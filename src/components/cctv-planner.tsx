@@ -45,6 +45,7 @@ import { Label } from '@/components/ui/label';
 type Action =
     | { type: 'LOAD_PROJECT', payload: ProjectState }
     | { type: 'UPDATE_PROJECT_NAME', payload: string }
+    | { type: 'UPDATE_BUILDING_NAME', payload: { buildingId: string, name: string } }
     | { type: 'SET_ACTIVE_FLOOR', payload: { buildingId: string, floorId: string } }
     | { type: 'ADD_DEVICE', payload: { device: AnyDevice, buildingId: string, floorId: string } }
     | { type: 'UPDATE_DEVICE', payload: { device: AnyDevice, buildingId: string, floorId: string } }
@@ -78,6 +79,15 @@ function projectReducer(state: ProjectState, action: Action): ProjectState {
             return {
                 ...state,
                 projectName: action.payload,
+            };
+        case 'UPDATE_BUILDING_NAME':
+            return {
+                ...state,
+                buildings: state.buildings.map(b => 
+                    b.id === action.payload.buildingId 
+                        ? { ...b, name: action.payload.name } 
+                        : b
+                )
             };
         case 'SET_ACTIVE_FLOOR':
             return state; // No state change needed, handled by setActiveIds
@@ -320,6 +330,14 @@ export function CCTVPlanner() {
             payload: { buildingId }
         });
         toast({ title: 'เพิ่มชั้นใหม่แล้ว' });
+    };
+
+    const handleUpdateBuildingName = (buildingId: string, name: string) => {
+        dispatch({
+            type: 'UPDATE_BUILDING_NAME',
+            payload: { buildingId, name }
+        });
+        toast({ title: 'อัปเดตชื่ออาคารแล้ว' });
     };
     
     const handleUpdateFloorPlanRect = useCallback((rect: DOMRect) => {
@@ -612,9 +630,11 @@ export function CCTVPlanner() {
                             
                             <ProjectNavigator 
                                 buildings={projectState.buildings}
+                                activeBuildingId={activeIds.buildingId}
                                 activeFloorId={activeIds.floorId}
                                 onFloorSelect={handleFloorSelect}
                                 onAddFloor={handleAddFloor}
+                                onUpdateBuildingName={handleUpdateBuildingName}
                             />
                             
                             <DevicesToolbar onSelectDevice={handleAddDevice} />
@@ -738,9 +758,3 @@ export function CCTVPlanner() {
         </SidebarProvider>
     );
 }
-
-    
-
-    
-
-    
