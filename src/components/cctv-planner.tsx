@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SaharaButton from './sahara-button';
 
 
 type Action =
@@ -601,15 +602,8 @@ export function CCTVPlanner() {
             <div className="w-full h-screen flex bg-background text-foreground dark:text-white">
                 <Sidebar className="flex flex-col border-r border-border bg-card text-card-foreground shadow-lg">
                     <SidebarContent className="p-0 flex flex-col">
-                         <div className="p-4 border-b border-border flex justify-between items-center flex-shrink-0">
-                            <div>
-                                <h1 className="text-xl font-bold tracking-tight">CCTV Visionary</h1>
-                                <p className="text-muted-foreground text-sm truncate max-w-[180px]">{projectState.projectName}</p>
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-                                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                            </Button>
+                         <div className="p-4 border-b border-border flex justify-center items-center flex-shrink-0">
+                            <SaharaButton />
                         </div>
                         <div className="p-2 space-y-4 overflow-y-auto flex-1">
                              <Card>
@@ -801,3 +795,5 @@ export function CCTVPlanner() {
         </SidebarProvider>
     );
 }
+
+    
