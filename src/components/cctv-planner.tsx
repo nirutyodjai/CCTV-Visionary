@@ -25,6 +25,7 @@ import { RackElevationView } from '@/components/rack/rack-elevation-view';
 import { SystemStatusPanel, type SystemCheck } from './sidebar/system-status-panel';
 import { Sidebar, SidebarProvider, SidebarContent, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -154,6 +155,7 @@ export function CCTVPlanner() {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
+    const [activeView, setActiveView] = useState<'master' | 'floor'>('floor');
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const [selectedDevice, setSelectedDevice] = useState<AnyDevice | null>(null);
@@ -209,6 +211,7 @@ export function CCTVPlanner() {
             if (firstBuilding && firstBuilding.floors.length > 0) {
                 const firstFloor = firstBuilding.floors[0];
                 setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
+                setActiveView('floor');
             }
         }
     }, [isLoading, projectState.buildings, activeIds.buildingId]);
@@ -219,11 +222,22 @@ export function CCTVPlanner() {
     const handleFloorSelect = (buildingId: string, floorId: string) => {
         setFloorPlanRect(null); // Reset canvas rect when floor changes
         setActiveIds({ buildingId, floorId });
+        setActiveView('floor');
         setSelectedDevice(null);
     };
 
+    const handleMasterPlanSelect = () => {
+        setActiveView('master');
+        setActiveIds({ buildingId: null, floorId: null });
+        setSelectedDevice(null);
+    };
+
+
     const handleAddDevice = (type: DeviceType) => {
-        if (!activeFloor || !activeIds.buildingId || !activeIds.floorId) return;
+        if (activeView !== 'floor' || !activeFloor || !activeIds.buildingId || !activeIds.floorId) {
+            toast({ title: "ไม่สามารถเพิ่มอุปกรณ์ได้", description: "กรุณาเลือกชั้นก่อน", variant: "destructive" });
+            return;
+        }
         
         const newDevice = createDevice(type, 0.5, 0.5, activeFloor.devices);
         dispatch({
@@ -443,7 +457,14 @@ export function CCTVPlanner() {
                 const firstBuilding = loadedProject.buildings?.[0];
                 const firstFloor = firstBuilding?.floors?.[0];
 
-                setActiveIds({ buildingId: firstBuilding?.id || null, floorId: firstFloor?.id || null });
+                if (firstBuilding && firstFloor) {
+                    setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
+                    setActiveView('floor');
+                } else {
+                    setActiveIds({ buildingId: null, floorId: null });
+                    setActiveView('master');
+                }
+
                 setSelectedDevice(null);
                 setFloorPlanRect(null); // Reset canvas rect
                 toast({
@@ -477,7 +498,7 @@ export function CCTVPlanner() {
         }
     }
 
-    if (isLoading) {
+    if (isLoading && projectState.id === 'loading') {
         return (
             <div className="w-full h-screen flex items-center justify-center bg-background">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -498,27 +519,84 @@ export function CCTVPlanner() {
     return (
         <SidebarProvider>
             <div className="w-full h-screen flex bg-background text-foreground dark:text-white">
-                <Sidebar className="flex flex-col border-r border-border bg-card text-card-foreground shadow-lg overflow-y-auto">
-                    <SidebarContent className="p-0">
-                         <div className="p-4 border-b border-border flex justify-between items-center">
+                <Sidebar className="flex flex-col border-r border-border bg-card text-card-foreground shadow-lg">
+                    <SidebarContent className="p-0 flex flex-col">
+                         <div className="p-4 border-b border-border flex justify-between items-center flex-shrink-0">
                             <div>
                                 <h1 className="text-xl font-bold tracking-tight">CCTV Visionary</h1>
-                                <p className="text-muted-foreground text-sm">{projectState.projectName}</p>
-                                <p className="text-xs text-muted-foreground/50 font-mono mt-1">ID: {projectState.id}</p>
+                                <p className="text-muted-foreground text-sm truncate max-w-[180px]">{projectState.projectName}</p>
                             </div>
                             <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
                                 <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                                 <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                             </Button>
                         </div>
-                        <div className="p-2 space-y-4">
+                        <div className="p-2 space-y-4 overflow-y-auto flex-1">
+                             <Card>
+                                <CardHeader className="p-3 border-b">
+                                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                        <FolderKanban className="w-4 h-4"/>
+                                        การจัดการโครงการ
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-3 space-y-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-between">
+                                                <span className="truncate">{projectState.projectName}</span>
+                                                <ChevronDown className="h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="w-[250px]">
+                                            <DropdownMenuLabel>สลับโครงการ</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            {projectList.map((p) => (
+                                                <DropdownMenuItem
+                                                    key={p.id}
+                                                    disabled={p.id === projectState.id || isLoading}
+                                                    onSelect={() => handleLoadProject(p.id)}
+                                                >
+                                                    {p.projectName}
+                                                </DropdownMenuItem>
+                                            ))}
+                                             <DropdownMenuSeparator />
+                                             <DropdownMenuItem onSelect={() => setProjectManagerOpen(true)}>
+                                                <FolderKanban className="mr-2 h-4 w-4" />
+                                                <span>จัดการโครงการทั้งหมด</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <Button onClick={handleSaveProject} disabled={isSaving || isLoading} className="w-full">
+                                        {isSaving ? <Loader2 className="animate-spin"/> : <Save />} บันทึกโครงการ
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                            
                             <ProjectNavigator 
                                 buildings={projectState.buildings}
                                 activeFloorId={activeIds.floorId}
                                 onFloorSelect={handleFloorSelect}
+                                onMasterPlanSelect={handleMasterPlanSelect}
+                                isMasterPlanActive={activeView === 'master'}
                             />
-                            <FloorPlanUpload onSetFloorPlan={handleSetFloorPlan} />
+                            
+                            <DevicesToolbar onSelectDevice={handleAddDevice} />
                             <ArchitectureToolbar selectedTool={selectedArchTool} onSelectTool={setSelectedArchTool} />
+                            
+                            <FloorPlanUpload onSetFloorPlan={handleSetFloorPlan} />
+
+                             <Card>
+                                <CardHeader className="p-3 border-b">
+                                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                        <Network className="w-4 h-4" />
+                                        มุมมองและรายงาน
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-3">
+                                    <Button variant="outline" className="w-full" onClick={() => setTopologyViewOpen(true)}><Network /> ดูผังเครือข่าย</Button>
+                                </CardContent>
+                            </Card>
+                            
                             <AiAssistant 
                                 onAnalyze={handleAnalyzePlan}
                                 onSuggest={handleSuggestPlacements}
@@ -545,44 +623,14 @@ export function CCTVPlanner() {
                         <div className="h-16 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
                             <div className="flex items-center gap-2">
                                 <SidebarTrigger className="md:hidden" />
-                                <div className="hidden md:flex">
-                                    <DevicesToolbar onSelectDevice={handleAddDevice} />
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" className="w-[200px] md:w-[250px] justify-between">
-                                            <span className="truncate">{projectState.projectName}</span>
-                                            <ChevronDown className="h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-[250px]">
-                                        <DropdownMenuLabel>Switch Project</DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-                                        {projectList.map((p) => (
-                                            <DropdownMenuItem
-                                                key={p.id}
-                                                disabled={p.id === projectState.id || isLoading}
-                                                onSelect={() => handleLoadProject(p.id)}
-                                            >
-                                                {p.projectName}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                <Button variant="outline" onClick={() => setTopologyViewOpen(true)}><Network /> View Topology</Button>
-                                <Button variant="outline" onClick={() => setProjectManagerOpen(true)} disabled={isLoading || isSaving}>
-                                    <FolderKanban/> จัดการโครงการ
-                                </Button>
-                                <Button onClick={handleSaveProject} disabled={isSaving || isLoading}>
-                                    {isSaving ? <Loader2 className="animate-spin"/> : <Save />} Save
-                                </Button>
+                                 <h2 className="text-lg font-semibold hidden md:block">
+                                    {activeView === 'floor' && activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "Master Plan"}
+                                </h2>
                             </div>
                         </div>
 
                         <div className="flex-1 w-full h-full relative">
-                            {activeFloor ? (
+                            {activeView === 'floor' && activeFloor ? (
                                 <PlannerCanvas
                                     floor={activeFloor}
                                     selectedDevice={selectedDevice}
@@ -601,12 +649,13 @@ export function CCTVPlanner() {
                                 />
                             ) : (
                                 <div className="flex-1 w-full h-full flex items-center justify-center bg-muted/20">
-                                    <p className="text-muted-foreground">Please select a building and floor to begin.</p>
+                                    <p className="text-muted-foreground text-center px-4">
+                                        {activeView === 'master' 
+                                            ? "Master Plan View: แสดงภาพรวมของโครงการทั้งหมด (อยู่ระหว่างการพัฒนา)" 
+                                            : "กรุณาเลือกอาคารและชั้นจากเมนูด้านซ้ายเพื่อเริ่มต้น"}
+                                    </p>
                                 </div>
                             )}
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 p-1 bg-background/80 border rounded-full shadow-lg md:hidden">
-                                <DevicesToolbar onSelectDevice={handleAddDevice} />
-                            </div>
                         </div>
                     </SidebarInset>
                     {!isMobile && (
@@ -623,9 +672,6 @@ export function CCTVPlanner() {
                          <SheetHeader className="p-4 border-b">
                             <SheetTitle>Device Properties</SheetTitle>
                          </SheetHeader>
-                        <div className="sr-only">
-                           <SheetTitle>Device Properties</SheetTitle>
-                        </div>
                         {propertiesPanel}
                     </SheetContent>
                 </Sheet>

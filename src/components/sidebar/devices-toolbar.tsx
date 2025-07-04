@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { DEVICE_CONFIG } from '@/lib/device-config';
 import type { DeviceType } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Wrench } from 'lucide-react';
 
 interface DevicesToolbarProps {
   onSelectDevice: (type: DeviceType) => void;
@@ -11,17 +13,26 @@ interface DevicesToolbarProps {
 const TOOLBAR_DEVICES: DeviceType[] = [
     'cctv-dome',
     'cctv-bullet',
+    'cctv-ptz',
+    'wifi-ap',
     'nvr',
     'switch',
     'rack-indoor',
-    'wifi-ap',
+    'rack-outdoor',
 ];
 
 export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
   return (
-    <div className="flex items-center space-x-2">
-         <h4 className="font-semibold mr-4 text-sm">Add Device</h4>
-         <TooltipProvider>
+     <Card>
+      <CardHeader className="p-3 border-b">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Wrench className="w-4 h-4" />
+            เครื่องมืออุปกรณ์
+        </CardTitle>
+      </CardHeader>
+       <CardContent className="p-3">
+        <TooltipProvider>
+            <div className="grid grid-cols-4 gap-2">
             {TOOLBAR_DEVICES.map(type => {
                 const config = DEVICE_CONFIG[type];
                 if (!config) return null;
@@ -29,17 +40,24 @@ export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
                 return (
                     <Tooltip key={type}>
                         <TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" onClick={() => onSelectDevice(type)}>
+                            <Button
+                                variant="outline"
+                                className="h-16 flex flex-col items-center justify-center space-y-1 p-1"
+                                onClick={() => onSelectDevice(type)}
+                                >
                                 <Icon className="h-5 w-5" />
+                                <span className="text-[10px] text-center leading-tight">{config.name}</span>
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <p>{config.name}</p>
+                            <p>เพิ่ม {config.name}</p>
                         </TooltipContent>
                     </Tooltip>
                 )
             })}
+            </div>
         </TooltipProvider>
-    </div>
+       </CardContent>
+    </Card>
   );
 }
