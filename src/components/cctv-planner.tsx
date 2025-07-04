@@ -23,7 +23,7 @@ import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
 import { LogicalTopologyView } from '@/components/topology/logical-topology-view';
 import { RackElevationView } from '@/components/rack/rack-elevation-view';
 import { SystemStatusPanel, type SystemCheck } from './sidebar/system-status-panel';
-import { Sidebar, SidebarProvider, SidebarContent, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
+import { Sidebar, SidebarProvider, SidebarContent, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,6 +43,7 @@ import { Label } from '@/components/ui/label';
 import PropertiesToggleButton from '@/components/ui/properties-toggle-button';
 import SaharaButton from '@/components/sahara-button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { SidebarToggle } from '@/components/ui/sidebar-toggle';
 
 
 type Action =
@@ -708,6 +709,9 @@ export function CCTVPlanner() {
                             <BillOfMaterials project={projectState} />
                         </div>
                     </SidebarContent>
+                    <SidebarFooter className="p-0 border-t border-border mt-auto">
+                        <SidebarToggle />
+                    </SidebarFooter>
                 </Sidebar>
                 
                 <div className="flex-1 flex min-w-0">
