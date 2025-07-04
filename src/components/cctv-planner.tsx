@@ -16,7 +16,7 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Sun, Moon, Network, Save, Loader2, FolderKanban, ChevronDown } from 'lucide-react';
+import { Sun, Moon, Network, Save, Loader2, FolderKanban, ChevronDown, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
 import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction, listProjectsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
@@ -206,6 +206,7 @@ export function CCTVPlanner() {
     const [isTopologyViewOpen, setTopologyViewOpen] = useState(false);
     const [isProjectManagerOpen, setProjectManagerOpen] = useState(false);
     const [isRackViewOpen, setRackViewOpen] = useState(false);
+    const [isPropertiesPanelOpen, setPropertiesPanelOpen] = useState(true);
     const isMobile = useIsMobile();
     
     // AI states
@@ -675,15 +676,24 @@ export function CCTVPlanner() {
                     </SidebarContent>
                 </Sidebar>
                 
-                <div className="flex-1 flex">
+                <div className="flex-1 flex min-w-0">
                     <SidebarInset className="flex-1 flex flex-col">
                         <div className="h-16 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
                                 <SidebarTrigger className="md:hidden" />
-                                 <h2 className="text-lg font-semibold hidden md:block">
+                                 <h2 className="text-lg font-semibold hidden md:block truncate">
                                     {activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "กรุณาเลือกแบบแปลน"}
                                 </h2>
                             </div>
+                            <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="hidden md:inline-flex" 
+                                onClick={() => setPropertiesPanelOpen(!isPropertiesPanelOpen)}
+                            >
+                                {isPropertiesPanelOpen ? <PanelRightClose /> : <PanelRightOpen />}
+                                <span className="sr-only">Toggle Properties Panel</span>
+                            </Button>
                         </div>
 
                         <div className="flex-1 w-full h-full relative">
@@ -713,8 +723,8 @@ export function CCTVPlanner() {
                             )}
                         </div>
                     </SidebarInset>
-                    {!isMobile && (
-                        <aside className="w-96 h-full flex flex-col border-l border-border bg-card shadow-lg">
+                    {!isMobile && isPropertiesPanelOpen && (
+                        <aside className="w-96 h-full flex flex-col border-l border-border bg-card shadow-lg flex-shrink-0">
                             {propertiesPanel}
                         </aside>
                     )}
