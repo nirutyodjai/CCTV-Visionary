@@ -136,7 +136,14 @@ const initialChecks: SystemCheck[] = [
 
 
 export function CCTVPlanner() {
-    const [projectState, dispatch] = useReducer(projectReducer, createInitialState());
+    const [projectState, dispatch] = useReducer(projectReducer, {
+        id: 'loading',
+        projectName: 'Loading...',
+        buildings: [],
+        vlans: [],
+        subnets: [],
+    });
+    const [isMounted, setIsMounted] = useState(false);
     const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
@@ -162,14 +169,20 @@ export function CCTVPlanner() {
     const [isCheckingSystem, setIsCheckingSystem] = useState(false);
 
     useEffect(() => {
-        if (!activeIds.buildingId && projectState.buildings.length > 0) {
+        // Defer state initialization to the client to prevent hydration mismatch
+        dispatch({ type: 'LOAD_PROJECT', payload: createInitialState() });
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (isMounted && !activeIds.buildingId && projectState.buildings.length > 0) {
             const firstBuilding = projectState.buildings[0];
             if (firstBuilding && firstBuilding.floors.length > 0) {
                 const firstFloor = firstBuilding.floors[0];
                 setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
             }
         }
-    }, [projectState.buildings, activeIds.buildingId]);
+    }, [isMounted, projectState.buildings, activeIds.buildingId]);
 
     const activeBuilding = useMemo(() => projectState.buildings.find(b => b.id === activeIds.buildingId), [projectState.buildings, activeIds.buildingId]);
     const activeFloor = useMemo(() => activeBuilding?.floors.find(f => f.id === activeIds.floorId), [activeBuilding, activeIds.floorId]);
@@ -435,6 +448,14 @@ export function CCTVPlanner() {
         }
     }
 
+    if (!isMounted) {
+        return (
+            <div className="w-full h-screen flex items-center justify-center bg-background">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+
     const propertiesPanel = (
          <PropertiesPanel 
             selectedDevice={selectedDevice}
@@ -552,6 +573,9 @@ export function CCTVPlanner() {
                          <SheetHeader className="p-4 border-b">
                             <SheetTitle>Device Properties</SheetTitle>
                          </SheetHeader>
+                        <div className="sr-only">
+                           <SheetTitle>Device Properties</SheetTitle>
+                        </div>
                         {propertiesPanel}
                     </SheetContent>
                 </Sheet>
