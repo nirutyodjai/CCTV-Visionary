@@ -89,6 +89,7 @@ export interface RackDevice {
 }
 
 export type AnyDevice = BaseDevice & { [key: string]: any };
+export type Device = AnyDevice;
 
 
 export interface Connection {

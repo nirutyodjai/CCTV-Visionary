@@ -4,7 +4,7 @@ import type { Device, DeviceType } from './types';
 // Add new device types for rack-mountable equipment
 export const RACK_DEVICE_TYPES = ['patch-panel', 'pdu', 'ups', 'switch', 'nvr'];
 
-export const DEVICE_CONFIG: Record<DeviceType | 'patch-panel' | 'pdu' | 'ups', { name: string; icon: React.ComponentType<any>; defaults: Partial<Device> & { uHeight?: number; powerConsumption?: number; powerCapacity?: number; } }> = {
+export const DEVICE_CONFIG: Record<string, { name: string; icon: React.ComponentType<any>; defaults: Partial<Device> & { uHeight?: number; powerConsumption?: number; powerCapacity?: number; } }> = {
   // Existing devices...
   'cctv-bullet': { name: 'กล้องกระบอก', icon: CctvBulletIcon, defaults: { resolution: '1080p', fov: 90, range: 20, rotation: 0, price: 1500, powerConsumption: 5 } },
   'cctv-dome': { name: 'กล้องโดม', icon: CctvDomeIcon, defaults: { resolution: '1080p', fov: 90, range: 20, rotation: 0, price: 1400, powerConsumption: 5 } },
@@ -29,8 +29,18 @@ export const DEVICE_CONFIG: Record<DeviceType | 'patch-panel' | 'pdu' | 'ups', {
 };
 
 export function createDevice(type: DeviceType, x: number, y: number, existingDevices: Device[]): Device {
-  const count = existingDevices.filter(d => d.type === type).length + 1;
+  // DEBUGGING: Log the type being passed to the function.
+  console.log(`[createDevice] Attempting to create device of type: ${type}`);
+
   const config = DEVICE_CONFIG[type];
+
+  if (!config) {
+    // This will prevent the crash and help debugging in the future.
+    console.error(`[createDevice] FATAL: No configuration found for device type: "${type}"`);
+    throw new Error(`Invalid device type specified: ${type}`);
+  }
+
+  const count = existingDevices.filter(d => d.type === type).length + 1;
 
   return {
     id: `dev_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,

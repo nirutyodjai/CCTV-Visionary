@@ -18,6 +18,9 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sarabun)', 'sans-serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -52,6 +55,13 @@ const config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        sidebar: {
+            border: 'hsl(var(--sidebar-border))',
+            accent: {
+                DEFAULT: 'hsl(var(--sidebar-accent))',
+                foreground: 'hsl(var(--sidebar-accent-foreground))'
+            }
+        }
       },
       borderRadius: {
         lg: 'var(--radius)',
