@@ -179,7 +179,6 @@ export function CCTVPlanner() {
     const handleFloorSelect = (buildingId: string, floorId: string) => {
         setActiveIds({ buildingId, floorId });
         setSelectedDevice(null);
-        setFloorPlanRect(null); // Reset rect on floor change
     };
 
     const handleAddDevice = (type: DeviceType) => {
