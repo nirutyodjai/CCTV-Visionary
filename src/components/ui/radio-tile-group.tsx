@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -25,26 +26,24 @@ const RadioTileItem = React.forwardRef<
   }
 >(({ className, icon, ...props }, ref) => {
   return (
-    // The Radix Item is the core component. It behaves like a button.
-    // With `asChild`, we tell it to use our custom div for its rendering,
-    // while passing all necessary accessibility and interaction props to it.
     <RadioGroupPrimitive.Item
-        ref={ref}
-        {...props}
-        className={cn("peer", className)}
-        asChild
+      ref={ref}
+      {...props}
+      className={cn(className)}
+      asChild
     >
       <div
       className={cn(
           "flex flex-col items-center justify-center p-1 w-full h-14 rounded-lg border-2 border-muted bg-card",
           "transition-all shadow-sm cursor-pointer",
+          "text-muted-foreground", // Default icon color
           // These styles apply based on the state of the 'peer' (the RadioGroup.Item)
-          "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-lg peer-data-[state=checked]:text-primary",
-          "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2",
+          "data-[state=checked]:border-primary data-[state=checked]:shadow-lg data-[state=checked]:text-primary",
+          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "hover:border-primary/70"
       )}
       >
-          <div className="w-8 h-8 flex items-center justify-center peer-data-[state=checked]:[&>svg]:text-primary [&>svg]:text-muted-foreground [&>svg]:w-7 [&>svg]:h-7">
+          <div className="w-8 h-8 flex items-center justify-center [&>svg]:w-7 [&>svg]:h-7">
               {icon}
           </div>
       </div>
