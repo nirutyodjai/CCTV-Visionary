@@ -713,14 +713,18 @@ export function CCTVPlanner() {
                 
                 <div className="flex-1 flex min-w-0">
                     <SidebarInset className="flex-1 flex flex-col">
-                        <div className="h-16 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
-                            <div className="flex items-center gap-4 min-w-0">
+                        <div className="h-16 border-b border-border flex items-center justify-between px-4 flex-shrink-0 relative">
+                            <div className="flex items-center gap-4">
                                 <SidebarTrigger className="md:hidden" />
                                 <SidebarToggle />
-                                 <h2 className="text-lg font-semibold hidden md:block truncate">
+                            </div>
+                            
+                            <div className="absolute left-1/2 -translate-x-1/2">
+                                <h2 className="text-lg font-semibold hidden md:block truncate text-center">
                                     {activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "กรุณาเลือกแบบแปลน"}
                                 </h2>
                             </div>
+
                             <div className="flex items-center gap-4">
                                 <ThemeToggle />
                                 <PropertiesToggleButton 
