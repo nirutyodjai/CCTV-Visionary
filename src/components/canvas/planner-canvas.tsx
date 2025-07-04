@@ -390,25 +390,47 @@ export function PlannerCanvas({
           ctx.font = '10px Sarabun';
 
           if (el.type === 'table') {
-              ctx.fillStyle = 'hsl(35, 20%, 80%)';
+              ctx.save();
+              ctx.translate(coords.x, coords.y);
+              const baseWidth = 24;
+              const baseHeight = 16;
+              const tableWidth = baseWidth * scale;
+              const tableHeight = baseHeight * scale;
+              const legSize = 3 * scale;
+
+              // Draw legs first
+              ctx.fillStyle = 'hsl(35, 20%, 60%)';
+              ctx.fillRect(-tableWidth/2, -tableHeight/2, legSize, legSize);
+              ctx.fillRect(tableWidth/2 - legSize, -tableHeight/2, legSize, legSize);
+              ctx.fillRect(-tableWidth/2, tableHeight/2 - legSize, legSize, legSize);
+              ctx.fillRect(tableWidth/2 - legSize, tableHeight/2 - legSize, legSize, legSize);
+
+              // Draw tabletop
+              ctx.fillStyle = 'hsl(35, 25%, 75%)';
               ctx.strokeStyle = 'hsl(35, 20%, 60%)';
-              ctx.lineWidth = 1.5;
-              const size = 16 * (scale ?? 1);
-              const rectWidth = size * 1.5;
-              const rectHeight = size;
-              ctx.beginPath();
-              ctx.rect(coords.x - rectWidth / 2, coords.y - rectHeight / 2, rectWidth, rectHeight);
-              ctx.fill();
-              ctx.stroke();
+              ctx.lineWidth = 1.5 * scale;
+              ctx.fillRect(-tableWidth / 2, -tableHeight / 2, tableWidth, tableHeight);
+              ctx.strokeRect(-tableWidth / 2, -tableHeight / 2, tableWidth, tableHeight);
+              ctx.restore();
           } else if (el.type === 'chair') {
-              ctx.fillStyle = 'hsl(35, 20%, 80%)';
+              ctx.save();
+              ctx.translate(coords.x, coords.y);
+              const baseSize = 12;
+              const size = baseSize * scale;
+              const backHeight = size * 1.2;
+
+              ctx.fillStyle = 'hsl(35, 25%, 75%)';
               ctx.strokeStyle = 'hsl(35, 20%, 60%)';
-              ctx.lineWidth = 1.5;
-              const size = 16 * (scale ?? 1);
-              ctx.beginPath();
-              ctx.arc(coords.x, coords.y, size / 2, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
+              ctx.lineWidth = 1 * scale;
+
+              // Draw back
+              ctx.fillRect(-size/2, -size - (size/2), size, backHeight);
+              ctx.strokeRect(-size/2, -size - (size/2), size, backHeight);
+
+              // Draw seat
+              ctx.fillRect(-size/2, -size/2, size, size);
+              ctx.strokeRect(-size/2, -size/2, size, size);
+              ctx.restore();
           } else {
               const rectSize = 30 * scale;
               const rectX = coords.x - rectSize / 2;
