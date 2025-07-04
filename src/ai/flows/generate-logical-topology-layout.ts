@@ -3,8 +3,8 @@
  * @fileOverview Generates a 2D layout for a network topology diagram.
  *
  * - generateLogicalTopologyLayout - A function that arranges device nodes for clear visualization.
- * - LayoutInputSchema - The input type for the generateLogicalTopologyLayout function.
- * - LayoutOutputSchema - The return type for the generateLogicalTopologyLayout function.
+ * - LayoutInput - The input type for the generateLogicalTopologyLayout function.
+ * - LayoutOutput - The return type for the generateLogicalTopologyLayout function.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -20,7 +20,7 @@ const ConnectionEdgeSchema = z.object({
   to: z.string(),
 });
 
-export const LayoutInputSchema = z.object({
+const LayoutInputSchema = z.object({
   devices: z.array(DeviceNodeSchema),
   connections: z.array(ConnectionEdgeSchema),
 });
@@ -28,7 +28,7 @@ export type LayoutInput = z.infer<typeof LayoutInputSchema>;
 
 const PointSchema = z.object({ x: z.number(), y: z.number() });
 
-export const LayoutOutputSchema = z.object({
+const LayoutOutputSchema = z.object({
   positions: z.record(z.string(), PointSchema), // Record<deviceId, {x, y}>
 });
 export type LayoutOutput = z.infer<typeof LayoutOutputSchema>;

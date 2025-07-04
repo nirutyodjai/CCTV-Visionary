@@ -1,7 +1,6 @@
 import React from 'react';
-import { CctvBulletIcon, CctvDomeIcon, CctvPtzIcon, WifiApIcon, NvrIcon, SwitchIcon, MonitorIcon, UtpCat6Icon, FiberOpticIcon, RackIcon, Server } from "@/components/icons";
+import { CctvBulletIcon, CctvDomeIcon, CctvPtzIcon, WifiApIcon, NvrIcon, SwitchIcon, MonitorIcon, UtpCat6Icon, FiberOpticIcon, RackIcon } from "@/components/icons";
 import type { Device, DeviceType } from './types';
-import { Cable, Power, PowerOff } from 'lucide-react';
 
 export const RACK_DEVICE_TYPES: DeviceType[] = ['nvr', 'switch', 'patch-panel', 'pdu', 'ups'];
 

@@ -3,21 +3,21 @@
  * @fileOverview Simulates fetching detailed status from a network device.
  *
  * - getDeviceDetails - A function that generates plausible status data for a given device.
- * - DeviceInfoSchema - The input type for the getDeviceDetails function.
- * - DeviceDetailsSchema - The output type for the getDeviceDetails function.
+ * - DeviceInfo - The input type for the getDeviceDetails function.
+ * - DeviceDetails - The output type for the getDeviceDetails function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const DeviceInfoSchema = z.object({
+const DeviceInfoSchema = z.object({
   ip: z.string().ip().optional().describe('The IP address of the device'),
   username: z.string().optional().describe('The username for the device'),
   deviceType: z.enum(['cctv-dome', 'cctv-bullet', 'cctv-ptz', 'nvr', 'switch']).describe('The type of device'),
 });
 export type DeviceInfo = z.infer<typeof DeviceInfoSchema>;
 
-export const DeviceDetailsSchema = z.object({
+const DeviceDetailsSchema = z.object({
     success: z.boolean(),
     status: z.string().optional(),
     details: z.record(z.any()).optional(),

@@ -3,8 +3,8 @@
  * @fileOverview Reviews a network and CCTV plan for potential issues and provides recommendations.
  *
  * - runPlanDiagnostics - A function that analyzes a plan for errors and warnings.
- * - PlanSchema - The input type for the runPlanDiagnostics function.
- * - DiagnosticResultSchema - The return type for the runPlanDiagnostics function.
+ * - Plan - The input type for the runPlanDiagnostics function.
+ * - DiagnosticResult - The return type for the runPlanDiagnostics function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -23,14 +23,14 @@ const ConnectionInfoSchema = z.object({
   toDeviceId: z.string(),
 });
 
-export const PlanSchema = z.object({
+const PlanSchema = z.object({
   devices: z.array(DeviceInfoSchema),
   connections: z.array(ConnectionInfoSchema),
 });
 export type Plan = z.infer<typeof PlanSchema>;
 
 
-export const DiagnosticResultSchema = z.object({
+const DiagnosticResultSchema = z.object({
   diagnostics: z.array(z.object({
     severity: z.enum(['error', 'warning', 'info']),
     message: z.string(),

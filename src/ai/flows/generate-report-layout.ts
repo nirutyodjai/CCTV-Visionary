@@ -3,14 +3,14 @@
  * @fileOverview Designs a professional report structure based on project summary data.
  *
  * - generateReportLayout - A function that creates a logical layout for a technical report.
- * - ReportInfoSchema - The input type for the generateReportLayout function.
- * - ReportLayoutSchema - The return type for the generateReportLayout function.
+ * - ReportInfo - The input type for the generateReportLayout function.
+ * - ReportLayout - The return type for the generateReportLayout function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const ReportInfoSchema = z.object({
+const ReportInfoSchema = z.object({
   projectName: z.string(),
   buildingCount: z.number(),
   deviceCount: z.number(),
@@ -27,7 +27,7 @@ const SectionSchema = z.object({
     targetId: z.string().optional(), // e.g. floor.id for FLOORPLAN
 });
 
-export const ReportLayoutSchema = z.object({
+const ReportLayoutSchema = z.object({
   layout: z.array(SectionSchema),
 });
 export type ReportLayout = z.infer<typeof ReportLayoutSchema>;
