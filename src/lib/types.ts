@@ -138,6 +138,7 @@ export interface Subnet {
 }
 
 export interface ProjectState {
+  id: string;
   projectName: string;
   buildings: Building[];
   vlans: VLAN[];

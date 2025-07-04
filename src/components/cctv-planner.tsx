@@ -16,7 +16,7 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Sun, Moon, Network, Save, FolderOpen } from 'lucide-react';
+import { Sun, Moon, Network, Save, FolderOpen, Loader2 } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
 import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
@@ -26,6 +26,8 @@ import { SystemStatusPanel, type SystemCheck } from './sidebar/system-status-pan
 import { Sidebar, SidebarProvider, SidebarContent, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 
 type Action =
@@ -58,6 +60,7 @@ function createInitialState(): ProjectState {
     };
 
     return {
+        id: `proj_${Date.now()}`,
         projectName: 'โครงการใหม่',
         buildings: [initialBuilding],
         vlans: [],
@@ -160,7 +163,7 @@ const initialChecks: SystemCheck[] = [
 
 export function CCTVPlanner() {
     const [projectState, dispatch] = useReducer(projectReducer, createInitialState());
-    const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: 'bld_starter_1', floorId: 'floor_starter_1' });
+    const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const [selectedDevice, setSelectedDevice] = useState<AnyDevice | null>(null);
@@ -176,17 +179,28 @@ export function CCTVPlanner() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSuggesting, setIsSuggesting] = useState(false);
     const [isDiagnosing, setIsDiagnosing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
 
     // System Status states
     const [systemStatuses, setSystemStatuses] = useState<SystemCheck[]>(initialChecks);
     const [isCheckingSystem, setIsCheckingSystem] = useState(false);
 
+    useEffect(() => {
+        if (!activeIds.buildingId && projectState.buildings.length > 0) {
+            const firstBuilding = projectState.buildings[0];
+            const firstFloor = firstBuilding.floors[0];
+            setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
+        }
+    }, [projectState.buildings, activeIds.buildingId]);
+
     const activeBuilding = useMemo(() => projectState.buildings.find(b => b.id === activeIds.buildingId), [projectState.buildings, activeIds.buildingId]);
     const activeFloor = useMemo(() => activeBuilding?.floors.find(f => f.id === activeIds.floorId), [activeBuilding, activeIds.floorId]);
 
     const handleFloorSelect = (buildingId: string, floorId: string) => {
-        if (activeIds.floorId !== floorId) {
-            setFloorPlanRect(null); // Reset canvas rect when floor changes
+        if (activeIds.floorId !== floorId || !floorPlanRect) {
+            setFloorPlanRect(null); // Reset canvas rect when floor changes or doesn't exist
         }
         setActiveIds({ buildingId, floorId });
         setSelectedDevice(null);
@@ -375,6 +389,68 @@ export function CCTVPlanner() {
         setIsCheckingSystem(false);
     };
 
+    const handleSaveProject = async () => {
+        setIsSaving(true);
+        const projectToSave = JSON.parse(JSON.stringify(projectState));
+        try {
+            await setDoc(doc(db, "projects", projectToSave.id), projectToSave);
+            toast({
+                title: "บันทึกโครงการสำเร็จ",
+                description: `โครงการ "${projectToSave.projectName}" (ID: ${projectToSave.id}) ถูกบันทึกแล้ว`,
+            });
+        } catch (error: any) {
+            console.error("Error saving project:", error);
+            toast({
+                title: "เกิดข้อผิดพลาดในการบันทึก",
+                description: error.message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleLoadProject = async () => {
+        const projectId = prompt("กรุณาใส่ Project ID ที่ต้องการโหลด:");
+        if (!projectId) return;
+
+        setIsLoading(true);
+        try {
+            const docRef = doc(db, "projects", projectId.trim());
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const loadedProject = docSnap.data() as ProjectState;
+                dispatch({ type: 'LOAD_PROJECT', payload: loadedProject });
+                
+                const firstBuilding = loadedProject.buildings[0];
+                const firstFloor = firstBuilding?.floors[0];
+
+                setActiveIds({ buildingId: firstBuilding?.id || null, floorId: firstFloor?.id || null });
+                setSelectedDevice(null);
+                setFloorPlanRect(null); // Reset canvas rect
+                toast({
+                    title: "โหลดโครงการสำเร็จ",
+                    description: `โครงการ "${loadedProject.projectName}" ถูกโหลดแล้ว`,
+                });
+            } else {
+                toast({
+                    title: "ไม่พบโครงการ",
+                    description: `ไม่พบโครงการที่มี ID: ${projectId}`,
+                    variant: "destructive",
+                });
+            }
+        } catch (error: any) {
+            console.error("Error loading project:", error);
+            toast({
+                title: "เกิดข้อผิดพลาดในการโหลด",
+                description: error.message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleSelectDevice = (device: AnyDevice | null) => {
         setSelectedDevice(device);
@@ -449,8 +525,12 @@ export function CCTVPlanner() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button variant="outline" onClick={() => setTopologyViewOpen(true)}><Network /> View Topology</Button>
-                                <Button variant="outline" disabled><FolderOpen/> Load</Button>
-                                <Button disabled><Save /> Save</Button>
+                                <Button variant="outline" onClick={handleLoadProject} disabled={isLoading || isSaving}>
+                                    {isLoading ? <Loader2 className="animate-spin"/> : <FolderOpen/>} Load
+                                </Button>
+                                <Button onClick={handleSaveProject} disabled={isSaving || isLoading}>
+                                    {isSaving ? <Loader2 className="animate-spin"/> : <Save />} Save
+                                </Button>
                             </div>
                         </div>
 
