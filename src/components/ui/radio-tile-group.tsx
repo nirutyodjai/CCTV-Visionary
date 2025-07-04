@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -25,35 +24,30 @@ const RadioTileItem = React.forwardRef<
     icon: React.ReactNode
     label: string
   }
->(({ className, icon, label, value, ...props }, ref) => {
-  const id = React.useId()
-
+>(({ className, icon, label, ...props }, ref) => {
   return (
-    <div>
-      <RadioGroupPrimitive.Item
-        ref={ref}
-        value={value}
-        id={id}
-        className="peer sr-only"
-        {...props}
-      />
-      <label
-        htmlFor={id}
+    <label className={cn("cursor-pointer", className)}>
+        <RadioGroupPrimitive.Item
+            ref={ref}
+            className="peer sr-only"
+            {...props}
+        />
+        <div
         className={cn(
-          "flex flex-col items-center justify-center p-1 w-full min-h-[70px] rounded-lg border-2 border-muted bg-card",
-          "cursor-pointer transition-all shadow-sm",
-          "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-lg peer-data-[state=checked]:text-primary",
-          "hover:border-primary/70"
+            "flex flex-col items-center justify-center p-1 w-full min-h-[70px] rounded-lg border-2 border-muted bg-card",
+            "transition-all shadow-sm",
+            "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-lg peer-data-[state=checked]:text-primary",
+            "hover:border-primary/70"
         )}
-      >
-        <div className="w-8 h-8 flex items-center justify-center peer-data-[state=checked]:[&>svg]:text-primary [&>svg]:text-muted-foreground [&>svg]:w-7 [&>svg]:h-7">
-          {icon}
+        >
+            <div className="w-8 h-8 flex items-center justify-center peer-data-[state=checked]:[&>svg]:text-primary [&>svg]:text-muted-foreground [&>svg]:w-7 [&>svg]:h-7">
+                {icon}
+            </div>
+            <span className="text-xs text-center font-medium mt-1">
+                {label}
+            </span>
         </div>
-        <span className="text-xs text-center font-medium mt-1">
-          {label}
-        </span>
-      </label>
-    </div>
+    </label>
   )
 })
 RadioTileItem.displayName = "RadioTileItem"
