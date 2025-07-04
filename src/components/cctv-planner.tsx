@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useReducer, useState, useMemo, useEffect, useCallback } from 'react';
@@ -15,13 +16,17 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Sun, Moon, Network, Save, FolderOpen } from 'lucide-react';
+import { Sun, Moon, Network, Save, FolderOpen, PanelLeft } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
 import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
 import { LogicalTopologyView } from '@/components/topology/logical-topology-view';
 import { RackElevationView } from '@/components/rack/rack-elevation-view';
 import { SystemStatusPanel, type SystemCheck } from './sidebar/system-status-panel';
+import { Sidebar, SidebarProvider, SidebarContent, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 type Action =
     | { type: 'LOAD_PROJECT', payload: ProjectState }
@@ -146,6 +151,7 @@ export function CCTVPlanner() {
     const [floorPlanRect, setFloorPlanRect] = useState<DOMRect | null>(null);
     const [isTopologyViewOpen, setTopologyViewOpen] = useState(false);
     const [isRackViewOpen, setRackViewOpen] = useState(false);
+    const isMobile = useIsMobile();
     
     // AI states
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -363,97 +369,124 @@ export function CCTVPlanner() {
     const handleSelectDevice = (device: AnyDevice | null) => {
         setSelectedDevice(device);
         setCablingMode({ enabled: false, fromDeviceId: null });
-        if (device?.type.startsWith('rack')) {
+        if (!isMobile && device?.type.startsWith('rack')) {
             setRackViewOpen(true);
         }
     }
 
-    return (
-        <div className="w-full h-screen flex bg-background text-foreground">
-            <aside className="w-96 h-full flex flex-col border-r border-border bg-card shadow-lg overflow-y-auto">
-                <div className="p-4 border-b border-border flex justify-between items-center">
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight">CCTV Visionary</h1>
-                        <p className="text-muted-foreground text-sm">{projectState.projectName}</p>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-                        <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                        <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    </Button>
-                </div>
-                <div className="p-2 space-y-4">
-                    <ProjectNavigator 
-                        buildings={projectState.buildings}
-                        activeFloorId={activeIds.floorId}
-                        onFloorSelect={handleFloorSelect}
-                    />
-                    <FloorPlanUpload onSetFloorPlan={handleSetFloorPlan} />
-                    <ArchitectureToolbar selectedTool={selectedArchTool} onSelectTool={setSelectedArchTool} />
-                    <AiAssistant 
-                        onAnalyze={handleAnalyzePlan}
-                        onSuggest={handleSuggestPlacements}
-                        isAnalyzing={isAnalyzing}
-                        isSuggesting={isSuggesting}
-                    />
-                    <DiagnosticsPanel
-                        diagnostics={activeFloor?.diagnostics || []}
-                        onRunDiagnostics={handleRunDiagnostics}
-                        isLoading={isDiagnosing}
-                    />
-                     <SystemStatusPanel
-                        statuses={systemStatuses}
-                        onRunChecks={handleRunAllChecks}
-                        isLoading={isCheckingSystem}
-                    />
-                     <BillOfMaterials project={projectState} />
-                </div>
-            </aside>
-            
-            <main className="flex-1 w-full h-full flex flex-col">
-                 <div className="h-16 border-b border-border flex items-center justify-between px-4">
-                    <DevicesToolbar onSelectDevice={handleAddDevice} />
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={() => setTopologyViewOpen(true)}><Network /> View Topology</Button>
-                        <Button variant="outline" disabled><FolderOpen/> Load</Button>
-                        <Button disabled><Save /> Save</Button>
-                    </div>
-                </div>
+    const propertiesPanel = (
+         <PropertiesPanel 
+            selectedDevice={selectedDevice}
+            onUpdateDevice={handleUpdateDevice}
+            onRemoveDevice={handleRemoveDevice}
+            onStartCabling={(deviceId) => setCablingMode({ enabled: true, fromDeviceId: deviceId })}
+            onViewRack={() => setRackViewOpen(true)}
+        />
+    );
 
-                <div className="flex-1 w-full h-full relative">
-                    {activeFloor ? (
-                        <PlannerCanvas
-                            floor={activeFloor}
-                            selectedDevice={selectedDevice}
-                            onSelectDevice={handleSelectDevice}
-                            onUpdateDevice={handleUpdateDevice}
-                            onCanvasClick={() => setSelectedDevice(null)}
-                            cablingMode={cablingMode}
-                            onSetCablingMode={setCablingMode}
-                            onAddConnection={handleAddConnection}
-                            selectedArchTool={selectedArchTool}
-                            drawingState={drawingState}
-                            onSetDrawingState={setDrawingState}
-                            onAddArchElement={handleAddArchElement}
-                            floorPlanRect={floorPlanRect}
-                            onUpdateFloorPlanRect={handleUpdateFloorPlanRect}
-                        />
-                    ) : (
-                        <div className="flex-1 w-full h-full flex items-center justify-center bg-muted/20">
-                            <p className="text-muted-foreground">Please select a building and floor to begin.</p>
+    return (
+        <SidebarProvider>
+            <div className="w-full h-screen flex bg-background text-foreground">
+                <Sidebar className="flex flex-col border-r border-border bg-card shadow-lg overflow-y-auto">
+                    <SidebarContent className="p-0">
+                         <div className="p-4 border-b border-border flex justify-between items-center">
+                            <div>
+                                <h1 className="text-xl font-bold tracking-tight">CCTV Visionary</h1>
+                                <p className="text-muted-foreground text-sm">{projectState.projectName}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                            </Button>
                         </div>
+                        <div className="p-2 space-y-4">
+                            <ProjectNavigator 
+                                buildings={projectState.buildings}
+                                activeFloorId={activeIds.floorId}
+                                onFloorSelect={handleFloorSelect}
+                            />
+                            <FloorPlanUpload onSetFloorPlan={handleSetFloorPlan} />
+                            <ArchitectureToolbar selectedTool={selectedArchTool} onSelectTool={setSelectedArchTool} />
+                            <AiAssistant 
+                                onAnalyze={handleAnalyzePlan}
+                                onSuggest={handleSuggestPlacements}
+                                isAnalyzing={isAnalyzing}
+                                isSuggesting={isSuggesting}
+                            />
+                            <DiagnosticsPanel
+                                diagnostics={activeFloor?.diagnostics || []}
+                                onRunDiagnostics={handleRunDiagnostics}
+                                isLoading={isDiagnosing}
+                            />
+                            <SystemStatusPanel
+                                statuses={systemStatuses}
+                                onRunChecks={handleRunAllChecks}
+                                isLoading={isCheckingSystem}
+                            />
+                            <BillOfMaterials project={projectState} />
+                        </div>
+                    </SidebarContent>
+                </Sidebar>
+                
+                <div className="flex-1 flex">
+                    <SidebarInset className="flex-1 flex flex-col">
+                        <div className="h-16 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                                <SidebarTrigger className="md:hidden" />
+                                <div className="hidden md:flex">
+                                    <DevicesToolbar onSelectDevice={handleAddDevice} />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" onClick={() => setTopologyViewOpen(true)}><Network /> View Topology</Button>
+                                <Button variant="outline" disabled><FolderOpen/> Load</Button>
+                                <Button disabled><Save /> Save</Button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 w-full h-full relative">
+                            {activeFloor ? (
+                                <PlannerCanvas
+                                    floor={activeFloor}
+                                    selectedDevice={selectedDevice}
+                                    onSelectDevice={handleSelectDevice}
+                                    onUpdateDevice={handleUpdateDevice}
+                                    onCanvasClick={() => setSelectedDevice(null)}
+                                    cablingMode={cablingMode}
+                                    onSetCablingMode={setCablingMode}
+                                    onAddConnection={handleAddConnection}
+                                    selectedArchTool={selectedArchTool}
+                                    drawingState={drawingState}
+                                    onSetDrawingState={setDrawingState}
+                                    onAddArchElement={handleAddArchElement}
+                                    floorPlanRect={floorPlanRect}
+                                    onUpdateFloorPlanRect={handleUpdateFloorPlanRect}
+                                />
+                            ) : (
+                                <div className="flex-1 w-full h-full flex items-center justify-center bg-muted/20">
+                                    <p className="text-muted-foreground">Please select a building and floor to begin.</p>
+                                </div>
+                            )}
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 p-1 bg-background/80 border rounded-full shadow-lg md:hidden">
+                                <DevicesToolbar onSelectDevice={handleAddDevice} />
+                            </div>
+                        </div>
+                    </SidebarInset>
+                    {!isMobile && (
+                        <aside className="w-96 h-full flex flex-col border-l border-border bg-card shadow-lg">
+                            {propertiesPanel}
+                        </aside>
                     )}
                 </div>
-            </main>
+            </div>
 
-            <aside className="w-96 h-full flex flex-col border-l border-border bg-card shadow-lg">
-                <PropertiesPanel 
-                    selectedDevice={selectedDevice}
-                    onUpdateDevice={handleUpdateDevice}
-                    onRemoveDevice={handleRemoveDevice}
-                    onStartCabling={(deviceId) => setCablingMode({ enabled: true, fromDeviceId: deviceId })}
-                    onViewRack={() => setRackViewOpen(true)}
-                />
-            </aside>
+            {isMobile && (
+                 <Sheet open={!!selectedDevice} onOpenChange={(isOpen) => !isOpen && setSelectedDevice(null)}>
+                    <SheetContent className="w-[85vw] p-0 border-l">
+                        {propertiesPanel}
+                    </SheetContent>
+                </Sheet>
+            )}
 
             <LogicalTopologyView
                 devices={projectState.buildings.flatMap(b => b.floors.flatMap(f => f.devices))}
@@ -468,6 +501,6 @@ export function CCTVPlanner() {
                 onClose={() => setRackViewOpen(false)}
                 onUpdateRack={handleUpdateRack}
              />
-        </div>
+        </SidebarProvider>
     );
 }
