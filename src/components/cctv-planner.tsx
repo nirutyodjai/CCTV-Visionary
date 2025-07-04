@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useReducer, useState, useMemo, useEffect, useCallback } from 'react';
@@ -746,7 +747,7 @@ export function CCTVPlanner() {
                         </div>
                     </SidebarInset>
                     {!isMobile && isPropertiesPanelOpen && (
-                        <aside className="w-96 h-full flex flex-col border-l border-border bg-card shadow-lg flex-shrink-0">
+                        <aside className="w-96 h-full flex flex-col flex-shrink-0 bg-[#e0e0e0] shadow-[20px_20px_60px_#bebebe,_-20px_-20px_60px_#ffffff] dark:bg-[#2a2a2a] dark:shadow-[20px_20px_60px_#1f1f1f,_-20px_-20px_60px_#353535]">
                             {propertiesPanel}
                         </aside>
                     )}
@@ -790,3 +791,5 @@ export function CCTVPlanner() {
         </SidebarProvider>
     );
 }
+
+    
