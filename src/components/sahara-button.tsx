@@ -1,38 +1,798 @@
+'use client';
 
-import React from 'react';
+import React, { useReducer, useState, useMemo, useEffect, useCallback } from 'react';
+import { createInitialState } from '@/lib/demo-data';
+import type { ProjectState, AnyDevice, CablingMode, Point, ArchitecturalElementType, ArchitecturalElement, Floor, Connection, Building, DeviceType, RackContainer, SelectableItem } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
+import { PlannerCanvas } from '@/components/canvas/planner-canvas';
+import { ProjectNavigator } from './sidebar/project-navigator';
+import { PropertiesPanel } from './sidebar/properties-panel';
+import { DevicesToolbar } from './sidebar/devices-toolbar';
+import { BillOfMaterials } from './sidebar/bill-of-materials';
+import { FloorPlanUpload } from './sidebar/floor-plan-upload';
+import { AiAssistant } from './sidebar/ai-assistant';
+import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
+import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
+import { useToast } from '@/hooks/use-toast';
+import { Sun, Moon, Network, Save, Loader2, FolderKanban, ChevronDown, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { createDevice } from '@/lib/device-config';
+import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction, listProjectsAction } from '@/app/actions';
+import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
+import { LogicalTopologyView } from '@/components/topology/logical-topology-view';
+import { RackElevationView } from '@/components/rack/rack-elevation-view';
+import { SystemStatusPanel, type SystemCheck } from './sidebar/system-status-panel';
+import { Sidebar, SidebarProvider, SidebarContent, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { ProjectManager } from './sidebar/project-manager';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import PropertiesToggleButton from '@/components/ui/properties-toggle-button';
 
-const SaharaButton = () => {
-  return (
-    <button style={{WebkitBoxReflect: 'below 0px linear-gradient(to bottom, rgba(0,0,0,0.0), rgba(0,0,0,0.4))'}} className="px-10 py-3 bg-gradient-to-r from-red-500 to-orange-500 rounded-full shadow-xl group-hover:shadow-2xl group-hover:shadow-red-600 shadow-red-600 uppercase font-serif tracking-widest relative overflow-hidden group text-transparent cursor-pointer z-10 after:absolute after:rounded-full after:bg-red-200 after:h-[85%] after:w-[95%] after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 hover:saturate-[1.15] active:saturate-[1.4]">
-      Button
-      <p className="absolute z-40 font-semibold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent top-1/2 left-1/2 -translate-x-1/2 group-hover:-translate-y-full h-full w-full transition-all duration-300 -translate-y-[30%] tracking-widest">
-        WELCOME
-      </p>
-      <p className="absolute z-40 top-1/2 left-1/2 bg-gradient-to-r from-red-700 to-orange-700 bg-clip-text text-transparent -translate-x-1/2 translate-y-full h-full w-full transition-all duration-300 group-hover:-translate-y-[40%] tracking-widest font-extrabold">
-        SAHARA
-      </p>
-      <svg className="absolute w-full h-full scale-x-125 rotate-180 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 group-hover:animate-none animate-pulse group-hover:-translate-y-[45%] transition-all duration-300" viewBox="0 0 2400 800" version="1.1" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="sssurf-grad" y2="100%" x2="50%" y1="0%" x1="50%">
-            <stop offset="0%" stopOpacity={1} stopColor="hsl(37, 99%, 67%)" />
-            <stop offset="100%" stopOpacity={1} stopColor="hsl(316, 73%, 52%)" />
-          </linearGradient>
-        </defs>
-        <g transform="matrix(1,0,0,1,0,-91.0877685546875)" fill="url(#sssurf-grad)">
-          <path opacity="0.05" transform="matrix(1,0,0,1,0,35)" d="M 0 305.9828838196134 Q 227.6031525693441 450 600 302.17553022897005 Q 1010.7738828515054 450 1200 343.3024459932802 Q 1379.4406250195766 450 1800 320.38902780838214 Q 2153.573162029817 450 2400 314.38564046970816 L 2400 800 L 0 800 L 0 340.3112176762882 Z" />
-          <path opacity="0.21" transform="matrix(1,0,0,1,0,70)" d="M 0 305.9828838196134 Q 227.6031525693441 450 600 302.17553022897005 Q 1010.7738828515054 450 1200 343.3024459932802 Q 1379.4406250195766 450 1800 320.38902780838214 Q 2153.573162029817 450 2400 314.38564046970816 L 2400 800 L 0 800 L 0 340.3112176762882 Z" />
-          <path opacity="0.37" transform="matrix(1,0,0,1,0,105)" d="M 0 305.9828838196134 Q 227.6031525693441 450 600 302.17553022897005 Q 1010.7738828515054 450 1200 343.3024459932802 Q 1379.4406250195766 450 1800 320.38902780838214 Q 2153.573162029817 450 2400 314.38564046970816 L 2400 800 L 0 800 L 0 340.3112176762882 Z" />
-          <path opacity="0.53" transform="matrix(1,0,0,1,0,140)" d="M 0 305.9828838196134 Q 227.6031525693441 450 600 302.17553022897005 Q 1010.7738828515054 450 1200 343.3024459932802 Q 1379.4406250195766 450 1800 320.38902780838214 Q 2153.573162029817 450 2400 314.38564046970816 L 2400 800 L 0 800 L 0 340.3112176762882 Z" />
-          <path opacity="0.68" transform="matrix(1,0,0,1,0,175)" d="M 0 305.9828838196134 Q 227.6031525693441 450 600 302.17553022897005 Q 1010.7738828515054 450 1200 343.3024459932802 Q 1379.4406250195766 450 1800 320.38902780838214 Q 2153.573162029817 450 2400 314.38564046970816 L 2400 800 L 0 800 L 0 340.3112176762882 Z" />
-          <path opacity="0.84" transform="matrix(1,0,0,1,0,210)" d="M 0 305.9828838196134 Q 227.6031525693441 450 600 302.17553022897005 Q 1010.7738828515054 450 1200 343.3024459932802 Q 1379.4406250195766 450 1800 320.38902780838214 Q 2153.573162029817 450 2400 314.38564046970816 L 2400 800 L 0 800 L 0 340.3112176762882 Z" />
-          <path opacity="1" transform="matrix(1,0,0,1,0,245)" d="M 0 305.9828838196134 Q 227.6031525693441 450 600 302.17553022897005 Q 1010.7738828515054 450 1200 343.3024459932802 Q 1379.4406250195766 450 1800 320.38902780838214 Q 2153.573162029817 450 2400 314.38564046970816 L 2400 800 L 0 800 L 0 340.3112176762882 Z" />
-        </g>
-      </svg>
-      <svg className="absolute w-full h-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-[30%] group-hover:-translate-y-[33%] group-hover:scale-95 transition-all duration-500 z-40 fill-red-500" viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0,288L9.2,250.7C18.5,213,37,139,55,133.3C73.8,128,92,192,111,224C129.2,256,148,256,166,256C184.6,256,203,256,222,250.7C240,245,258,235,277,213.3C295.4,192,314,160,332,170.7C350.8,181,369,235,388,229.3C406.2,224,425,160,443,122.7C461.5,85,480,75,498,74.7C516.9,75,535,85,554,101.3C572.3,117,591,139,609,170.7C627.7,203,646,245,665,256C683.1,267,702,245,720,245.3C738.5,245,757,267,775,266.7C793.8,267,812,245,831,234.7C849.2,224,868,224,886,218.7C904.6,213,923,203,942,170.7C960,139,978,85,997,53.3C1015.4,21,1034,11,1052,48C1070.8,85,1089,171,1108,197.3C1126.2,224,1145,192,1163,197.3C1181.5,203,1200,245,1218,224C1236.9,203,1255,117,1274,106.7C1292.3,96,1311,160,1329,170.7C1347.7,181,1366,139,1385,128C1403.1,117,1422,139,1431,149.3L1440,160L1440,320L1430.8,320C1421.5,320,1403,320,1385,320C1366.2,320,1348,320,1329,320C1310.8,320,1292,320,1274,320C1255.4,320,1237,320,1218,320C1200,320,1182,320,1163,320C1144.6,320,1126,320,1108,320C1089.2,320,1071,320,1052,320C1033.8,320,1015,320,997,320C978.5,320,960,320,942,320C923.1,320,905,320,886,320C867.7,320,849,320,831,320C812.3,320,794,320,775,320C756.9,320,738,320,720,320C701.5,320,683,320,665,320C646.2,320,628,320,609,320C590.8,320,572,320,554,320C535.4,320,517,320,498,320C480,320,462,320,443,320C424.6,320,406,320,388,320C369.2,320,351,320,332,320C313.8,320,295,320,277,320C258.5,320,240,320,222,320C203.1,320,185,320,166,320C147.7,320,129,320,111,320C92.3,320,74,320,55,320C36.9,320,18,320,9,320L0,320Z" fillOpacity={1} />
-      </svg>
-    </button>
-  );
+
+type Action =
+    | { type: 'LOAD_PROJECT', payload: ProjectState }
+    | { type: 'UPDATE_PROJECT_NAME', payload: string }
+    | { type: 'UPDATE_BUILDING_NAME', payload: { buildingId: string, name: string } }
+    | { type: 'SET_ACTIVE_FLOOR', payload: { buildingId: string, floorId: string } }
+    | { type: 'ADD_DEVICE', payload: { device: AnyDevice, buildingId: string, floorId: string } }
+    | { type: 'UPDATE_DEVICE', payload: { device: AnyDevice, buildingId: string, floorId: string } }
+    | { type: 'REMOVE_DEVICE', payload: { deviceId: string, buildingId: string, floorId: string } }
+    | { type: 'ADD_CONNECTION', payload: { connection: Connection, buildingId: string, floorId: string } }
+    | { type: 'SET_FLOOR_PLAN', payload: { url: string, buildingId: string, floorId: string } }
+    | { type: 'ADD_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
+    | { type: 'UPDATE_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
+    | { type: 'REMOVE_ARCH_ELEMENT', payload: { elementId: string, buildingId: string, floorId: string } }
+    | { type: 'SET_DIAGNOSTICS', payload: { diagnostics: DiagnosticResult['diagnostics'], buildingId: string, floorId: string } }
+    | { type: 'ADD_FLOOR', payload: { buildingId: string } }
+    | { type: 'UPDATE_RACK', payload: { rack: RackContainer, buildingId: string, floorId: string } };
+
+
+function projectReducer(state: ProjectState, action: Action): ProjectState {
+     // Helper function to update a specific floor
+    const updateFloor = (
+      buildings: Building[], 
+      bId: string, 
+      fId: string, 
+      updateFn: (floor: Floor) => Floor
+    ) => {
+        return buildings.map(b => b.id === bId ? {
+            ...b,
+            floors: b.floors.map(f => f.id === fId ? updateFn(f) : f)
+        } : b);
+    };
+
+    switch (action.type) {
+        case 'LOAD_PROJECT':
+            return action.payload;
+        case 'UPDATE_PROJECT_NAME':
+            return {
+                ...state,
+                projectName: action.payload,
+            };
+        case 'UPDATE_BUILDING_NAME':
+            return {
+                ...state,
+                buildings: state.buildings.map(b => 
+                    b.id === action.payload.buildingId 
+                        ? { ...b, name: action.payload.name } 
+                        : b
+                )
+            };
+        case 'SET_ACTIVE_FLOOR':
+            return state; // No state change needed, handled by setActiveIds
+        case 'ADD_DEVICE':
+            return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, devices: [...f.devices, action.payload.device]
+                }))
+            };
+        case 'UPDATE_DEVICE':
+            return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, devices: f.devices.map(d => d.id === action.payload.device.id ? action.payload.device : d)
+                }))
+            };
+        case 'UPDATE_RACK':
+             return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, devices: f.devices.map(d => d.id === action.payload.rack.id ? action.payload.rack : d)
+                }))
+            };
+        case 'REMOVE_DEVICE':
+            return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, 
+                    devices: f.devices.filter(d => d.id !== action.payload.deviceId),
+                    connections: f.connections.filter(c => c.fromDeviceId !== action.payload.deviceId && c.toDeviceId !== action.payload.deviceId)
+                }))
+            };
+        case 'ADD_CONNECTION':
+             return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, connections: [...f.connections, action.payload.connection]
+                }))
+            };
+        case 'SET_FLOOR_PLAN':
+             return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, floorPlanUrl: action.payload.url
+                }))
+            };
+        case 'ADD_ARCH_ELEMENT':
+             return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, architecturalElements: [...f.architecturalElements, action.payload.element]
+                }))
+            };
+        case 'UPDATE_ARCH_ELEMENT':
+             return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, architecturalElements: f.architecturalElements.map(el => el.id === action.payload.element.id ? action.payload.element : el)
+                }))
+            };
+        case 'REMOVE_ARCH_ELEMENT':
+            return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, architecturalElements: f.architecturalElements.filter(el => el.id !== action.payload.elementId)
+                }))
+            };
+        case 'SET_DIAGNOSTICS':
+             return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, diagnostics: action.payload.diagnostics
+                }))
+            };
+        case 'ADD_FLOOR': {
+            const { buildingId } = action.payload;
+            return {
+                ...state,
+                buildings: state.buildings.map(b => {
+                    if (b.id !== buildingId) {
+                        return b;
+                    }
+                    const newFloorNumber = b.floors.length + 1;
+                    const newFloor: Floor = {
+                        id: `floor_${b.id}_${Date.now()}`,
+                        name: `ชั้น ${newFloorNumber}`,
+                        floorPlanUrl: null,
+                        devices: [],
+                        connections: [],
+                        architecturalElements: [],
+                        diagnostics: [],
+                    };
+                    return { ...b, floors: [...b.floors, newFloor] };
+                })
+            };
+        }
+        default:
+            return state;
+    }
 }
 
-export default SaharaButton;
+
+const initialChecks: SystemCheck[] = [
+    { id: 'diag', name: 'การวินิจฉัยแบบแปลน', status: 'pending' },
+    { id: 'analyze', name: 'การวิเคราะห์ภาพรวม', status: 'pending' },
+    { id: 'suggest', name: 'การแนะนำตำแหน่ง', status: 'pending' },
+    { id: 'topology', name: 'การสร้างผังเครือข่าย', status: 'pending' },
+    { id: 'report', name: 'การสร้างรายงาน', status: 'pending' },
+];
+
+
+export function CCTVPlanner() {
+    const [projectState, dispatch] = useReducer(projectReducer, {
+        id: 'loading',
+        projectName: 'Loading...',
+        buildings: [],
+        vlans: [],
+        subnets: [],
+    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
+    const { toast } = useToast();
+    const { theme, setTheme } = useTheme();
+    const [selectedItem, setSelectedItem] = useState<SelectableItem | null>(null);
+    const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
+    const [selectedArchTool, setSelectedArchTool] = useState<ArchitecturalElementType | null>(null);
+    const [drawingState, setDrawingState] = useState<{ isDrawing: boolean, startPoint: Point | null }>({ isDrawing: false, startPoint: null });
+    const [floorPlanRect, setFloorPlanRect] = useState<DOMRect | null>(null);
+    const [isTopologyViewOpen, setTopologyViewOpen] = useState(false);
+    const [isProjectManagerOpen, setProjectManagerOpen] = useState(false);
+    const [isRackViewOpen, setRackViewOpen] = useState(false);
+    const [isPropertiesPanelOpen, setPropertiesPanelOpen] = useState(true);
+    const isMobile = useIsMobile();
+    
+    // AI states
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSuggesting, setIsSuggesting] = useState(false);
+    const [isDiagnosing, setIsDiagnosing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    
+    const [projectList, setProjectList] = useState<Pick<ProjectState, 'id' | 'projectName'>[]>([]);
+
+
+    // System Status states
+    const [systemStatuses, setSystemStatuses] = useState<SystemCheck[]>(initialChecks);
+    const [isCheckingSystem, setIsCheckingSystem] = useState(false);
+
+    useEffect(() => {
+        // Defer state initialization to the client to prevent hydration mismatch
+        if (projectState.id === 'loading') {
+            dispatch({ type: 'LOAD_PROJECT', payload: createInitialState() });
+            setIsLoading(false);
+        }
+    }, [projectState.id]);
+
+    const fetchProjectList = useCallback(async () => {
+        const result = await listProjectsAction();
+        if (result.success) {
+            setProjectList(result.data);
+        } else {
+            toast({
+                title: 'Could not fetch project list',
+                description: result.error,
+                variant: 'destructive',
+            });
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        fetchProjectList();
+    }, [fetchProjectList]);
+
+
+    useEffect(() => {
+        if (!isLoading && projectState.id !== 'loading' && !activeIds.buildingId && projectState.buildings.length > 0) {
+            const firstBuilding = projectState.buildings[0];
+            if (firstBuilding && firstBuilding.floors.length > 0) {
+                const firstFloor = firstBuilding.floors[0];
+                setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
+            }
+        }
+    }, [isLoading, projectState, activeIds.buildingId]);
+
+    const activeBuilding = useMemo(() => projectState.buildings.find(b => b.id === activeIds.buildingId), [projectState.buildings, activeIds.buildingId]);
+    const activeFloor = useMemo(() => activeBuilding?.floors.find(f => f.id === activeIds.floorId), [activeBuilding, activeIds.floorId]);
+
+    const handleFloorSelect = (buildingId: string, floorId: string) => {
+        setFloorPlanRect(null); // Reset canvas rect when floor changes
+        setActiveIds({ buildingId, floorId });
+        setSelectedItem(null);
+    };
+
+    const handleAddDevice = (type: DeviceType) => {
+        if (!activeFloor || !activeIds.buildingId || !activeIds.floorId) {
+            toast({ title: "ไม่สามารถเพิ่มอุปกรณ์ได้", description: "กรุณาเลือกชั้นก่อน", variant: "destructive" });
+            return;
+        }
+        
+        const newDevice = createDevice(type, 0.5, 0.5, activeFloor.devices);
+        dispatch({
+            type: 'ADD_DEVICE',
+            payload: { device: newDevice, buildingId: activeIds.buildingId, floorId: activeIds.floorId }
+        });
+        toast({ title: "เพิ่มอุปกรณ์แล้ว", description: `เพิ่ม ${newDevice.label} ลงในแผนผัง` });
+    };
+    
+    const handleSetFloorPlan = (file: File) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (typeof e.target?.result === 'string') {
+                dispatch({
+                    type: 'SET_FLOOR_PLAN',
+                    payload: { url: e.target.result, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! }
+                });
+                toast({ title: "อัปโหลดแผนผังสำเร็จ" });
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleUpdateDevice = useCallback((device: AnyDevice) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'UPDATE_DEVICE', payload: { device, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+    }, [activeIds.buildingId, activeIds.floorId]);
+
+    const handleUpdateRack = useCallback((rack: RackContainer) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'UPDATE_RACK', payload: { rack, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+    }, [activeIds.buildingId, activeIds.floorId]);
+
+    const handleUpdateArchElement = useCallback((element: ArchitecturalElement) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'UPDATE_ARCH_ELEMENT', payload: { element, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+    }, [activeIds.buildingId, activeIds.floorId]);
+
+
+    const handleRemoveDevice = (deviceId: string) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'REMOVE_DEVICE', payload: { deviceId, buildingId: activeIds.buildingId, floorId: activeIds.floorId }});
+        setSelectedItem(null);
+        toast({ title: "ลบอุปกรณ์แล้ว", variant: "destructive" });
+    };
+
+    const handleAddConnection = (connection: Connection) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'ADD_CONNECTION', payload: { connection, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+        toast({ title: "สร้างการเชื่อมต่อแล้ว" });
+    };
+    
+    const handleAddArchElement = (elem: ArchitecturalElement) => {
+       if (!activeIds.buildingId || !activeIds.floorId) return;
+       dispatch({ type: 'ADD_ARCH_ELEMENT', payload: { element: elem, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+    };
+    
+    const handleRemoveArchElement = (elementId: string) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'REMOVE_ARCH_ELEMENT', payload: { elementId, buildingId: activeIds.buildingId, floorId: activeIds.floorId }});
+        setSelectedItem(null);
+        toast({ title: "ลบส่วนประกอบแล้ว", variant: "destructive" });
+    };
+
+    const handleAddFloor = (buildingId: string) => {
+        dispatch({
+            type: 'ADD_FLOOR',
+            payload: { buildingId }
+        });
+        toast({ title: 'เพิ่มชั้นใหม่แล้ว' });
+    };
+
+    const handleUpdateBuildingName = (buildingId: string, name: string) => {
+        dispatch({
+            type: 'UPDATE_BUILDING_NAME',
+            payload: { buildingId, name }
+        });
+        toast({ title: 'อัปเดตชื่ออาคารแล้ว' });
+    };
+    
+    const handleUpdateFloorPlanRect = useCallback((rect: DOMRect) => {
+        setFloorPlanRect(rect);
+    }, []);
+
+    const handleAnalyzePlan = async () => {
+        if (!activeFloor) return;
+        setIsAnalyzing(true);
+        const deviceSummary = activeFloor.devices.map(d => d.label).join(', ');
+        const result = await analyzeCctvPlanAction({ deviceSummary, totalFloors: 1 });
+
+        if (result.success) {
+            toast({
+                title: "AI Analysis Complete",
+                description: result.data.analysis,
+                duration: 9000,
+            });
+        } else {
+            toast({ title: "Analysis Failed", description: result.error, variant: 'destructive' });
+        }
+        setIsAnalyzing(false);
+    };
+
+    const handleSuggestPlacements = async () => {
+        if (!activeFloor?.floorPlanUrl) {
+            toast({ title: "No Floor Plan", description: "Please upload a floor plan before suggesting placements.", variant: 'destructive' });
+            return;
+        }
+        setIsSuggesting(true);
+        const result = await suggestDevicePlacementsAction({ floorPlanDataUri: activeFloor.floorPlanUrl });
+        
+        if (result.success && activeIds.buildingId && activeIds.floorId) {
+            const bId = activeIds.buildingId;
+            const fId = activeIds.floorId;
+            const currentDevices = activeFloor?.devices || [];
+            result.data.forEach(suggestion => {
+                const newDevice = createDevice(suggestion.type, suggestion.x, suggestion.y, currentDevices);
+                dispatch({ type: 'ADD_DEVICE', payload: { device: newDevice, buildingId: bId, floorId: fId }});
+            });
+            toast({ title: "AI Suggestions Added", description: `Added ${result.data.length} new devices to the plan.` });
+        } else if (!result.success) {
+            toast({ title: "Suggestion Failed", description: result.error, variant: 'destructive' });
+        }
+        setIsSuggesting(false);
+    };
+    
+    const handleRunDiagnostics = async () => {
+        if (!activeFloor || !activeIds.buildingId || !activeIds.floorId) return;
+        setIsDiagnosing(true);
+        
+        const planData = {
+            devices: activeFloor.devices.map(d => ({
+                id: d.id, label: d.label, type: d.type,
+                channels: d.channels, ports: d.ports
+            })),
+            connections: activeFloor.connections.map(c => ({
+                fromDeviceId: c.fromDeviceId, toDeviceId: c.toDeviceId
+            })),
+        };
+
+        const result = await runPlanDiagnosticsAction(planData);
+        if (result.success) {
+            dispatch({
+                type: 'SET_DIAGNOSTICS',
+                payload: { diagnostics: result.data.diagnostics, buildingId: activeIds.buildingId, floorId: activeIds.floorId }
+            });
+            toast({ title: 'Diagnostics Complete' });
+        } else {
+            toast({ title: "Diagnostics Failed", description: result.error, variant: 'destructive' });
+        }
+        setIsDiagnosing(false);
+    };
+
+    const handleRunAllChecks = async () => {
+        if (!activeFloor) {
+            toast({ title: "No Active Floor", description: "Please select a floor to run checks.", variant: "destructive" });
+            return;
+        }
+        setIsCheckingSystem(true);
+
+        const updateStatus = (id: string, status: SystemCheck['status'], message?: string) => {
+            setSystemStatuses(prev => prev.map(c => c.id === id ? { ...c, status, message } : c));
+        };
+
+        // Reset all to running
+        setSystemStatuses(prev => prev.map(c => ({...c, status: 'running', message: undefined })));
+
+        // --- Run checks sequentially ---
+        
+        // 1. Diagnostics Check
+        try {
+            const planData = {
+                devices: activeFloor.devices.map(d => ({ id: d.id, label: d.label, type: d.type, channels: d.channels, ports: d.ports })),
+                connections: activeFloor.connections.map(c => ({ fromDeviceId: c.fromDeviceId, toDeviceId: c.toDeviceId })),
+            };
+            const result = await runPlanDiagnosticsAction(planData);
+            if (result.success) {
+                 dispatch({ type: 'SET_DIAGNOSTICS', payload: { diagnostics: result.data.diagnostics, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! } });
+                 const errors = result.data.diagnostics.filter(d => d.severity === 'error').length;
+                 const warnings = result.data.diagnostics.filter(d => d.severity === 'warning').length;
+                 updateStatus('diag', 'success', `พบ ${errors} ข้อผิดพลาด, ${warnings} คำเตือน`);
+            } else {
+                updateStatus('diag', 'error', result.error);
+            }
+        } catch (e: any) {
+            updateStatus('diag', 'error', e.message);
+        }
+
+        // 2. Plan Analysis Check
+        try {
+            const deviceSummary = activeFloor.devices.map(d => d.label).join(', ');
+            const result = await analyzeCctvPlanAction({ deviceSummary, totalFloors: 1 });
+             if (result.success) {
+                updateStatus('analyze', 'success', result.data.analysis);
+            } else {
+                updateStatus('analyze', 'error', result.error);
+            }
+        } catch (e: any) {
+            updateStatus('analyze', 'error', e.message);
+        }
+        
+        // --- Mock other checks for now ---
+        updateStatus('suggest', 'success', 'สามารถแนะนำตำแหน่งได้');
+        updateStatus('topology', 'success', 'สามารถสร้าง Topology ได้');
+        updateStatus('report', 'success', 'สามารถสร้างรายงานได้');
+
+
+        setIsCheckingSystem(false);
+    };
+
+    const handleSaveProject = async () => {
+        setIsSaving(true);
+        const projectToSave = JSON.parse(JSON.stringify(projectState));
+        try {
+            await setDoc(doc(db, "projects", projectToSave.id), projectToSave);
+            toast({
+                title: "บันทึกโครงการสำเร็จ",
+                description: `โครงการ "${projectToSave.projectName}" (ID: ${projectToSave.id}) ถูกบันทึกแล้ว`,
+            });
+            fetchProjectList();
+        } catch (error: any) {
+            console.error("Error saving project:", error);
+            toast({
+                title: "เกิดข้อผิดพลาดในการบันทึก",
+                description: error.message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleLoadProject = useCallback(async (projectId: string) => {
+        if (!projectId) return;
+
+        setIsLoading(true);
+        try {
+            const docRef = doc(db, "projects", projectId.trim());
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const loadedProject = docSnap.data() as ProjectState;
+                dispatch({ type: 'LOAD_PROJECT', payload: loadedProject });
+                
+                const firstBuilding = loadedProject.buildings?.[0];
+                const firstFloor = firstBuilding?.floors?.[0];
+
+                if (firstBuilding && firstFloor) {
+                    setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
+                } else {
+                    setActiveIds({ buildingId: null, floorId: null });
+                }
+
+                setSelectedItem(null);
+                setFloorPlanRect(null); // Reset canvas rect
+                toast({
+                    title: "โหลดโครงการสำเร็จ",
+                    description: `โครงการ "${loadedProject.projectName}" ถูกโหลดแล้ว`,
+                });
+            } else {
+                toast({
+                    title: "ไม่พบโครงการ",
+                    description: `ไม่พบโครงการที่มี ID: ${projectId}`,
+                    variant: "destructive",
+                });
+            }
+        } catch (error: any) {
+            console.error("Error loading project:", error);
+            toast({
+                title: "เกิดข้อผิดพลาดในการโหลด",
+                description: error.message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    const handleSelectItem = (item: SelectableItem | null) => {
+        setSelectedItem(item);
+        if (!item || ('x' in item && 'y' in item)) { // It is a device
+            setCablingMode({ enabled: false, fromDeviceId: null });
+            if (!isMobile && item?.type.startsWith('rack')) {
+                setRackViewOpen(true);
+            }
+        }
+    };
+
+    if (isLoading && projectState.id === 'loading') {
+        return (
+            <div className="w-full h-screen flex items-center justify-center bg-background">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    const propertiesPanel = (
+         <PropertiesPanel 
+            selectedItem={selectedItem}
+            onUpdateDevice={handleUpdateDevice}
+            onRemoveDevice={handleRemoveDevice}
+            onStartCabling={(deviceId) => setCablingMode({ enabled: true, fromDeviceId: deviceId })}
+            onViewRack={() => setRackViewOpen(true)}
+            onRemoveArchElement={handleRemoveArchElement}
+            onUpdateArchElement={handleUpdateArchElement}
+        />
+    );
+
+    return (
+        <SidebarProvider>
+            <div className="w-full h-screen flex bg-background text-foreground dark:text-white">
+                <Sidebar className="flex flex-col border-r border-border bg-card text-card-foreground shadow-lg">
+                    <SidebarContent className="p-0 flex flex-col">
+                         <div className="p-4 border-b border-border flex justify-center items-center flex-shrink-0">
+                            <h1 className="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">CCTV Visionary</h1>
+                        </div>
+                        <div className="p-2 space-y-4 overflow-y-auto flex-1">
+                             <Card>
+                                <CardHeader className="p-3 border-b">
+                                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                        <FolderKanban className="w-4 h-4"/>
+                                        การจัดการโครงการ
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-3 space-y-2">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="project-name" className="text-xs">ชื่อโครงการ</Label>
+                                        <Input 
+                                            id="project-name"
+                                            value={projectState.projectName}
+                                            onChange={(e) => dispatch({ type: 'UPDATE_PROJECT_NAME', payload: e.target.value })}
+                                            className="h-9"
+                                        />
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-between">
+                                                <span>สลับโครงการ</span>
+                                                <ChevronDown className="h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="w-[250px]">
+                                            <DropdownMenuLabel>โครงการที่บันทึกไว้</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            {projectList.map((p) => (
+                                                <DropdownMenuItem
+                                                    key={p.id}
+                                                    disabled={p.id === projectState.id || isLoading}
+                                                    onSelect={() => handleLoadProject(p.id)}
+                                                >
+                                                    {p.projectName}
+                                                </DropdownMenuItem>
+                                            ))}
+                                             <DropdownMenuSeparator />
+                                             <DropdownMenuItem onSelect={() => setProjectManagerOpen(true)}>
+                                                <FolderKanban className="mr-2 h-4 w-4" />
+                                                <span>จัดการโครงการทั้งหมด</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <button onClick={handleSaveProject} disabled={isSaving || isLoading} className="group relative z-10 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 p-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 hover:from-blue-500 hover:to-indigo-500 hover:shadow-xl active:-translate-y-0.5 active:scale-100 active:shadow-md disabled:pointer-events-none disabled:opacity-50">
+                                        {isSaving ? (
+                                            <Loader2 className="h-5 w-5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-12" />
+                                                <span className="transition-all duration-300 group-hover:tracking-wider">บันทึกโครงการ</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </CardContent>
+                            </Card>
+                            
+                            <ProjectNavigator 
+                                buildings={projectState.buildings}
+                                activeBuildingId={activeIds.buildingId}
+                                activeFloorId={activeIds.floorId}
+                                onFloorSelect={handleFloorSelect}
+                                onAddFloor={handleAddFloor}
+                                onUpdateBuildingName={handleUpdateBuildingName}
+                            />
+                            
+                            <DevicesToolbar onSelectDevice={handleAddDevice} />
+                            <ArchitectureToolbar selectedTool={selectedArchTool} onSelectTool={setSelectedArchTool} />
+                            
+                            <FloorPlanUpload onSetFloorPlan={handleSetFloorPlan} />
+
+                             <Card>
+                                <CardHeader className="p-3 border-b">
+                                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                        <Network className="w-4 h-4" />
+                                        มุมมองและรายงาน
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-3">
+                                    <Button variant="outline" className="w-full" onClick={() => setTopologyViewOpen(true)}><Network /> ดูผังเครือข่าย</Button>
+                                </CardContent>
+                            </Card>
+                            
+                            <AiAssistant 
+                                onAnalyze={handleAnalyzePlan}
+                                onSuggest={handleSuggestPlacements}
+                                isAnalyzing={isAnalyzing}
+                                isSuggesting={isSuggesting}
+                            />
+                            <DiagnosticsPanel
+                                diagnostics={activeFloor?.diagnostics || []}
+                                onRunDiagnostics={handleRunDiagnostics}
+                                isLoading={isDiagnosing}
+                            />
+                            <SystemStatusPanel
+                                statuses={systemStatuses}
+                                onRunChecks={handleRunAllChecks}
+                                isLoading={isCheckingSystem}
+                            />
+                            <BillOfMaterials project={projectState} />
+                        </div>
+                    </SidebarContent>
+                </Sidebar>
+                
+                <div className="flex-1 flex min-w-0">
+                    <SidebarInset className="flex-1 flex flex-col">
+                        <div className="h-16 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <SidebarTrigger className="md:hidden" />
+                                 <h2 className="text-lg font-semibold hidden md:block truncate">
+                                    {activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "กรุณาเลือกแบบแปลน"}
+                                </h2>
+                            </div>
+                            <PropertiesToggleButton 
+                                isOpen={isPropertiesPanelOpen}
+                                onClick={() => setPropertiesPanelOpen(!isPropertiesPanelOpen)}
+                            />
+                        </div>
+
+                        <div className="flex-1 w-full h-full relative">
+                            {activeFloor ? (
+                                <PlannerCanvas
+                                    floor={activeFloor}
+                                    selectedItem={selectedItem}
+                                    onSelectItem={handleSelectItem}
+                                    onUpdateDevice={handleUpdateDevice}
+                                    onCanvasClick={() => handleSelectItem(null)}
+                                    cablingMode={cablingMode}
+                                    onSetCablingMode={setCablingMode}
+                                    onAddConnection={handleAddConnection}
+                                    selectedArchTool={selectedArchTool}
+                                    drawingState={drawingState}
+                                    onSetDrawingState={setDrawingState}
+                                    onAddArchElement={handleAddArchElement}
+                                    onUpdateArchElement={handleUpdateArchElement}
+                                    floorPlanRect={floorPlanRect}
+                                    onUpdateFloorPlanRect={handleUpdateFloorPlanRect}
+                                />
+                            ) : (
+                                <div className="flex-1 w-full h-full flex items-center justify-center bg-muted/20">
+                                    <p className="text-muted-foreground text-center px-4">
+                                        กรุณาเลือกอาคารและชั้นจากเมนูด้านซ้ายเพื่อเริ่มต้น
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </SidebarInset>
+                    {!isMobile && isPropertiesPanelOpen && (
+                        <aside className="w-96 h-full flex flex-col flex-shrink-0 bg-[#e0e0e0] shadow-[20px_20px_60px_#bebebe,_-20px_-20px_60px_#ffffff] dark:bg-[#2a2a2a] dark:shadow-[20px_20px_60px_#1f1f1f,_-20px_-20px_60px_#353535]">
+                            {propertiesPanel}
+                        </aside>
+                    )}
+                </div>
+            </div>
+
+            {isMobile && (
+                 <Sheet open={!!selectedItem} onOpenChange={(isOpen) => !isOpen && setSelectedItem(null)}>
+                    <SheetContent className="w-[85vw] p-0 border-l">
+                         <SheetHeader className="p-4 border-b">
+                            <SheetTitle>Item Properties</SheetTitle>
+                         </SheetHeader>
+                        {propertiesPanel}
+                    </SheetContent>
+                </Sheet>
+            )}
+
+            <LogicalTopologyView
+                devices={projectState.buildings.flatMap(b => b.floors.flatMap(f => f.devices))}
+                connections={projectState.buildings.flatMap(b => b.floors.flatMap(f => f.connections))}
+                isOpen={isTopologyViewOpen}
+                onClose={() => setTopologyViewOpen(false)}
+            />
+
+            <RackElevationView
+                rack={selectedItem?.type.startsWith('rack') ? selectedItem as RackContainer : null}
+                isOpen={isRackViewOpen}
+                onClose={() => setRackViewOpen(false)}
+                onUpdateRack={handleUpdateRack}
+             />
+
+            <ProjectManager
+                isOpen={isProjectManagerOpen}
+                onClose={() => {
+                    setProjectManagerOpen(false);
+                    fetchProjectList();
+                }}
+                onLoadProject={handleLoadProject}
+                currentProjectId={projectState.id}
+            />
+        </SidebarProvider>
+    );
+}

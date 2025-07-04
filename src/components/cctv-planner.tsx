@@ -40,7 +40,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import SaharaButton from '@/components/sahara-button';
 import PropertiesToggleButton from '@/components/ui/properties-toggle-button';
 
 
@@ -604,7 +603,7 @@ export function CCTVPlanner() {
                 <Sidebar className="flex flex-col border-r border-border bg-card text-card-foreground shadow-lg">
                     <SidebarContent className="p-0 flex flex-col">
                          <div className="p-4 border-b border-border flex justify-center items-center flex-shrink-0">
-                            <SaharaButton />
+                            <h1 className="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">CCTV Visionary</h1>
                         </div>
                         <div className="p-2 space-y-4 overflow-y-auto flex-1">
                              <Card>
@@ -650,9 +649,16 @@ export function CCTVPlanner() {
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                    <Button onClick={handleSaveProject} disabled={isSaving || isLoading} className="w-full">
-                                        {isSaving ? <Loader2 className="animate-spin"/> : <Save />} บันทึกโครงการ
-                                    </Button>
+                                    <button onClick={handleSaveProject} disabled={isSaving || isLoading} className="group relative z-10 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 p-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 hover:from-blue-500 hover:to-indigo-500 hover:shadow-xl active:-translate-y-0.5 active:scale-100 active:shadow-md disabled:pointer-events-none disabled:opacity-50">
+                                        {isSaving ? (
+                                            <Loader2 className="h-5 w-5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-12" />
+                                                <span className="transition-all duration-300 group-hover:tracking-wider">บันทึกโครงการ</span>
+                                            </>
+                                        )}
+                                    </button>
                                 </CardContent>
                             </Card>
                             
