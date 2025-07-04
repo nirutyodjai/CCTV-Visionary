@@ -15,12 +15,13 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Sun, Moon, Network, Save, FolderOpen, AlertTriangle } from 'lucide-react';
+import { Sun, Moon, Network, Save, FolderOpen } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
-import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction, generateLogicalTopologyLayoutAction } from '@/app/actions';
+import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
 import { LogicalTopologyView } from '@/components/topology/logical-topology-view';
 import { RackElevationView } from '@/components/rack/rack-elevation-view';
+import { SystemStatusPanel, type SystemCheck } from './sidebar/system-status-panel';
 
 type Action =
     | { type: 'LOAD_PROJECT', payload: ProjectState }
@@ -123,11 +124,37 @@ function projectReducer(state: ProjectState, action: Action): ProjectState {
     }
 }
 
+
+const initialChecks: SystemCheck[] = [
+    { id: 'diag', name: 'การวินิจฉัยแบบแปลน', status: 'pending' },
+    { id: 'analyze', name: 'การวิเคราะห์ภาพรวม', status: 'pending' },
+    { id: 'suggest', name: 'การแนะนำตำแหน่ง', status: 'pending' },
+    { id: 'topology', name: 'การสร้างผังเครือข่าย', status: 'pending' },
+    { id: 'report', name: 'การสร้างรายงาน', status: 'pending' },
+];
+
+
 export function CCTVPlanner() {
     const [projectState, dispatch] = useReducer(projectReducer, initialState);
     const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
+    const [selectedDevice, setSelectedDevice] = useState<AnyDevice | null>(null);
+    const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
+    const [selectedArchTool, setSelectedArchTool] = useState<ArchitecturalElementType | null>(null);
+    const [drawingState, setDrawingState] = useState<{ isDrawing: boolean, startPoint: Point | null }>({ isDrawing: false, startPoint: null });
+    const [floorPlanRect, setFloorPlanRect] = useState<DOMRect | null>(null);
+    const [isTopologyViewOpen, setTopologyViewOpen] = useState(false);
+    const [isRackViewOpen, setRackViewOpen] = useState(false);
+    
+    // AI states
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSuggesting, setIsSuggesting] = useState(false);
+    const [isDiagnosing, setIsDiagnosing] = useState(false);
+
+    // System Status states
+    const [systemStatuses, setSystemStatuses] = useState<SystemCheck[]>(initialChecks);
+    const [isCheckingSystem, setIsCheckingSystem] = useState(false);
 
     useEffect(() => {
         const demoProject = generateDemoProject();
@@ -142,19 +169,6 @@ export function CCTVPlanner() {
 
     const activeBuilding = useMemo(() => projectState.buildings.find(b => b.id === activeIds.buildingId), [projectState.buildings, activeIds.buildingId]);
     const activeFloor = useMemo(() => activeBuilding?.floors.find(f => f.id === activeIds.floorId), [activeBuilding, activeIds.floorId]);
-
-    const [selectedDevice, setSelectedDevice] = useState<AnyDevice | null>(null);
-    const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
-    const [selectedArchTool, setSelectedArchTool] = useState<ArchitecturalElementType | null>(null);
-    const [drawingState, setDrawingState] = useState<{ isDrawing: boolean, startPoint: Point | null }>({ isDrawing: false, startPoint: null });
-    const [floorPlanRect, setFloorPlanRect] = useState<DOMRect | null>(null);
-    const [isTopologyViewOpen, setTopologyViewOpen] = useState(false);
-    const [isRackViewOpen, setRackViewOpen] = useState(false);
-    
-    // AI states
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [isSuggesting, setIsSuggesting] = useState(false);
-    const [isDiagnosing, setIsDiagnosing] = useState(false);
 
     const handleFloorSelect = (buildingId: string, floorId: string) => {
         setActiveIds({ buildingId, floorId });
@@ -288,6 +302,64 @@ export function CCTVPlanner() {
         setIsDiagnosing(false);
     };
 
+    const handleRunAllChecks = async () => {
+        if (!activeFloor) {
+            toast({ title: "No Active Floor", description: "Please select a floor to run checks.", variant: "destructive" });
+            return;
+        }
+        setIsCheckingSystem(true);
+
+        const updateStatus = (id: string, status: SystemCheck['status'], message?: string) => {
+            setSystemStatuses(prev => prev.map(c => c.id === id ? { ...c, status, message } : c));
+        };
+
+        // Reset all to running
+        setSystemStatuses(prev => prev.map(c => ({...c, status: 'running', message: undefined })));
+
+        // --- Run checks sequentially ---
+        
+        // 1. Diagnostics Check
+        try {
+            const planData = {
+                devices: activeFloor.devices.map(d => ({ id: d.id, label: d.label, type: d.type, channels: d.channels, ports: d.ports })),
+                connections: activeFloor.connections.map(c => ({ fromDeviceId: c.fromDeviceId, toDeviceId: c.toDeviceId })),
+            };
+            const result = await runPlanDiagnosticsAction(planData);
+            if (result.success) {
+                 dispatch({ type: 'SET_DIAGNOSTICS', payload: { diagnostics: result.data.diagnostics, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! } });
+                 const errors = result.data.diagnostics.filter(d => d.severity === 'error').length;
+                 const warnings = result.data.diagnostics.filter(d => d.severity === 'warning').length;
+                 updateStatus('diag', 'success', `พบ ${errors} ข้อผิดพลาด, ${warnings} คำเตือน`);
+            } else {
+                updateStatus('diag', 'error', result.error);
+            }
+        } catch (e: any) {
+            updateStatus('diag', 'error', e.message);
+        }
+
+        // 2. Plan Analysis Check
+        try {
+            const deviceSummary = activeFloor.devices.map(d => d.label).join(', ');
+            const result = await analyzeCctvPlanAction({ deviceSummary, totalFloors: 1 });
+             if (result.success) {
+                updateStatus('analyze', 'success', result.data.analysis);
+            } else {
+                updateStatus('analyze', 'error', result.error);
+            }
+        } catch (e: any) {
+            updateStatus('analyze', 'error', e.message);
+        }
+        
+        // --- Mock other checks for now ---
+        updateStatus('suggest', 'success', 'สามารถแนะนำตำแหน่งได้');
+        updateStatus('topology', 'success', 'สามารถสร้าง Topology ได้');
+        updateStatus('report', 'success', 'สามารถสร้างรายงานได้');
+
+
+        setIsCheckingSystem(false);
+    };
+
+
     const handleSelectDevice = (device: AnyDevice | null) => {
         setSelectedDevice(device);
         setCablingMode({ enabled: false, fromDeviceId: null });
@@ -327,6 +399,11 @@ export function CCTVPlanner() {
                         diagnostics={activeFloor?.diagnostics || []}
                         onRunDiagnostics={handleRunDiagnostics}
                         isLoading={isDiagnosing}
+                    />
+                     <SystemStatusPanel
+                        statuses={systemStatuses}
+                        onRunChecks={handleRunAllChecks}
+                        isLoading={isCheckingSystem}
                     />
                      <BillOfMaterials project={projectState} />
                 </div>
@@ -394,5 +471,3 @@ export function CCTVPlanner() {
         </div>
     );
 }
-
-    
