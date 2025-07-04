@@ -42,11 +42,10 @@ export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
                         <TooltipTrigger asChild>
                             <Button
                                 variant="outline"
-                                className="h-16 flex flex-col items-center justify-center space-y-1 p-1"
+                                className="h-14 flex items-center justify-center"
                                 onClick={() => onSelectDevice(type)}
                                 >
-                                <Icon className="h-5 w-5" />
-                                <span className="text-[10px] text-center leading-tight">{config.name}</span>
+                                <Icon className="h-7 w-7" />
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
