@@ -38,10 +38,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 
 type Action =
     | { type: 'LOAD_PROJECT', payload: ProjectState }
+    | { type: 'UPDATE_PROJECT_NAME', payload: string }
     | { type: 'SET_ACTIVE_FLOOR', payload: { buildingId: string, floorId: string } }
     | { type: 'ADD_DEVICE', payload: { device: AnyDevice, buildingId: string, floorId: string } }
     | { type: 'UPDATE_DEVICE', payload: { device: AnyDevice, buildingId: string, floorId: string } }
@@ -70,6 +73,11 @@ function projectReducer(state: ProjectState, action: Action): ProjectState {
     switch (action.type) {
         case 'LOAD_PROJECT':
             return action.payload;
+        case 'UPDATE_PROJECT_NAME':
+            return {
+                ...state,
+                projectName: action.payload,
+            };
         case 'SET_ACTIVE_FLOOR':
             return state; // No state change needed, handled by setActiveIds
         case 'ADD_DEVICE':
@@ -540,15 +548,24 @@ export function CCTVPlanner() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-3 space-y-2">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="project-name" className="text-xs">ชื่อโครงการ</Label>
+                                        <Input 
+                                            id="project-name"
+                                            value={projectState.projectName}
+                                            onChange={(e) => dispatch({ type: 'UPDATE_PROJECT_NAME', payload: e.target.value })}
+                                            className="h-9"
+                                        />
+                                    </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="outline" className="w-full justify-between">
-                                                <span className="truncate">{projectState.projectName}</span>
+                                                <span>สลับโครงการ</span>
                                                 <ChevronDown className="h-4 w-4 opacity-50" />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="w-[250px]">
-                                            <DropdownMenuLabel>สลับโครงการ</DropdownMenuLabel>
+                                            <DropdownMenuLabel>โครงการที่บันทึกไว้</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
                                             {projectList.map((p) => (
                                                 <DropdownMenuItem
@@ -703,6 +720,8 @@ export function CCTVPlanner() {
         </SidebarProvider>
     );
 }
+
+    
 
     
 
