@@ -1,0 +1,41 @@
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Minus, DoorOpen, PanelTop } from 'lucide-react';
+import type { ArchitecturalElementType } from '@/lib/types';
+
+const tools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
+  { type: 'wall', name: 'กำแพง', icon: <Minus size={24} /> },
+  { type: 'door', name: 'ประตู', icon: <DoorOpen size={20} /> },
+  { type: 'window', name: 'หน้าต่าง', icon: <PanelTop size={20} /> },
+];
+
+interface ArchitectureToolbarProps {
+  selectedTool: ArchitecturalElementType | null;
+  onSelectTool: (type: ArchitecturalElementType | null) => void;
+}
+
+export function ArchitectureToolbar({ selectedTool, onSelectTool }: ArchitectureToolbarProps) {
+  return (
+    <Card>
+      <CardHeader className="p-4">
+        <CardTitle className="text-base">เครื่องมือวาดแบบแปลน</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 grid grid-cols-3 gap-2">
+        {tools.map((tool) => (
+          <Button
+            key={tool.type}
+            variant={selectedTool === tool.type ? 'secondary' : 'outline'}
+            className="h-16 flex flex-col items-center justify-center space-y-1"
+            onClick={() => onSelectTool(selectedTool === tool.type ? null : tool.type)}
+          >
+            {tool.icon}
+            <span className="text-xs">{tool.name}</span>
+          </Button>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}

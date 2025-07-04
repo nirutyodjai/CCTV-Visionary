@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { DeviceType } from '@/lib/types';
-import { DEVICE_CONFIG } from '@/lib/device-config';
+import { DEVICE_CONFIG } from '@/lib/DEVICE_CONFIG';
 
 interface DevicesToolbarProps {
   selectedDeviceToAdd: DeviceType | null;

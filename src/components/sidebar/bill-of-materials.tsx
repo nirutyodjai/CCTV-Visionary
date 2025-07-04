@@ -1,45 +1,104 @@
 'use client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { Device } from '@/lib/types';
+import type { PlanState } from '@/lib/types';
+import { DEVICE_CONFIG } from '@/lib/device-config';
+import React from 'react';
 
 interface BillOfMaterialsProps {
-  devicesByFloor: Record<number, Device[]>;
+  devicesByFloor: PlanState['devicesByFloor'];
+  connectionsByFloor: PlanState['connectionsByFloor'];
 }
 
-export function BillOfMaterials({ devicesByFloor }: BillOfMaterialsProps) {
-  const allDevices = Object.values(devicesByFloor).flat();
+const formatCurrency = (value?: number) => {
+    if (typeof value !== 'number') return '-';
+    return new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(value);
+};
 
-  const bom = allDevices.reduce((acc, device) => {
-    let key = device.type;
-    if (device.resolution) key += ` (${device.resolution})`;
-    else if (device.ports) key += ` (${device.ports} พอร์ต)`;
-    else if (device.channels) key += ` (${device.channels} ช่อง, ${device.storage})`;
-    else if (device.size) key += ` (${device.size})`;
-    else if (device.length) key += ` (${device.length} ม.)`;
+export function BillOfMaterials({ devicesByFloor, connectionsByFloor }: BillOfMaterialsProps) {
+  
+  const { summary, grandTotal } = React.useMemo(() => {
+    const allDevices = Object.values(devicesByFloor).flat();
+    const allConnections = Object.values(connectionsByFloor).flat();
     
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+    let total = 0;
+    const lineItems: Record<string, { name: string; count: number; unit?: string; price: number; total: number }> = {};
+
+    // Process devices
+    allDevices.forEach(device => {
+      const config = DEVICE_CONFIG[device.type];
+      if (!lineItems[device.type]) {
+        lineItems[device.type] = {
+          name: config?.name || device.type,
+          count: 0,
+          price: device.price || config?.defaults.price || 0,
+          total: 0
+        };
+      }
+      lineItems[device.type].count++;
+      lineItems[device.type].total += lineItems[device.type].price;
+      total += lineItems[device.type].price;
+    });
+
+    // Process cables
+    allConnections.forEach(conn => {
+        const config = DEVICE_CONFIG[conn.cableType];
+        const key = `cable-${conn.cableType}`;
+        if (!lineItems[key]) {
+            lineItems[key] = {
+                name: `${config.name} (สาย)`,
+                count: 0,
+                unit: 'm',
+                price: config.defaults.price || 0,
+                total: 0
+            };
+        }
+        lineItems[key].count += conn.length || 0;
+        lineItems[key].total += conn.price || 0;
+        total += conn.price || 0;
+    });
+
+    return {
+      summary: Object.values(lineItems).sort((a, b) => a.name.localeCompare(b.name)),
+      grandTotal: total
+    };
+  }, [devicesByFloor, connectionsByFloor]);
+
+  if (summary.length === 0) {
+    // ... return empty state card
+  }
 
   return (
-    <Card className="flex-grow flex flex-col">
-      <CardHeader className="p-4">
-        <CardTitle className="text-base">รายการวัสดุ (รวมทุกชั้น)</CardTitle>
+    <Card>
+      <CardHeader className="p-4 flex flex-row items-center justify-between">
+        <div>
+            <CardTitle className="text-base">สรุปงบประมาณโครงการ</CardTitle>
+            <CardDescription>ประเมินราคาตามจริง</CardDescription>
+        </div>
+        <div className="text-xl font-bold text-primary">{formatCurrency(grandTotal)}</div>
       </CardHeader>
-      <CardContent className="p-4 pt-0 flex-grow">
+      <CardContent className="p-4 pt-0">
         <ScrollArea className="h-48">
-          {Object.keys(bom).length === 0 ? (
-            <p className="text-sm text-muted-foreground">ยังไม่มีอุปกรณ์</p>
-          ) : (
-            <ul className="list-disc list-inside text-sm space-y-1">
-              {Object.entries(bom).map(([key, count]) => (
-                <li key={key}>
-                  {count}x {key}
-                </li>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>รายการ</TableHead>
+                <TableHead className="text-center">จำนวน</TableHead>
+                <TableHead className="text-right">ราคารวม</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {summary.map((item) => (
+                <TableRow key={item.name}>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell className="text-center">{item.count.toFixed(item.unit ? 2 : 0)}{item.unit || ''}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+                </TableRow>
               ))}
-            </ul>
-          )}
+            </TableBody>
+          </Table>
         </ScrollArea>
       </CardContent>
     </Card>
