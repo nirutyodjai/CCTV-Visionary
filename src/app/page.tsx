@@ -1,3 +1,9 @@
+import { CCTVPlanner } from "@/components/cctv-planner";
+
 export default function Home() {
-  return <></>;
+  return (
+    <div className="bg-background">
+      <CCTVPlanner />
+    </div>
+  );
 }
