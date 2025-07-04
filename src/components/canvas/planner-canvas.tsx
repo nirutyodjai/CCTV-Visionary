@@ -199,15 +199,56 @@ export function PlannerCanvas({
             y: floorPlanRect.y + el.start.y * floorPlanRect.height,
           };
           
-          ctx.fillStyle = 'hsl(var(--foreground) / 0.6)';
-          const size = 16;
-          
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = '10px Sarabun';
+
           if (el.type === 'table') {
+              ctx.fillStyle = 'hsl(var(--foreground) / 0.6)';
+              const size = 16;
               ctx.fillRect(coords.x - size / 1.5, coords.y - size / 2, size * 1.5, size);
           } else if (el.type === 'chair') {
+              ctx.fillStyle = 'hsl(var(--foreground) / 0.6)';
+              const size = 16;
               ctx.beginPath();
               ctx.arc(coords.x, coords.y, size / 2, 0, Math.PI * 2);
               ctx.fill();
+          } else {
+              const rectSize = 30;
+              const rectX = coords.x - rectSize / 2;
+              const rectY = coords.y - rectSize / 2;
+
+              if (el.type === 'elevator') {
+                  ctx.strokeStyle = 'hsl(var(--foreground) / 0.8)';
+                  ctx.lineWidth = 2;
+                  ctx.strokeRect(rectX, rectY, rectSize, rectSize);
+                  // Draw X inside
+                  ctx.beginPath();
+                  ctx.moveTo(rectX, rectY);
+                  ctx.lineTo(rectX + rectSize, rectY + rectSize);
+                  ctx.moveTo(rectX + rectSize, rectY);
+                  ctx.lineTo(rectX, rectY + rectSize);
+                  ctx.stroke();
+                  ctx.fillStyle = 'hsl(var(--foreground) / 0.8)';
+                  ctx.fillText('L', coords.x, coords.y);
+              } else if (el.type === 'fire-escape') {
+                  ctx.strokeStyle = 'hsl(var(--destructive))';
+                  ctx.fillStyle = 'hsl(var(--destructive) / 0.1)';
+                  ctx.lineWidth = 1.5;
+                  ctx.fillRect(rectX, rectY, rectSize, rectSize);
+                  ctx.strokeRect(rectX, rectY, rectSize, rectSize);
+                  ctx.font = 'bold 9px Sarabun';
+                  ctx.fillStyle = 'hsl(var(--destructive))';
+                  ctx.fillText('FIRE', coords.x, coords.y);
+              } else if (el.type === 'shaft') {
+                  ctx.strokeStyle = 'hsl(var(--foreground) / 0.5)';
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([4, 4]);
+                  ctx.strokeRect(rectX, rectY, rectSize, rectSize);
+                  ctx.setLineDash([]);
+                  ctx.fillStyle = 'hsl(var(--foreground) / 0.8)';
+                  ctx.fillText('Shaft', coords.x, coords.y);
+              }
           }
       }
       ctx.restore();
@@ -318,7 +359,7 @@ export function PlannerCanvas({
     if (selectedArchTool) {
       const startPoint = getFloorPlanRelativeCoords(point);
       if (startPoint) {
-        const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair'];
+        const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair', 'elevator', 'fire-escape', 'shaft'];
         if (pointBasedTools.includes(selectedArchTool)) {
             onAddArchElement({
                 id: `arch_${Date.now()}`,

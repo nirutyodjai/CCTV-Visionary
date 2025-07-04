@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Minus, DoorOpen, PanelTop, Armchair, Upload } from 'lucide-react';
+import { Minus, DoorOpen, PanelTop, Armchair, Upload, RectangleVertical, ShieldAlert, Layers } from 'lucide-react';
 import type { ArchitecturalElementType } from '@/lib/types';
 import { TableIcon } from '@/components/icons/table-icon';
 
@@ -13,6 +13,9 @@ const tools: { type: ArchitecturalElementType | 'other', name: string; icon: Rea
   { type: 'window', name: 'หน้าต่าง', icon: <PanelTop size={20} /> },
   { type: 'table', name: 'โต๊ะ', icon: <TableIcon className="w-5 h-5" /> },
   { type: 'chair', name: 'เก้าอี้', icon: <Armchair size={20} /> },
+  { type: 'elevator', name: 'ลิฟท์', icon: <RectangleVertical size={20} /> },
+  { type: 'fire-escape', name: 'ทางหนีไฟ', icon: <ShieldAlert size={20} /> },
+  { type: 'shaft', name: 'ช่องชาร์ป', icon: <Layers size={20} /> },
   { type: 'other', name: 'อื่นๆ', icon: <Upload size={20} /> },
 ];
 
