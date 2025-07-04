@@ -13,7 +13,12 @@ export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect }: Pr
   return (
     <div className="p-2">
       <h3 className="text-lg font-semibold mb-2">Project Navigator</h3>
-      <Accordion type="multiple" defaultValue={buildings.map(b => b.id)}>
+      <Accordion 
+        type="multiple" 
+        defaultValue={buildings.map(b => b.id)} 
+        key={buildings.map(b => b.id).join(',')}
+        className="w-full"
+      >
         {buildings.map((building) => (
           <AccordionItem key={building.id} value={building.id}>
             <AccordionTrigger>{building.name}</AccordionTrigger>

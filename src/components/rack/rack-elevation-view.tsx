@@ -8,7 +8,29 @@ import type { RackContainer, RackDevice, DeviceType } from '@/lib/types';
 import { DEVICE_CONFIG, RACK_DEVICE_TYPES } from '@/lib/device-config';
 import { Zap } from 'lucide-react';
 
-// ... RackItem component from before
+interface RackElevationViewProps {
+  rack: RackContainer | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdateRack: (rack: RackContainer) => void;
+}
+
+const RackItem = ({ device, rackSize }: { device: RackDevice; rackSize: number }) => {
+  const itemStyle: React.CSSProperties = {
+    height: `${(device.uHeight / rackSize) * 100}%`,
+    bottom: `${((device.uPosition - 1) / rackSize) * 100}%`,
+  };
+
+  return (
+    <div
+      className="absolute w-full left-0 border border-border bg-card shadow-sm rounded-sm flex items-center justify-center p-1"
+      style={itemStyle}
+    >
+      <span className="text-xs text-center text-card-foreground truncate">{device.label} ({device.uHeight}U)</span>
+    </div>
+  );
+};
+
 
 function findEmptySlot(devices: RackDevice[], rackSize: number, uHeight: number): number | null {
     const occupied = new Array(rackSize + 1).fill(false);
@@ -70,7 +92,6 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
         uHeight: uHeight,
         price: config.defaults.price,
         powerConsumption: config.defaults.powerConsumption,
-        // Add other relevant properties from config
     };
     
     const updatedRack: RackContainer = {
@@ -120,7 +141,23 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                   </div>
               </div>
           </div>
-          {/* ... Rack visual representation from before */}
+          <div className="col-span-9 bg-muted/50 rounded-lg relative border-4 border-muted">
+            {[...Array(2)].map((_, i) => (
+                <div key={i} className={`absolute top-0 bottom-0 ${i === 0 ? 'left-2' : 'right-2'} w-4 bg-background border-x-2 border-border`}>
+                    {[...Array(rackSize)].map((_, u) => (
+                        <div key={u} className="h-[calc(100%/var(--rack-size))] border-b border-dashed border-border flex items-center justify-center text-[8px] text-muted-foreground" style={{'--rack-size': rackSize} as React.CSSProperties}>
+                            <span>{rackSize - u}</span>
+                        </div>
+                    ))}
+                </div>
+            ))}
+            
+            <div className="relative w-full h-full p-8">
+                {rackDevices.map(device => (
+                    <RackItem key={device.id} device={device} rackSize={rackSize} />
+                ))}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

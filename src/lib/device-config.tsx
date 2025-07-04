@@ -1,3 +1,4 @@
+import React from 'react';
 import { CctvBulletIcon, CctvDomeIcon, CctvPtzIcon, WifiApIcon, NvrIcon, SwitchIcon, MonitorIcon, UtpCat6Icon, FiberOpticIcon, RackIcon } from "@/components/icons";
 import type { Device, DeviceType } from './types';
 
@@ -29,13 +30,9 @@ export const DEVICE_CONFIG: Record<string, { name: string; icon: React.Component
 };
 
 export function createDevice(type: DeviceType, x: number, y: number, existingDevices: Device[]): Device {
-  // DEBUGGING: Log the type being passed to the function.
-  console.log(`[createDevice] Attempting to create device of type: ${type}`);
-
   const config = DEVICE_CONFIG[type];
 
   if (!config) {
-    // This will prevent the crash and help debugging in the future.
     console.error(`[createDevice] FATAL: No configuration found for device type: "${type}"`);
     throw new Error(`Invalid device type specified: ${type}`);
   }

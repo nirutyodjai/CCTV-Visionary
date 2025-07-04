@@ -1,9 +1,12 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { generateReportLayoutAction } from './actions'; // We'll create this action next
+import { generateReportLayoutAction } from '@/app/actions';
 import type { ProjectState } from './types';
 
-// ... constants
+const A4_WIDTH = 595;
+const A4_HEIGHT = 842;
+const MARGIN = 40;
+
 
 export class ReportService {
   private doc: jsPDF;
@@ -25,40 +28,49 @@ export class ReportService {
     this.doc.setFontSize(22);
     this.doc.text(section.title, MARGIN, MARGIN + 60);
     this.doc.setFontSize(12);
-    // The 'splitTextToSize' is crucial for handling paragraphs.
     const textLines = this.doc.splitTextToSize(section.content, A4_WIDTH - MARGIN * 2);
     this.doc.text(textLines, MARGIN, MARGIN + 90);
   }
   
-  // ... other draw methods for BUDGET, BOM etc. would be here
-  
+  private addHeader() {
+    this.doc.setFontSize(10);
+    this.doc.setTextColor(150);
+    this.doc.text(this.project.projectName, MARGIN, MARGIN / 2);
+    this.doc.text('AI Generated Report', A4_WIDTH - MARGIN, MARGIN / 2, { align: 'right' });
+    this.doc.line(MARGIN, MARGIN / 2 + 10, A4_WIDTH - MARGIN, MARGIN / 2 + 10);
+  }
+
+  private addFooter(pageNumber: number) {
+    this.doc.setFontSize(10);
+    this.doc.setTextColor(150);
+    this.doc.text(`Page ${pageNumber}`, A4_WIDTH / 2, A4_HEIGHT - MARGIN / 2, { align: 'center' });
+  }
+
   public async generateReport() {
     const projectInfo = {
       projectName: this.project.projectName,
       buildingCount: this.project.buildings.length,
       deviceCount: this.project.buildings.flatMap(b => b.floors.flatMap(f => f.devices)).length,
-      totalBudget: 100000, // This would be calculated from a helper
-      criticalAlerts: 5,   // This would be calculated too
+      totalBudget: 100000, 
+      criticalAlerts: 5,   
     };
 
-    // 1. Get the layout from AI
-    const { layout } = await generateReportLayoutAction(projectInfo);
+    const result = await generateReportLayoutAction(projectInfo);
 
-    if (!layout || layout.length === 0) {
+    if (!result.success || !result.data.layout || result.data.layout.length === 0) {
       throw new Error("AI failed to generate a report layout.");
     }
     
+    const layout = result.data.layout;
     let pageCount = 1;
 
-    // 2. Follow the AI's layout
     for (const section of layout) {
         if (pageCount > 1) {
             this.doc.addPage();
         }
         
-        // Add header and footer for all pages except title
         if (section.type !== 'TITLE') {
-            // this.addHeader(); 
+            this.addHeader(); 
         }
 
         switch (section.type) {
@@ -68,13 +80,11 @@ export class ReportService {
             case 'SUMMARY':
                 this.drawSummaryPage(section);
                 break;
-            // case 'BUDGET': await this.drawBudgetPage(section); break;
-            // case 'FLOORPLAN': await this.drawFloorplanPage(section); break;
             default:
                 this.doc.text(`Unsupported section type: ${section.type}`, MARGIN, MARGIN);
         }
         
-        // this.addFooter(pageCount);
+        this.addFooter(pageCount);
         pageCount++;
     }
 
