@@ -3,7 +3,6 @@
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import type { Floor, AnyDevice, Connection, ArchitecturalElement, Point, CablingMode, ArchitecturalElementType, SelectableItem } from '@/lib/types';
-import { DEVICE_CONFIG } from '@/lib/device-config';
 import { useTheme } from 'next-themes';
 
 const ICON_SIZE = 28;
@@ -53,6 +52,7 @@ export function PlannerCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [floorPlanImage, setFloorPlanImage] = useState<HTMLImageElement | null>(null);
+  const [iconImages, setIconImages] = useState<Record<string, HTMLImageElement>>({});
   const [draggingDevice, setDraggingDevice] = useState<AnyDevice | null>(null);
   const [draggingElement, setDraggingElement] = useState<ArchitecturalElement | null>(null);
   const [resizingElement, setResizingElement] = useState<{ element: ArchitecturalElement, handle: string } | null>(null);
@@ -84,6 +84,51 @@ export function PlannerCanvas({
       setFloorPlanImage(null);
     }
   }, [floor.floorPlanUrl]);
+  
+  // Effect to pre-render device icons as images
+  useEffect(() => {
+    const deviceIconSvgs: Record<string, string> = {
+      'cctv-bullet': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 9H16C17.1046 9 18 9.89543 18 11V14C18 15.1046 17.1046 16 16 16H2V9Z" fill="currentColor" /><path d="M18 11.5L22 9V16L18 13.5" fill="currentColor" /><path d="M8 16V19C8 19.5523 8.44772 20 9 20H11C11.5523 20 12 19.5523 12 19V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>`,
+      'cctv-dome': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12H20V14H4V12Z" fill="currentColor" /><path d="M20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12" fill="currentColor" /><circle cx="12" cy="11" r="2" fill="white" fill-opacity="0.7" /></svg>`,
+      'cctv-ptz': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 17C15.3137 17 18 14.3137 18 11C18 7.68629 15.3137 5 12 5C8.68629 5 6 7.68629 6 11C6 14.3137 8.68629 17 12 17Z" fill="currentColor" /><circle cx="12" cy="11" r="2" fill="white" /><path d="M9 17V19C9 19.5523 9.44772 20 10 20H14C14.5523 20 15 19.5523 15 19V17" stroke="currentColor" stroke-width="2" /><path d="M20 11L22 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><path d="M2 11L4 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>`,
+      'wifi-ap': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12C12.5523 12 13 11.5523 13 11C13 10.4477 12.5523 10 12 10C11.4477 10 11 10.4477 11 11C11 11.5523 11.4477 12 12 12Z" fill="currentColor" /><path d="M5.63604 18.364C9.51139 22.2393 15.843 22.2393 19.7184 18.364" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><path d="M8.46448 15.5355C10.9526 13.0474 14.8284 13.0474 17.3165 15.5355" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>`,
+      'nvr': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="8" width="20" height="8" rx="1" fill="currentColor" /><circle cx="19" cy="12" r="1" fill="lime" /><circle cx="16" cy="12" r="1" fill="gray" /></svg>`,
+      'switch': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="10" rx="2" fill="currentColor" /><path d="M6 11L7 12L8 11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M11 11L10 12L9 11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M15 11L16 12L17 11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M20 11L19 12L18 11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>`,
+      'rack-indoor': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2" width="18" height="20" rx="2" ry="2"></rect><line x1="7" y1="6" x2="17" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="18" x2="17" y2="18"></line></svg>`,
+      'rack-outdoor': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2" width="18" height="20" rx="2" ry="2"></rect><line x1="7" y1="6" x2="17" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="18" x2="17" y2="18"></line></svg>`,
+    };
+
+    const loadImages = () => {
+        if (!canvasRef.current || !document.body.contains(canvasRef.current)) return;
+        
+        const style = getComputedStyle(document.documentElement);
+        const primaryColor = style.getPropertyValue('--primary');
+        const accentColor = style.getPropertyValue('--accent');
+        
+        const images: Record<string, HTMLImageElement> = {};
+        
+        Object.entries(deviceIconSvgs).forEach(([type, svgTemplate]) => {
+            // Create normal version
+            const normalColor = `hsl(${primaryColor})`;
+            let normalSvg = svgTemplate.replace(/currentColor/g, normalColor);
+            const normalImg = new Image();
+            normalImg.src = `data:image/svg+xml;base64,${btoa(normalSvg)}`;
+            images[`${type}-normal`] = normalImg;
+
+            // Create selected version
+            const selectedColor = `hsl(${accentColor})`;
+            let selectedSvg = svgTemplate.replace(/currentColor/g, selectedColor);
+            const selectedImg = new Image();
+            selectedImg.src = `data:image/svg+xml;base64,${btoa(selectedSvg)}`;
+            images[`${type}-selected`] = selectedImg;
+        });
+        setIconImages(images);
+    };
+
+    // Need a slight delay to ensure CSS variables are available
+    const timer = setTimeout(loadImages, 50);
+    return () => clearTimeout(timer);
+  }, [resolvedTheme]);
 
   const getRelativeCoords = (e: React.MouseEvent): Point => {
     const canvas = canvasRef.current;
@@ -120,7 +165,7 @@ export function PlannerCanvas({
     
     if (isCablingStart) {
       const pulseRadius = (ICON_SIZE / 2 + 5) * (1 + Math.sin(Date.now() / 300) * 0.1);
-      ctx.fillStyle = 'hsla(var(--destructive), 0.3)';
+      ctx.fillStyle = 'hsla(var(--accent), 0.3)';
       ctx.beginPath();
       ctx.arc(x, y, pulseRadius, 0, 2 * Math.PI);
       ctx.fill();
@@ -133,8 +178,13 @@ export function PlannerCanvas({
       ctx.fill();
     }
     
-    const DeviceIcon = DEVICE_CONFIG[device.type]?.icon;
-    if (DeviceIcon) {
+    const imageKey = `${device.type}-${isSelected ? 'selected' : 'normal'}`;
+    const iconImage = iconImages[imageKey];
+
+    if (iconImage && iconImage.complete) {
+        ctx.drawImage(iconImage, x - ICON_SIZE / 2, y - ICON_SIZE / 2, ICON_SIZE, ICON_SIZE);
+    } else {
+        // Fallback to circle if image not loaded yet
         ctx.fillStyle = isSelected ? 'hsl(var(--accent))' : 'hsl(var(--primary))';
         ctx.beginPath();
         ctx.arc(x, y, ICON_SIZE / 2, 0, 2 * Math.PI);
@@ -153,7 +203,7 @@ export function PlannerCanvas({
     ctx.fillText(device.label, x, y + ICON_SIZE / 2 + 12);
     
     ctx.restore();
-  }, [getAbsoluteCoords, selectedItem, cablingMode, resolvedTheme]);
+  }, [getAbsoluteCoords, selectedItem, cablingMode, resolvedTheme, iconImages]);
 
   const drawConnections = useCallback((ctx: CanvasRenderingContext2D) => {
     floor.connections?.forEach(conn => {
