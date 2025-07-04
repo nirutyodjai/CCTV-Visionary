@@ -52,7 +52,7 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
                     <TooltipTrigger asChild>
                         <Button
                             variant={selectedTool === tool.type ? 'secondary' : 'outline'}
-                            className="h-14 flex items-center justify-center"
+                            className="h-14 flex items-center justify-center [&_svg]:size-7"
                             onClick={() => handleToolClick(tool.type)}
                         >
                             {tool.icon}
@@ -75,12 +75,10 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
                 {radioTools.map((tool) => (
                     <Tooltip key={tool.type}>
                         <TooltipTrigger asChild>
-                            <div className="w-full">
-                                <RadioTileItem 
-                                    value={tool.type}
-                                    icon={tool.icon}
-                                />
-                            </div>
+                            <RadioTileItem 
+                                value={tool.type}
+                                icon={tool.icon}
+                            />
                         </TooltipTrigger>
                         <TooltipContent>
                             <p>เพิ่ม {tool.name}</p>
