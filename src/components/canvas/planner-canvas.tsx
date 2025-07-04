@@ -406,9 +406,6 @@ export function PlannerCanvas({
 
     if (floorPlanImage) {
       ctx.drawImage(floorPlanImage, floorPlanRect.x, floorPlanRect.y, floorPlanRect.width, floorPlanRect.height);
-    } else {
-      ctx.fillStyle = 'hsl(var(--card))';
-      ctx.fillRect(floorPlanRect.x, floorPlanRect.y, floorPlanRect.width, floorPlanRect.height);
     }
     
     ctx.strokeStyle = 'hsl(var(--primary))';
@@ -654,12 +651,16 @@ export function PlannerCanvas({
   return (
     <div
       ref={containerRef}
-      className="w-full h-full relative bg-muted/20 cursor-crosshair"
+      className="w-full h-full relative bg-[#e8e8e8] dark:bg-[#2a2a2a] shadow-[rgba(50,50,93,0.25)_0px_50px_100px_-20px,rgba(0,0,0,0.3)_0px_30px_60px_-30px,rgba(10,37,64,0.35)_0px_-2px_6px_0px_inset] dark:shadow-[rgba(0,0,0,0.4)_0px_30px_60px_-30px,rgba(255,255,255,0.05)_0px_-2px_6px_0px_inset] cursor-crosshair"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      <canvas ref={canvasRef} />
+      <div 
+        className="absolute inset-0 pointer-events-none bg-[repeating-conic-gradient(#e8e8e8_0.0000001%,#93a1a1_0.000104%)_60%_60%/600%_600%] dark:bg-[repeating-conic-gradient(#2a2a2a_0.0000001%,#444_0.000104%)_60%_60%/600%_600%] opacity-10 contrast-105"
+        aria-hidden="true"
+      />
+      <canvas ref={canvasRef} className="relative z-10" />
     </div>
   );
 }
