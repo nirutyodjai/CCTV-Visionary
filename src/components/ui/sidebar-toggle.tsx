@@ -5,11 +5,7 @@ import { useSidebar } from './sidebar';
 import { cn } from '@/lib/utils';
 
 export function SidebarToggle() {
-  const { open, toggleSidebar, isMobile } = useSidebar();
-
-  if (isMobile) {
-    return null;
-  }
+  const { open, toggleSidebar, isMobile, openMobile } = useSidebar();
   
   const scale = 0.4; // 120px * 0.4 = 48px (w-12), 60px * 0.4 = 24px (h-6)
   const baseWidth = 120;
@@ -18,7 +14,7 @@ export function SidebarToggle() {
 
   return (
      <div
-      className={cn("group-data-[collapsible=icon]:hidden", "flex items-center justify-center")}
+      className={cn("flex items-center justify-center")}
       style={{
         width: `${baseWidth * scale}px`,
         height: `${baseHeight * scale}px`,
@@ -37,7 +33,7 @@ export function SidebarToggle() {
               className="toggle-input" 
               id="sidebar-holo-toggle" 
               type="checkbox"
-              checked={open}
+              checked={isMobile ? openMobile : open}
               onChange={toggleSidebar}
               aria-label="Toggle Sidebar"
             />

@@ -715,7 +715,6 @@ export function CCTVPlanner() {
                     <SidebarInset className="flex-1 flex flex-col">
                         <div className="h-16 border-b border-border flex items-center justify-between px-4 flex-shrink-0 relative">
                             <div className="flex items-center gap-4">
-                                <SidebarTrigger className="md:hidden" />
                                 <SidebarToggle />
                             </div>
                             
