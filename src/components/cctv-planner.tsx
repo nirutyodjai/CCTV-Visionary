@@ -440,8 +440,8 @@ export function CCTVPlanner() {
                 const loadedProject = docSnap.data() as ProjectState;
                 dispatch({ type: 'LOAD_PROJECT', payload: loadedProject });
                 
-                const firstBuilding = loadedProject.buildings[0];
-                const firstFloor = firstBuilding?.floors[0];
+                const firstBuilding = loadedProject.buildings?.[0];
+                const firstFloor = firstBuilding?.floors?.[0];
 
                 setActiveIds({ buildingId: firstBuilding?.id || null, floorId: firstFloor?.id || null });
                 setSelectedDevice(null);
@@ -657,5 +657,7 @@ export function CCTVPlanner() {
         </SidebarProvider>
     );
 }
+
+    
 
     
