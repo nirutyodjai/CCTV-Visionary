@@ -407,15 +407,33 @@ export function PlannerCanvas({
       const startPoint = getFloorPlanRelativeCoords(point);
       if (startPoint) {
         const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair', 'elevator', 'fire-escape', 'shaft'];
-        if (pointBasedTools.includes(selectedArchTool)) {
+        
+        if (selectedArchTool === 'area') {
+            if (!floorPlanRect) return;
+            const defaultSizePx = 150;
+            // Center the new area on the click point
+            const startRel = {
+                x: startPoint.x - (defaultSizePx / 2) / floorPlanRect.width,
+                y: startPoint.y - (defaultSizePx / 2) / floorPlanRect.height
+            };
+            const endRel = {
+                x: startPoint.x + (defaultSizePx / 2) / floorPlanRect.width,
+                y: startPoint.y + (defaultSizePx / 2) / floorPlanRect.height
+            };
+            onAddArchElement({
+                id: `arch_${Date.now()}`,
+                type: 'area',
+                start: startRel,
+                end: endRel,
+            });
+        } else if (pointBasedTools.includes(selectedArchTool)) {
             onAddArchElement({
                 id: `arch_${Date.now()}`,
                 type: selectedArchTool,
                 start: startPoint,
-                end: startPoint, // For point objects, start and end are the same
+                end: startPoint,
             });
-        } else {
-            // It's a line-based tool, start drawing
+        } else { // line-based tools like wall, window, door, and sizable objects
             onSetDrawingState({ isDrawing: true, startPoint });
         }
       }
