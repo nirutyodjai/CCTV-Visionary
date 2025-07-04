@@ -10,6 +10,11 @@ const ICON_SIZE = 28;
 const RESIZE_HANDLE_SIZE = 10;
 const SELECTION_THRESHOLD = 10; // Click tolerance in pixels
 
+const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+}
+
 interface PlannerCanvasProps {
   floor: Floor;
   selectedItem: SelectableItem | null;
@@ -226,12 +231,10 @@ export function PlannerCanvas({
         const y1 = Math.min(startAbs.y, endAbs.y);
         const width = Math.abs(endAbs.x - startAbs.x);
         const height = Math.abs(endAbs.y - startAbs.y);
-        
+
+        // Draw fill with shadow
+        ctx.save();
         if (el.shadow?.enabled) {
-            const hexToRgb = (hex: string) => {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-                return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
-            }
             const rgb = hexToRgb(el.shadow.color || '#000000');
             if (rgb) {
                 ctx.shadowColor = `rgba(${rgb}, ${el.shadow.opacity ?? 0.1})`;
@@ -243,17 +246,12 @@ export function PlannerCanvas({
         
         const color = el.color || '#3b82f6';
         ctx.fillStyle = `${color}33`; // Add ~20% opacity
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
-        
         ctx.fillRect(x1, y1, width, height);
-        
-        // Reset shadow before stroking the border to keep the border crisp
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-        
+        ctx.restore(); // Restore context, removing shadow properties for subsequent draws
+
+        // Draw border without shadow
+        ctx.strokeStyle = el.color || '#3b82f6';
+        ctx.lineWidth = 1.5;
         ctx.strokeRect(x1, y1, width, height);
 
         if (isSelected) {
