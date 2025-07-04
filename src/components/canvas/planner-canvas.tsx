@@ -390,15 +390,25 @@ export function PlannerCanvas({
           ctx.font = '10px Sarabun';
 
           if (el.type === 'table') {
-              ctx.fillStyle = 'hsl(var(--foreground) / 0.6)';
-              const size = 16 * scale;
-              ctx.fillRect(coords.x - size / 1.5, coords.y - size / 2, size * 1.5, size);
+              ctx.fillStyle = 'hsl(35, 20%, 80%)';
+              ctx.strokeStyle = 'hsl(35, 20%, 60%)';
+              ctx.lineWidth = 1.5;
+              const size = 16 * (scale ?? 1);
+              const rectWidth = size * 1.5;
+              const rectHeight = size;
+              ctx.beginPath();
+              ctx.rect(coords.x - rectWidth / 2, coords.y - rectHeight / 2, rectWidth, rectHeight);
+              ctx.fill();
+              ctx.stroke();
           } else if (el.type === 'chair') {
-              ctx.fillStyle = 'hsl(var(--foreground) / 0.6)';
-              const size = 16 * scale;
+              ctx.fillStyle = 'hsl(35, 20%, 80%)';
+              ctx.strokeStyle = 'hsl(35, 20%, 60%)';
+              ctx.lineWidth = 1.5;
+              const size = 16 * (scale ?? 1);
               ctx.beginPath();
               ctx.arc(coords.x, coords.y, size / 2, 0, Math.PI * 2);
               ctx.fill();
+              ctx.stroke();
           } else {
               const rectSize = 30 * scale;
               const rectX = coords.x - rectSize / 2;
@@ -466,6 +476,7 @@ export function PlannerCanvas({
 
     if (!floorPlanRect) return;
 
+    // The canvas is transparent, so the container's background shows through
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (floorPlanImage) {
@@ -689,9 +700,14 @@ export function PlannerCanvas({
           const start = drawingState.startPoint;
           let finalStart = start;
           let finalEnd = endPoint;
-
-          // For 'area', we always want normalized top-left and bottom-right corners.
-          if (selectedArchTool === 'area') {
+          
+          // For line-based and rotatable tools, preserve start and end as drawn
+          const lineLikeTools: ArchitecturalElementType[] = ['wall', 'door', 'window', 'tree', 'motorcycle', 'car', 'supercar'];
+          if (lineLikeTools.includes(selectedArchTool)) {
+               finalStart = start;
+               finalEnd = endPoint;
+          } else if (selectedArchTool === 'area') {
+               // For 'area', we always want normalized top-left and bottom-right corners.
               finalStart = { x: Math.min(start.x, endPoint.x), y: Math.min(start.y, endPoint.y) };
               finalEnd = { x: Math.max(start.x, endPoint.x), y: Math.max(start.y, endPoint.y) };
           }
@@ -728,7 +744,8 @@ export function PlannerCanvas({
       onMouseUp={handleMouseUp}
     >
       <div 
-        className="absolute inset-0 pointer-events-none bg-[repeating-conic-gradient(#e8e8e8_0.0000001%,#93a1a1_0.000104%)_60%_60%/600%_600%] dark:bg-[repeating-conic-gradient(#2a2a2a_0.0000001%,#444_0.000104%)_60%_60%/600%_600%] opacity-10 contrast-105"
+        className="absolute inset-0 pointer-events-none bg-[repeating-conic-gradient(var(--bg,theme(colors.gray.200))_0.0000001%,var(--grey,theme(colors.gray.400))_0.000104%)_60%_60%/600%_600%] dark:bg-[repeating-conic-gradient(var(--bg,theme(colors.gray.800))_0.0000001%,var(--grey,theme(colors.gray.600))_0.000104%)_60%_60%/600%_600%] opacity-10 contrast-105"
+        style={{'--bg': '#e8e8e8', '--grey': '#93a1a1'} as React.CSSProperties}
         aria-hidden="true"
       />
       <canvas ref={canvasRef} className="relative z-10" />
