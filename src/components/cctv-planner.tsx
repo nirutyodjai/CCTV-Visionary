@@ -163,7 +163,6 @@ export function CCTVPlanner() {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
-    const [activeView, setActiveView] = useState<'master' | 'floor'>('floor');
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const [selectedDevice, setSelectedDevice] = useState<AnyDevice | null>(null);
@@ -191,9 +190,11 @@ export function CCTVPlanner() {
 
     useEffect(() => {
         // Defer state initialization to the client to prevent hydration mismatch
-        dispatch({ type: 'LOAD_PROJECT', payload: createInitialState() });
-        setIsLoading(false);
-    }, []);
+        if (projectState.id === 'loading') {
+            dispatch({ type: 'LOAD_PROJECT', payload: createInitialState() });
+            setIsLoading(false);
+        }
+    }, [projectState.id]);
 
     const fetchProjectList = useCallback(async () => {
         const result = await listProjectsAction();
@@ -214,15 +215,14 @@ export function CCTVPlanner() {
 
 
     useEffect(() => {
-        if (!isLoading && !activeIds.buildingId && projectState.buildings.length > 0) {
+        if (!isLoading && projectState.id !== 'loading' && !activeIds.buildingId && projectState.buildings.length > 0) {
             const firstBuilding = projectState.buildings[0];
             if (firstBuilding && firstBuilding.floors.length > 0) {
                 const firstFloor = firstBuilding.floors[0];
                 setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
-                setActiveView('floor');
             }
         }
-    }, [isLoading, projectState.buildings, activeIds.buildingId]);
+    }, [isLoading, projectState, activeIds.buildingId]);
 
     const activeBuilding = useMemo(() => projectState.buildings.find(b => b.id === activeIds.buildingId), [projectState.buildings, activeIds.buildingId]);
     const activeFloor = useMemo(() => activeBuilding?.floors.find(f => f.id === activeIds.floorId), [activeBuilding, activeIds.floorId]);
@@ -230,19 +230,11 @@ export function CCTVPlanner() {
     const handleFloorSelect = (buildingId: string, floorId: string) => {
         setFloorPlanRect(null); // Reset canvas rect when floor changes
         setActiveIds({ buildingId, floorId });
-        setActiveView('floor');
         setSelectedDevice(null);
     };
-
-    const handleMasterPlanSelect = () => {
-        setActiveView('master');
-        setActiveIds({ buildingId: null, floorId: null });
-        setSelectedDevice(null);
-    };
-
 
     const handleAddDevice = (type: DeviceType) => {
-        if (activeView !== 'floor' || !activeFloor || !activeIds.buildingId || !activeIds.floorId) {
+        if (!activeFloor || !activeIds.buildingId || !activeIds.floorId) {
             toast({ title: "ไม่สามารถเพิ่มอุปกรณ์ได้", description: "กรุณาเลือกชั้นก่อน", variant: "destructive" });
             return;
         }
@@ -467,10 +459,8 @@ export function CCTVPlanner() {
 
                 if (firstBuilding && firstFloor) {
                     setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
-                    setActiveView('floor');
                 } else {
                     setActiveIds({ buildingId: null, floorId: null });
-                    setActiveView('master');
                 }
 
                 setSelectedDevice(null);
@@ -593,8 +583,6 @@ export function CCTVPlanner() {
                                 buildings={projectState.buildings}
                                 activeFloorId={activeIds.floorId}
                                 onFloorSelect={handleFloorSelect}
-                                onMasterPlanSelect={handleMasterPlanSelect}
-                                isMasterPlanActive={activeView === 'master'}
                             />
                             
                             <DevicesToolbar onSelectDevice={handleAddDevice} />
@@ -641,13 +629,13 @@ export function CCTVPlanner() {
                             <div className="flex items-center gap-2">
                                 <SidebarTrigger className="md:hidden" />
                                  <h2 className="text-lg font-semibold hidden md:block">
-                                    {activeView === 'floor' && activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "Master Plan"}
+                                    {activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "กรุณาเลือกแบบแปลน"}
                                 </h2>
                             </div>
                         </div>
 
                         <div className="flex-1 w-full h-full relative">
-                            {activeView === 'floor' && activeFloor ? (
+                            {activeFloor ? (
                                 <PlannerCanvas
                                     floor={activeFloor}
                                     selectedDevice={selectedDevice}
@@ -667,9 +655,7 @@ export function CCTVPlanner() {
                             ) : (
                                 <div className="flex-1 w-full h-full flex items-center justify-center bg-muted/20">
                                     <p className="text-muted-foreground text-center px-4">
-                                        {activeView === 'master' 
-                                            ? "Master Plan View: แสดงภาพรวมของโครงการทั้งหมด (อยู่ระหว่างการพัฒนา)" 
-                                            : "กรุณาเลือกอาคารและชั้นจากเมนูด้านซ้ายเพื่อเริ่มต้น"}
+                                        กรุณาเลือกอาคารและชั้นจากเมนูด้านซ้ายเพื่อเริ่มต้น
                                     </p>
                                 </div>
                             )}

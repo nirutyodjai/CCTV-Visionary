@@ -2,63 +2,61 @@ import * as React from 'react';
 import type { Building } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard } from 'lucide-react';
+import { Building2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ProjectNavigatorProps {
   buildings: Building[];
   activeFloorId: string | null;
   onFloorSelect: (buildingId: string, floorId: string) => void;
-  onMasterPlanSelect: () => void;
-  isMasterPlanActive: boolean;
 }
 
-export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect, onMasterPlanSelect, isMasterPlanActive }: ProjectNavigatorProps) {
+export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect }: ProjectNavigatorProps) {
   const [openItems, setOpenItems] = React.useState<string[]>([]);
 
-  // When buildings are loaded or change, update the open accordion items
+  // When buildings are loaded or change, keep the accordions open
   React.useEffect(() => {
     setOpenItems(buildings.map(b => b.id));
   }, [buildings]);
 
   return (
-    <div>
-      <h3 className="text-sm font-semibold mb-2 px-2 uppercase text-muted-foreground">Building Plan</h3>
-      <div className="px-2 pb-2">
-        <Button
-            variant={isMasterPlanActive ? 'secondary' : 'ghost'}
-            className="w-full justify-start"
-            onClick={onMasterPlanSelect}
-        >
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            Master Plan
-        </Button>
-      </div>
-      <Accordion 
-        type="multiple" 
-        value={openItems}
-        onValueChange={setOpenItems}
-        className="w-full"
-      >
-        {buildings.map((building) => (
-          <AccordionItem key={building.id} value={building.id}>
-            <AccordionTrigger className="px-2">{building.name}</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col space-y-1 pl-2">
-                {building.floors.map((floor) => (
-                  <Button
-                    key={floor.id}
-                    variant={floor.id === activeFloorId ? 'secondary' : 'ghost'}
-                    className="w-full justify-start"
-                    onClick={() => onFloorSelect(building.id, floor.id)}
-                  >
-                    {floor.name}
-                  </Button>
+    <Card>
+        <CardHeader className="p-3 border-b">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Building2 className="w-4 h-4"/>
+                Building Plan
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="p-1">
+             <Accordion 
+                type="multiple" 
+                value={openItems}
+                onValueChange={setOpenItems}
+                className="w-full"
+            >
+                {buildings.map((building) => (
+                <AccordionItem key={building.id} value={building.id} className="border-none">
+                    <AccordionTrigger className="px-2 py-1.5 text-sm hover:no-underline font-semibold rounded-md hover:bg-muted">
+                        {building.name}
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-1 pt-1">
+                    <div className="flex flex-col space-y-1 pl-4">
+                        {building.floors.map((floor) => (
+                        <Button
+                            key={floor.id}
+                            variant={floor.id === activeFloorId ? 'secondary' : 'ghost'}
+                            className="w-full justify-start h-8 text-xs font-normal"
+                            onClick={() => onFloorSelect(building.id, floor.id)}
+                        >
+                            {floor.name}
+                        </Button>
+                        ))}
+                    </div>
+                    </AccordionContent>
+                </AccordionItem>
                 ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-    </div>
+            </Accordion>
+        </CardContent>
+    </Card>
   );
 }
