@@ -82,12 +82,12 @@ export function LogicalTopologyView({ devices, connections, isOpen, onClose }: L
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[90vh]">
+      <DialogContent className="max-w-7xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Logical Network Topology</DialogTitle>
           <DialogDescription>An AI-generated visual representation of your network connections.</DialogDescription>
         </DialogHeader>
-        <div className="w-full h-full border rounded-md">
+        <div className="flex-1 w-full border rounded-md relative min-h-0">
             {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
                     <p>AI is generating the layout...</p>
