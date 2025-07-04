@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { Minus, DoorOpen, PanelTop, Armchair, RectangleVertical, ShieldAlert, Layers, TreeDeciduous, Car, Bike, CarFront, RectangleHorizontal } from 'lucide-react';
 import type { ArchitecturalElementType } from '@/lib/types';
 import { TableIcon } from '@/components/icons/table-icon';
+import { Separator } from '@/components/ui/separator';
+import ReactionButtons from './reaction-buttons';
 
 const tools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
   { type: 'wall', name: 'กำแพง', icon: <Minus size={24} /> },
@@ -38,18 +40,24 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
       <CardHeader className="p-3 border-b">
         <CardTitle className="text-sm font-semibold">ส่วนประกอบห้อง</CardTitle>
       </CardHeader>
-      <CardContent className="p-3 grid grid-cols-4 gap-2">
-        {tools.map((tool) => (
-          <Button
-            key={tool.type}
-            variant={selectedTool === tool.type ? 'secondary' : 'outline'}
-            className="h-16 flex flex-col items-center justify-center space-y-1"
-            onClick={() => handleToolClick(tool.type)}
-          >
-            {tool.icon}
-            <span className="text-xs">{tool.name}</span>
-          </Button>
-        ))}
+      <CardContent className="p-3 space-y-3">
+        <div className="grid grid-cols-4 gap-2">
+            {tools.map((tool) => (
+            <Button
+                key={tool.type}
+                variant={selectedTool === tool.type ? 'secondary' : 'outline'}
+                className="h-16 flex flex-col items-center justify-center space-y-1"
+                onClick={() => handleToolClick(tool.type)}
+            >
+                {tool.icon}
+                <span className="text-xs">{tool.name}</span>
+            </Button>
+            ))}
+        </div>
+        <Separator />
+        <div className="flex justify-center pt-2">
+            <ReactionButtons />
+        </div>
       </CardContent>
     </Card>
   );

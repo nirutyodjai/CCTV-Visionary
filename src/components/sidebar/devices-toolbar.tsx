@@ -5,6 +5,8 @@ import type { DeviceType } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wrench } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import ReactionButtons from './reaction-buttons';
 
 interface DevicesToolbarProps {
   onSelectDevice: (type: DeviceType) => void;
@@ -30,7 +32,7 @@ export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
             เครื่องมืออุปกรณ์
         </CardTitle>
       </CardHeader>
-       <CardContent className="p-3">
+       <CardContent className="p-3 space-y-3">
         <TooltipProvider>
             <div className="grid grid-cols-4 gap-2">
             {TOOLBAR_DEVICES.map(type => {
@@ -57,6 +59,10 @@ export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
             })}
             </div>
         </TooltipProvider>
+        <Separator/>
+        <div className="flex justify-center pt-2">
+            <ReactionButtons />
+        </div>
        </CardContent>
     </Card>
   );
