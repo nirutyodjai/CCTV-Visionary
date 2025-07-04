@@ -16,9 +16,9 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Sun, Moon, Network, Save, Loader2, FolderKanban } from 'lucide-react';
+import { Sun, Moon, Network, Save, Loader2, FolderKanban, ChevronDown } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
-import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction } from '@/app/actions';
+import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction, listProjectsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
 import { LogicalTopologyView } from '@/components/topology/logical-topology-view';
 import { RackElevationView } from '@/components/rack/rack-elevation-view';
@@ -29,6 +29,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { ProjectManager } from './sidebar/project-manager';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 type Action =
@@ -164,6 +172,7 @@ export function CCTVPlanner() {
     const [isDiagnosing, setIsDiagnosing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
+    const [projectList, setProjectList] = useState<Pick<ProjectState, 'id' | 'projectName'>[]>([]);
 
 
     // System Status states
@@ -175,6 +184,24 @@ export function CCTVPlanner() {
         dispatch({ type: 'LOAD_PROJECT', payload: createInitialState() });
         setIsLoading(false);
     }, []);
+
+    const fetchProjectList = useCallback(async () => {
+        const result = await listProjectsAction();
+        if (result.success) {
+            setProjectList(result.data);
+        } else {
+            toast({
+                title: 'Could not fetch project list',
+                description: result.error,
+                variant: 'destructive',
+            });
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        fetchProjectList();
+    }, [fetchProjectList]);
+
 
     useEffect(() => {
         if (!isLoading && !activeIds.buildingId && projectState.buildings.length > 0) {
@@ -388,6 +415,7 @@ export function CCTVPlanner() {
                 title: "บันทึกโครงการสำเร็จ",
                 description: `โครงการ "${projectToSave.projectName}" (ID: ${projectToSave.id}) ถูกบันทึกแล้ว`,
             });
+            fetchProjectList();
         } catch (error: any) {
             console.error("Error saving project:", error);
             toast({
@@ -400,7 +428,7 @@ export function CCTVPlanner() {
         }
     };
 
-    const handleLoadProject = async (projectId: string) => {
+    const handleLoadProject = useCallback(async (projectId: string) => {
         if (!projectId) return;
 
         setIsLoading(true);
@@ -439,7 +467,7 @@ export function CCTVPlanner() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [toast]);
 
     const handleSelectDevice = (device: AnyDevice | null) => {
         setSelectedDevice(device);
@@ -522,6 +550,27 @@ export function CCTVPlanner() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="w-[200px] md:w-[250px] justify-between">
+                                            <span className="truncate">{projectState.projectName}</span>
+                                            <ChevronDown className="h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-[250px]">
+                                        <DropdownMenuLabel>Switch Project</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {projectList.map((p) => (
+                                            <DropdownMenuItem
+                                                key={p.id}
+                                                disabled={p.id === projectState.id || isLoading}
+                                                onSelect={() => handleLoadProject(p.id)}
+                                            >
+                                                {p.projectName}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                                 <Button variant="outline" onClick={() => setTopologyViewOpen(true)}><Network /> View Topology</Button>
                                 <Button variant="outline" onClick={() => setProjectManagerOpen(true)} disabled={isLoading || isSaving}>
                                     <FolderKanban/> จัดการโครงการ
@@ -598,10 +647,15 @@ export function CCTVPlanner() {
 
             <ProjectManager
                 isOpen={isProjectManagerOpen}
-                onClose={() => setProjectManagerOpen(false)}
+                onClose={() => {
+                    setProjectManagerOpen(false);
+                    fetchProjectList();
+                }}
                 onLoadProject={handleLoadProject}
                 currentProjectId={projectState.id}
             />
         </SidebarProvider>
     );
 }
+
+    
