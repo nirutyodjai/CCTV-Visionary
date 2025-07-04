@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +7,10 @@ import { Minus, DoorOpen, PanelTop, Armchair, RectangleVertical, ShieldAlert, La
 import type { ArchitecturalElementType } from '@/lib/types';
 import { TableIcon } from '@/components/icons/table-icon';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RadioTileGroup, RadioTileItem } from '@/components/ui/radio-tile-group';
+import { Separator } from '@/components/ui/separator';
 
-const tools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
+const buttonTools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
   { type: 'wall', name: 'กำแพง', icon: <Minus size={24} /> },
   { type: 'door', name: 'ประตู', icon: <DoorOpen size={20} /> },
   { type: 'window', name: 'หน้าต่าง', icon: <PanelTop size={20} /> },
@@ -16,12 +19,15 @@ const tools: { type: ArchitecturalElementType, name: string; icon: React.ReactNo
   { type: 'elevator', name: 'ลิฟท์', icon: <RectangleVertical size={20} /> },
   { type: 'fire-escape', name: 'ทางหนีไฟ', icon: <ShieldAlert size={20} /> },
   { type: 'shaft', name: 'ช่องชาร์ป', icon: <Layers size={20} /> },
-  { type: 'tree', name: 'ต้นไม้', icon: <TreeDeciduous size={20} /> },
-  { type: 'car', name: 'รถยนต์', icon: <Car size={20} /> },
-  { type: 'motorcycle', name: 'มอเตอร์ไซค์', icon: <Bike size={20} /> },
-  { type: 'supercar', name: 'ซุปเปอร์คาร์', icon: <CarFront size={20} /> },
   { type: 'area', name: 'พื้นที่', icon: <RectangleHorizontal size={20} /> },
 ];
+
+const radioTools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
+    { type: 'tree', name: 'ต้นไม้', icon: <TreeDeciduous /> },
+    { type: 'motorcycle', name: 'มอเตอร์ไซค์', icon: <Bike /> },
+    { type: 'car', name: 'รถยนต์', icon: <Car /> },
+    { type: 'supercar', name: 'ซุปเปอร์คาร์', icon: <CarFront /> },
+]
 
 interface ArchitectureToolbarProps {
   selectedTool: ArchitecturalElementType | null;
@@ -38,10 +44,10 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
       <CardHeader className="p-3 border-b">
         <CardTitle className="text-sm font-semibold">ส่วนประกอบห้อง</CardTitle>
       </CardHeader>
-      <CardContent className="p-3">
+      <CardContent className="p-3 space-y-3">
         <TooltipProvider>
             <div className="grid grid-cols-4 gap-2">
-                {tools.map((tool) => (
+                {buttonTools.map((tool) => (
                 <Tooltip key={tool.type}>
                     <TooltipTrigger asChild>
                         <Button
@@ -59,6 +65,24 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
                 ))}
             </div>
         </TooltipProvider>
+
+        <Separator />
+        
+        <RadioTileGroup 
+            className="grid-cols-4"
+            value={selectedTool || ''}
+            onValueChange={(value) => onSelectTool(value as ArchitecturalElementType)}
+        >
+            {radioTools.map((tool) => (
+                <RadioTileItem 
+                    key={tool.type}
+                    value={tool.type}
+                    label={tool.name}
+                    icon={tool.icon}
+                />
+            ))}
+        </RadioTileGroup>
+        
       </CardContent>
     </Card>
   );
