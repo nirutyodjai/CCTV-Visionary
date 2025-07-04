@@ -22,7 +22,7 @@ export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect, onMa
 
   return (
     <div>
-      <h3 className="text-sm font-semibold mb-2 px-2 uppercase text-muted-foreground">Project Navigator</h3>
+      <h3 className="text-sm font-semibold mb-2 px-2 uppercase text-muted-foreground">Building Plan</h3>
       <div className="px-2 pb-2">
         <Button
             variant={isMasterPlanActive ? 'secondary' : 'ghost'}

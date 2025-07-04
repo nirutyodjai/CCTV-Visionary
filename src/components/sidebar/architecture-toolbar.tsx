@@ -35,7 +35,7 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
   return (
     <Card>
       <CardHeader className="p-3 border-b">
-        <CardTitle className="text-sm font-semibold">เครื่องมือวาดแบบแปลน</CardTitle>
+        <CardTitle className="text-sm font-semibold">ส่วนประกอบห้อง</CardTitle>
       </CardHeader>
       <CardContent className="p-3 grid grid-cols-4 gap-2">
         {tools.map((tool) => (
