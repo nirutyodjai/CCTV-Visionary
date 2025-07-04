@@ -10,9 +10,9 @@ export function SidebarToggle() {
     return null;
   }
 
-  // The provided CSS has fixed sizes (150x60px), which is too large for the sidebar footer.
-  // We scale it down to fit the UI.
-  const scale = 0.5;
+  // The provided CSS has fixed sizes, which is too large for the header.
+  // We scale it down to match the other toggles.
+  const scale = 0.4;
 
   return (
     <div className="flex items-center justify-center p-2 group-data-[collapsible=icon]:hidden holo-switch-wrapper">
