@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useReducer, useState, useMemo, useEffect, useCallback } from 'react';
-import { generateDemoProject } from '@/lib/demo-data';
+import { createInitialState } from '@/lib/demo-data';
 import type { ProjectState, AnyDevice, CablingMode, Point, ArchitecturalElementType, ArchitecturalElement, Floor, Connection, Building, DeviceType, RackContainer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
@@ -41,32 +41,6 @@ type Action =
     | { type: 'ADD_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
     | { type: 'SET_DIAGNOSTICS', payload: { diagnostics: DiagnosticResult['diagnostics'], buildingId: string, floorId: string } }
     | { type: 'UPDATE_RACK', payload: { rack: RackContainer, buildingId: string, floorId: string } };
-
-function createInitialState(): ProjectState {
-    const initialFloor: Floor = {
-        id: 'floor_starter_1',
-        name: 'ชั้น 1',
-        floorPlanUrl: null,
-        devices: [],
-        connections: [],
-        architecturalElements: [],
-        diagnostics: [],
-    };
-
-    const initialBuilding: Building = {
-        id: 'bld_starter_1',
-        name: 'อาคาร 1',
-        floors: [initialFloor],
-    };
-
-    return {
-        id: `proj_${Date.now()}`,
-        projectName: 'โครงการใหม่',
-        buildings: [initialBuilding],
-        vlans: [],
-        subnets: [],
-    };
-}
 
 
 function projectReducer(state: ProjectState, action: Action): ProjectState {
@@ -190,8 +164,10 @@ export function CCTVPlanner() {
     useEffect(() => {
         if (!activeIds.buildingId && projectState.buildings.length > 0) {
             const firstBuilding = projectState.buildings[0];
-            const firstFloor = firstBuilding.floors[0];
-            setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
+            if (firstBuilding && firstBuilding.floors.length > 0) {
+                const firstFloor = firstBuilding.floors[0];
+                setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
+            }
         }
     }, [projectState.buildings, activeIds.buildingId]);
 
@@ -199,9 +175,7 @@ export function CCTVPlanner() {
     const activeFloor = useMemo(() => activeBuilding?.floors.find(f => f.id === activeIds.floorId), [activeBuilding, activeIds.floorId]);
 
     const handleFloorSelect = (buildingId: string, floorId: string) => {
-        if (activeIds.floorId !== floorId || !floorPlanRect) {
-            setFloorPlanRect(null); // Reset canvas rect when floor changes or doesn't exist
-        }
+        setFloorPlanRect(null); // Reset canvas rect when floor changes
         setActiveIds({ buildingId, floorId });
         setSelectedDevice(null);
     };
@@ -294,8 +268,9 @@ export function CCTVPlanner() {
         if (result.success && activeIds.buildingId && activeIds.floorId) {
             const bId = activeIds.buildingId;
             const fId = activeIds.floorId;
+            const currentDevices = activeFloor?.devices || [];
             result.data.forEach(suggestion => {
-                const newDevice = createDevice(suggestion.type, suggestion.x, suggestion.y, activeFloor.devices);
+                const newDevice = createDevice(suggestion.type, suggestion.x, suggestion.y, currentDevices);
                 dispatch({ type: 'ADD_DEVICE', payload: { device: newDevice, buildingId: bId, floorId: fId }});
             });
             toast({ title: "AI Suggestions Added", description: `Added ${result.data.length} new devices to the plan.` });
@@ -472,13 +447,14 @@ export function CCTVPlanner() {
 
     return (
         <SidebarProvider>
-            <div className="w-full h-screen flex bg-background text-foreground">
+            <div className="w-full h-screen flex bg-background text-foreground dark:text-white">
                 <Sidebar className="flex flex-col border-r border-border bg-card text-card-foreground shadow-lg overflow-y-auto">
                     <SidebarContent className="p-0">
                          <div className="p-4 border-b border-border flex justify-between items-center">
                             <div>
                                 <h1 className="text-xl font-bold tracking-tight">CCTV Visionary</h1>
                                 <p className="text-muted-foreground text-sm">{projectState.projectName}</p>
+                                <p className="text-xs text-muted-foreground/50 font-mono mt-1">ID: {projectState.id}</p>
                             </div>
                             <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
                                 <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

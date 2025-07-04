@@ -1,10 +1,11 @@
+
 import type { ProjectState, Building, Floor } from './types';
 
 /**
  * Generates an empty project structure to start a new plan.
  * @returns An empty ProjectState object with one default building and floor.
  */
-export function generateDemoProject(): ProjectState {
+export function createInitialState(): ProjectState {
 
     const initialFloor: Floor = {
         id: 'floor_starter_1',
@@ -23,6 +24,7 @@ export function generateDemoProject(): ProjectState {
     };
 
     const project: ProjectState = {
+        id: `proj_${Date.now()}`,
         projectName: 'โครงการใหม่',
         buildings: [initialBuilding],
         vlans: [],
