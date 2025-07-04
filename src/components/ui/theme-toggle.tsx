@@ -52,7 +52,7 @@ export function ThemeToggle() {
       </svg>
 
       {/* Knob */}
-      <div className="pointer-events-none absolute left-1 top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-lg transition-all duration-300 peer-checked:left-6" />
+      <div className="pointer-events-none absolute left-1 top-[2px] h-5 w-5 rounded-full border-2 border-white shadow-lg transition-all duration-300 peer-checked:left-6" />
     </label>
   );
 }
