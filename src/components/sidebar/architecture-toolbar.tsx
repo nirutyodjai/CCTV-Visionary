@@ -11,15 +11,15 @@ import { RadioTileGroup, RadioTileItem } from '@/components/ui/radio-tile-group'
 import { Separator } from '@/components/ui/separator';
 
 const buttonTools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
-  { type: 'wall', name: 'กำแพง', icon: <Minus size={24} /> },
-  { type: 'door', name: 'ประตู', icon: <DoorOpen size={20} /> },
-  { type: 'window', name: 'หน้าต่าง', icon: <PanelTop size={20} /> },
-  { type: 'table', name: 'โต๊ะ', icon: <TableIcon className="w-5 h-5" /> },
-  { type: 'chair', name: 'เก้าอี้', icon: <Armchair size={20} /> },
-  { type: 'elevator', name: 'ลิฟท์', icon: <RectangleVertical size={20} /> },
-  { type: 'fire-escape', name: 'ทางหนีไฟ', icon: <ShieldAlert size={20} /> },
-  { type: 'shaft', name: 'ช่องชาร์ป', icon: <Layers size={20} /> },
-  { type: 'area', name: 'พื้นที่', icon: <RectangleHorizontal size={20} /> },
+  { type: 'wall', name: 'กำแพง', icon: <Minus size={28} /> },
+  { type: 'door', name: 'ประตู', icon: <DoorOpen size={28} /> },
+  { type: 'window', name: 'หน้าต่าง', icon: <PanelTop size={28} /> },
+  { type: 'table', name: 'โต๊ะ', icon: <TableIcon className="w-7 h-7" /> },
+  { type: 'chair', name: 'เก้าอี้', icon: <Armchair size={28} /> },
+  { type: 'elevator', name: 'ลิฟท์', icon: <RectangleVertical size={28} /> },
+  { type: 'fire-escape', name: 'ทางหนีไฟ', icon: <ShieldAlert size={28} /> },
+  { type: 'shaft', name: 'ช่องชาร์ป', icon: <Layers size={28} /> },
+  { type: 'area', name: 'พื้นที่', icon: <RectangleHorizontal size={28} /> },
 ];
 
 const radioTools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
@@ -75,10 +75,12 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
                 {radioTools.map((tool) => (
                     <Tooltip key={tool.type}>
                         <TooltipTrigger asChild>
-                             <RadioTileItem 
-                                value={tool.type}
-                                icon={tool.icon}
-                            />
+                            <div className="w-full">
+                                <RadioTileItem 
+                                    value={tool.type}
+                                    icon={tool.icon}
+                                />
+                            </div>
                         </TooltipTrigger>
                         <TooltipContent>
                             <p>เพิ่ม {tool.name}</p>
