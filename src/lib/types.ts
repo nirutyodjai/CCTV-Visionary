@@ -105,6 +105,7 @@ export interface ArchitecturalElement {
   type: ArchitecturalElementType;
   start: Point;
   end: Point;
+  color?: string;
 }
 
 export interface Floor {

@@ -23,6 +23,7 @@ interface PlannerCanvasProps {
   drawingState: { isDrawing: boolean; startPoint: Point | null };
   onSetDrawingState: (state: { isDrawing: boolean; startPoint: Point | null }) => void;
   onAddArchElement: (element: ArchitecturalElement) => void;
+  onUpdateArchElement: (element: ArchitecturalElement) => void;
   floorPlanRect: DOMRect | null;
   onUpdateFloorPlanRect: (rect: DOMRect) => void;
 }
@@ -40,6 +41,7 @@ export function PlannerCanvas({
   drawingState,
   onSetDrawingState,
   onAddArchElement,
+  onUpdateArchElement,
   floorPlanRect,
   onUpdateFloorPlanRect,
 }: PlannerCanvasProps) {
@@ -47,12 +49,13 @@ export function PlannerCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const [floorPlanImage, setFloorPlanImage] = useState<HTMLImageElement | null>(null);
   const [draggingDevice, setDraggingDevice] = useState<AnyDevice | null>(null);
+  const [draggingElement, setDraggingElement] = useState<ArchitecturalElement | null>(null);
+  const [resizingElement, setResizingElement] = useState<{ element: ArchitecturalElement, handle: string } | null>(null);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
-  const [resizingHandle, setResizingHandle] = useState<string | null>(null);
+  const [resizingHandle, setResizingHandle] = useState<string | null>(null); // For floor plan
   const { resolvedTheme } = useTheme();
   const initializedFloorRef = useRef<string | null>(null);
 
-  // Initialize the floor plan rectangle on mount or floor change
   useEffect(() => {
     if (containerRef.current && (!floorPlanRect || initializedFloorRef.current !== floor.id)) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -67,7 +70,6 @@ export function PlannerCanvas({
     }
   }, [floor.id, floorPlanRect, onUpdateFloorPlanRect]);
 
-  // Load floor plan image
   useEffect(() => {
     if (floor.floorPlanUrl) {
       const img = new Image();
@@ -111,7 +113,6 @@ export function PlannerCanvas({
 
     ctx.save();
     
-    // Pulsing effect for cabling start device
     if (isCablingStart) {
       const pulseRadius = (ICON_SIZE / 2 + 5) * (1 + Math.sin(Date.now() / 300) * 0.1);
       ctx.fillStyle = 'hsla(var(--destructive), 0.3)';
@@ -120,7 +121,6 @@ export function PlannerCanvas({
       ctx.fill();
     }
     
-    // Selection highlight
     if (isSelected) {
       ctx.fillStyle = 'hsla(var(--accent), 0.3)';
       ctx.beginPath();
@@ -130,9 +130,6 @@ export function PlannerCanvas({
     
     const DeviceIcon = DEVICE_CONFIG[device.type]?.icon;
     if (DeviceIcon) {
-        // This is a simplification. Drawing SVG components onto a canvas is complex.
-        // For a real app, you'd need a robust way to render SVG to canvas.
-        // Here, we draw a placeholder circle with initials.
         ctx.fillStyle = isSelected ? 'hsl(var(--accent))' : 'hsl(var(--primary))';
         ctx.beginPath();
         ctx.arc(x, y, ICON_SIZE / 2, 0, 2 * Math.PI);
@@ -172,6 +169,23 @@ export function PlannerCanvas({
     });
   }, [floor.connections, floor.devices, getAbsoluteCoords]);
   
+  const getAreaHandles = useCallback((el: ArchitecturalElement) => {
+    if (el.type !== 'area' || !floorPlanRect) return {};
+    const startAbs = getAbsoluteCoords(el.start);
+    const endAbs = getAbsoluteCoords(el.end);
+    if (!startAbs || !endAbs) return {};
+
+    const x1 = Math.min(startAbs.x, endAbs.x);
+    const y1 = Math.min(startAbs.y, endAbs.y);
+    const x2 = Math.max(startAbs.x, endAbs.x);
+    const y2 = Math.max(startAbs.y, endAbs.y);
+
+    return {
+      tl: { x: x1, y: y1 }, tr: { x: x2, y: y1 },
+      bl: { x: x1, y: y2 }, br: { x: x2, y: y2 },
+    };
+  }, [floorPlanRect, getAbsoluteCoords]);
+
   const drawArchitecturalElements = useCallback((ctx: CanvasRenderingContext2D) => {
     if (!floorPlanRect) return;
 
@@ -189,11 +203,10 @@ export function PlannerCanvas({
       
       const isSelected = selectedItem?.id === el.id;
 
-      if (isSelected) {
+      if (isSelected && el.type !== 'area') {
         ctx.strokeStyle = 'hsla(var(--accent), 0.9)';
         ctx.fillStyle = 'hsla(var(--accent), 0.2)';
         ctx.lineWidth = 2;
-        // The selection highlight is drawn before the element itself to keep it as a background
         const endAbs = getAbsoluteCoords(el.end);
         if (endAbs) {
             const minX = Math.min(startAbs.x, endAbs.x) - 5;
@@ -205,23 +218,33 @@ export function PlannerCanvas({
         }
       }
 
-
       if (el.type === 'area') {
         const endAbs = getAbsoluteCoords(el.end);
         if (!endAbs) { ctx.restore(); return; }
-
-        const width = endAbs.x - startAbs.x;
-        const height = endAbs.y - startAbs.y;
-
-        ctx.fillStyle = 'hsla(var(--primary), 0.2)';
-        ctx.strokeStyle = 'hsla(var(--primary), 0.6)';
-        ctx.lineWidth = 1;
         
-        ctx.fillRect(startAbs.x, startAbs.y, width, height);
-        ctx.strokeRect(startAbs.x, startAbs.y, width, height);
+        const x1 = Math.min(startAbs.x, endAbs.x);
+        const y1 = Math.min(startAbs.y, endAbs.y);
+        const width = Math.abs(endAbs.x - startAbs.x);
+        const height = Math.abs(endAbs.y - startAbs.y);
 
+        const color = el.color || '#3b82f6';
+        ctx.fillStyle = `${color}33`; // Add ~20% opacity
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        
+        ctx.fillRect(x1, y1, width, height);
+        ctx.strokeRect(x1, y1, width, height);
+
+        if (isSelected) {
+            const handles = getAreaHandles(el);
+            ctx.fillStyle = 'hsl(var(--primary))';
+            Object.values(handles).forEach(pos => {
+                ctx.fillRect(pos.x - RESIZE_HANDLE_SIZE / 2, pos.y - RESIZE_HANDLE_SIZE / 2, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE);
+            });
+        }
       } else if (lineBasedTools.includes(el.type)) {
-          const endAbs = getAbsoluteCoords(el.end);
+          // ... (existing drawing logic for wall, door, window)
+           const endAbs = getAbsoluteCoords(el.end);
           if (!endAbs) { ctx.restore(); return; }
 
           ctx.strokeStyle = 'hsl(var(--foreground) / 0.5)';
@@ -234,7 +257,8 @@ export function PlannerCanvas({
           ctx.lineTo(endAbs.x, endAbs.y);
           ctx.stroke();
       } else if (rotatableSizableTools.includes(el.type)) {
-          const endAbs = getAbsoluteCoords(el.end);
+          // ... (existing drawing logic for sizable objects)
+           const endAbs = getAbsoluteCoords(el.end);
           if (!endAbs) { ctx.restore(); return; }
 
           const dx = endAbs.x - startAbs.x;
@@ -276,6 +300,7 @@ export function PlannerCanvas({
               ctx.stroke();
           }
       } else if (pointBasedTools.includes(el.type)) {
+          // ... (existing drawing logic for point-based objects)
           const coords = startAbs;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -330,7 +355,7 @@ export function PlannerCanvas({
       }
       ctx.restore();
     });
-  }, [floor.architecturalElements, floorPlanRect, selectedItem, getAbsoluteCoords]);
+  }, [floor.architecturalElements, floorPlanRect, selectedItem, getAbsoluteCoords, getAreaHandles]);
 
   const drawResizeHandles = useCallback((ctx: CanvasRenderingContext2D) => {
     if (!floorPlanRect) return;
@@ -413,7 +438,7 @@ export function PlannerCanvas({
     const px = endAbs.x - startAbs.x;
     const py = endAbs.y - startAbs.y;
     const lenSq = px * px + py * py;
-    if (lenSq === 0) { // start and end are the same point (e.g. for some sizable objects before drag)
+    if (lenSq === 0) {
         const distance = Math.sqrt(Math.pow(clickPoint.x - startAbs.x, 2) + Math.pow(clickPoint.y - startAbs.y, 2));
         return distance < SELECTION_THRESHOLD;
     }
@@ -430,7 +455,18 @@ export function PlannerCanvas({
   const handleMouseDown = (e: React.MouseEvent) => {
     const point = getRelativeCoords(e);
 
-    // Check for resize handle interaction
+    // Check for architectural element resize
+    if (selectedItem && selectedItem.type === 'area') {
+        const handles = getAreaHandles(selectedItem as ArchitecturalElement);
+        for (const [key, pos] of Object.entries(handles)) {
+            if (Math.hypot(point.x - pos.x, point.y - pos.y) < RESIZE_HANDLE_SIZE) {
+                setResizingElement({ element: selectedItem as ArchitecturalElement, handle: key });
+                return;
+            }
+        }
+    }
+
+    // Check for floor plan resize
     if (floorPlanRect) {
       const { x, y, width, height } = floorPlanRect;
       const handles = {
@@ -445,11 +481,15 @@ export function PlannerCanvas({
       }
     }
     
-    // Check for architectural element interaction first (as they might be "under" devices)
+    // Check for architectural element interaction first
     for (const el of [...floor.architecturalElements].reverse()) {
         if (isPointOnElement(point, el)) {
             onSelectItem(el);
-            // We could add dragging for arch elements here in the future
+            setDraggingElement(el);
+            const startAbs = getAbsoluteCoords(el.start);
+            if (startAbs) {
+                setDragOffset({ x: point.x - startAbs.x, y: point.y - startAbs.y });
+            }
             return;
         }
     }
@@ -486,44 +526,57 @@ export function PlannerCanvas({
       const startPoint = getFloorPlanRelativeCoords(point);
       if (startPoint) {
         const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair', 'elevator', 'fire-escape', 'shaft'];
-        
-        if (selectedArchTool === 'area') {
-            if (!floorPlanRect) return;
-            const defaultSizePx = 150;
-            const startRel = {
-                x: startPoint.x - (defaultSizePx / 2) / floorPlanRect.width,
-                y: startPoint.y - (defaultSizePx / 2) / floorPlanRect.height
-            };
-            const endRel = {
-                x: startPoint.x + (defaultSizePx / 2) / floorPlanRect.width,
-                y: startPoint.y + (defaultSizePx / 2) / floorPlanRect.height
-            };
-            onAddArchElement({
-                id: `arch_${Date.now()}`,
-                type: 'area',
-                start: startRel,
-                end: endRel,
-            });
-        } else if (pointBasedTools.includes(selectedArchTool)) {
-            onAddArchElement({
-                id: `arch_${Date.now()}`,
-                type: selectedArchTool,
-                start: startPoint,
-                end: startPoint,
-            });
-        } else { // line-based tools like wall, window, door, and sizable objects
+        if (pointBasedTools.includes(selectedArchTool)) {
+            onAddArchElement({ id: `arch_${Date.now()}`, type: selectedArchTool, start: startPoint, end: startPoint });
+        } else { // line-based tools, sizable objects, and 'area'
             onSetDrawingState({ isDrawing: true, startPoint });
         }
       }
       return;
     }
     
+    onSelectItem(null); // Deselect if clicking on empty space
     onCanvasClick(e);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const point = getRelativeCoords(e);
+    const relPoint = getFloorPlanRelativeCoords(point);
+
+    // Handle area resizing
+    if (resizingElement && relPoint) {
+        const { element, handle } = resizingElement;
+        const normalizedStart = { x: Math.min(element.start.x, element.end.x), y: Math.min(element.start.y, element.end.y) };
+        const normalizedEnd = { x: Math.max(element.start.x, element.end.x), y: Math.max(element.start.y, element.end.y) };
+        
+        let nextStart = { ...normalizedStart };
+        let nextEnd = { ...normalizedEnd };
+
+        if (handle.includes('l')) { nextStart.x = relPoint.x; }
+        if (handle.includes('r')) { nextEnd.x = relPoint.x; }
+        if (handle.includes('t')) { nextStart.y = relPoint.y; }
+        if (handle.includes('b')) { nextEnd.y = relPoint.y; }
+
+        const updatedElement = { ...element, start: nextStart, end: nextEnd };
+        onUpdateArchElement(updatedElement);
+        setResizingElement({ ...resizingElement, element: updatedElement });
+        return;
+    }
     
+    // Handle architectural element dragging
+    if (draggingElement && relPoint && floorPlanRect) {
+        const newStartAbs = { x: point.x - dragOffset.x, y: point.y - dragOffset.y };
+        const newStartRel = getFloorPlanRelativeCoords(newStartAbs);
+        if (newStartRel) {
+            const widthRel = draggingElement.end.x - draggingElement.start.x;
+            const heightRel = draggingElement.end.y - draggingElement.start.y;
+            const newEndRel = { x: newStartRel.x + widthRel, y: newStartRel.y + heightRel };
+            const updatedElement = { ...draggingElement, start: newStartRel, end: newEndRel };
+            onUpdateArchElement(updatedElement);
+        }
+        return;
+    }
+
     // Handle floor plan resizing
     if (resizingHandle && floorPlanRect) {
       let { x, y, width, height } = floorPlanRect;
@@ -543,40 +596,46 @@ export function PlannerCanvas({
     }
 
     // Handle device dragging
-    if (draggingDevice && floorPlanRect) {
-      const newAbsX = point.x - dragOffset.x;
-      const newAbsY = point.y - dragOffset.y;
-      const newRelX = (newAbsX - floorPlanRect.x) / floorPlanRect.width;
-      const newRelY = (newAbsY - floorPlanRect.y) / floorPlanRect.height;
-      
-      onUpdateDevice({ ...draggingDevice, x: newRelX, y: newRelY });
+    if (draggingDevice && floorPlanRect && relPoint) {
+      onUpdateDevice({ ...draggingDevice, x: relPoint.x, y: relPoint.y });
       return;
     }
-    
-    // Handle architecture drawing preview (can be added later)
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (drawingState.isDrawing && drawingState.startPoint && selectedArchTool) {
       const endPoint = getFloorPlanRelativeCoords(getRelativeCoords(e));
       if (endPoint) {
+          const start = drawingState.startPoint;
+          const finalStart = { x: Math.min(start.x, endPoint.x), y: Math.min(start.y, endPoint.y) };
+          const finalEnd = { x: Math.max(start.x, endPoint.x), y: Math.max(start.y, endPoint.y) };
+
           onAddArchElement({
               id: `arch_${Date.now()}`,
               type: selectedArchTool,
-              start: drawingState.startPoint,
-              end: endPoint,
+              start: finalStart,
+              end: finalEnd,
           });
       }
       onSetDrawingState({ isDrawing: false, startPoint: null });
     }
+    if (resizingElement) {
+        const { element } = resizingElement;
+        const finalStart = { x: Math.min(element.start.x, element.end.x), y: Math.min(element.start.y, element.end.y) };
+        const finalEnd = { x: Math.max(element.start.x, element.end.x), y: Math.max(element.start.y, element.end.y) };
+        onUpdateArchElement({ ...element, start: finalStart, end: finalEnd });
+    }
+
     setDraggingDevice(null);
     setResizingHandle(null);
+    setDraggingElement(null);
+    setResizingElement(null);
   };
 
   return (
     <div
       ref={containerRef}
-      className="w-full h-full relative bg-muted/20"
+      className="w-full h-full relative bg-muted/20 cursor-crosshair"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

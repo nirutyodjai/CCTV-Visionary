@@ -1,6 +1,6 @@
 
 
-import type { AnyDevice, RackContainer, SelectableItem, ArchitecturalElementType } from '@/lib/types';
+import type { AnyDevice, RackContainer, SelectableItem, ArchitecturalElementType, ArchitecturalElement } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ interface PropertiesPanelProps {
   onStartCabling: (deviceId: string) => void;
   onViewRack: (rack: RackContainer) => void;
   onRemoveArchElement: (elementId: string) => void;
+  onUpdateArchElement: (element: ArchitecturalElement) => void;
 }
 
 const ARCH_ELEMENT_TYPES: ArchitecturalElementType[] = ['wall', 'door', 'window', 'table', 'chair', 'elevator', 'fire-escape', 'shaft', 'tree', 'motorcycle', 'car', 'supercar', 'area'];
@@ -34,10 +35,11 @@ const ARCH_ELEMENT_NAMES: Record<ArchitecturalElementType, string> = {
 };
 
 
-export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, onStartCabling, onViewRack, onRemoveArchElement }: PropertiesPanelProps) {
+export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, onStartCabling, onViewRack, onRemoveArchElement, onUpdateArchElement }: PropertiesPanelProps) {
   
   const isDevice = selectedItem && !ARCH_ELEMENT_TYPES.includes(selectedItem.type as ArchitecturalElementType);
   const selectedDevice = isDevice ? selectedItem as AnyDevice : null;
+  const isArea = selectedItem?.type === 'area';
 
   const handleChange = (key: keyof AnyDevice, value: any) => {
       if(selectedDevice){
@@ -48,11 +50,12 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
       }
   };
 
-  const handleRemove = () => {
-      if(selectedDevice) {
-          onRemoveDevice(selectedDevice.id);
-      }
-  }
+  const handleArchChange = (key: keyof ArchitecturalElement, value: any) => {
+    if(selectedItem && !isDevice){
+        const updatedElement = { ...selectedItem, [key]: value } as ArchitecturalElement;
+        onUpdateArchElement(updatedElement);
+    }
+  };
 
   const renderSpecificFields = () => {
     if (!selectedDevice) return null;
@@ -178,7 +181,7 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
                 <Button variant="outline" className="w-full" onClick={() => onStartCabling(selectedDevice.id)}>
                     <Cable /> Start Cabling
                 </Button>
-                <Button variant="destructive" className="w-full" onClick={handleRemove}>
+                <Button variant="destructive" className="w-full" onClick={() => onRemoveDevice(selectedDevice.id)}>
                     <Trash2/> Delete Device
                 </Button>
             </div>
@@ -186,7 +189,7 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
         ) : ( // Architectural Element View
         <>
             <div className="flex-1 overflow-y-auto p-4">
-                <Accordion type="multiple" defaultValue={['general']} className="w-full">
+                <Accordion type="multiple" defaultValue={['general', 'appearance']} className="w-full">
                     <AccordionItem value="general">
                         <AccordionTrigger>General</AccordionTrigger>
                         <AccordionContent className="space-y-4 pt-2">
@@ -196,6 +199,23 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
                             </div>
                         </AccordionContent>
                     </AccordionItem>
+                    {isArea && (
+                        <AccordionItem value="appearance">
+                            <AccordionTrigger>Appearance</AccordionTrigger>
+                            <AccordionContent className="space-y-4 pt-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="element-color">Area Color</Label>
+                                    <Input
+                                        id="element-color"
+                                        type="color"
+                                        value={(selectedItem as ArchitecturalElement).color || '#3b82f6'}
+                                        onChange={(e) => handleArchChange('color', e.target.value)}
+                                        className="h-10 p-1"
+                                    />
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    )}
                 </Accordion>
             </div>
             <div className="p-4 border-t border-border space-y-2">

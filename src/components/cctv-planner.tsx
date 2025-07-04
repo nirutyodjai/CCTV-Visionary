@@ -53,6 +53,7 @@ type Action =
     | { type: 'ADD_CONNECTION', payload: { connection: Connection, buildingId: string, floorId: string } }
     | { type: 'SET_FLOOR_PLAN', payload: { url: string, buildingId: string, floorId: string } }
     | { type: 'ADD_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
+    | { type: 'UPDATE_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
     | { type: 'REMOVE_ARCH_ELEMENT', payload: { elementId: string, buildingId: string, floorId: string } }
     | { type: 'SET_DIAGNOSTICS', payload: { diagnostics: DiagnosticResult['diagnostics'], buildingId: string, floorId: string } }
     | { type: 'ADD_FLOOR', payload: { buildingId: string } }
@@ -141,6 +142,13 @@ function projectReducer(state: ProjectState, action: Action): ProjectState {
                 ...state,
                 buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
                     ...f, architecturalElements: [...f.architecturalElements, action.payload.element]
+                }))
+            };
+        case 'UPDATE_ARCH_ELEMENT':
+             return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, architecturalElements: f.architecturalElements.map(el => el.id === action.payload.element.id ? action.payload.element : el)
                 }))
             };
         case 'REMOVE_ARCH_ELEMENT':
@@ -312,6 +320,11 @@ export function CCTVPlanner() {
     const handleUpdateRack = useCallback((rack: RackContainer) => {
         if (!activeIds.buildingId || !activeIds.floorId) return;
         dispatch({ type: 'UPDATE_RACK', payload: { rack, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+    }, [activeIds.buildingId, activeIds.floorId]);
+
+    const handleUpdateArchElement = useCallback((element: ArchitecturalElement) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'UPDATE_ARCH_ELEMENT', payload: { element, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
     }, [activeIds.buildingId, activeIds.floorId]);
 
 
@@ -579,6 +592,7 @@ export function CCTVPlanner() {
             onStartCabling={(deviceId) => setCablingMode({ enabled: true, fromDeviceId: deviceId })}
             onViewRack={() => setRackViewOpen(true)}
             onRemoveArchElement={handleRemoveArchElement}
+            onUpdateArchElement={handleUpdateArchElement}
         />
     );
 
@@ -729,6 +743,7 @@ export function CCTVPlanner() {
                                     drawingState={drawingState}
                                     onSetDrawingState={setDrawingState}
                                     onAddArchElement={handleAddArchElement}
+                                    onUpdateArchElement={handleUpdateArchElement}
                                     floorPlanRect={floorPlanRect}
                                     onUpdateFloorPlanRect={handleUpdateFloorPlanRect}
                                 />
