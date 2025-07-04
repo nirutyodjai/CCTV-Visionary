@@ -7,6 +7,10 @@ import { generateLogicalTopologyLayout as generateLogicalTopologyLayoutFlow, typ
 import { generateReportLayout as generateReportLayoutFlow, type ReportInfo, type ReportLayout } from '@/ai/flows/generate-report-layout';
 import { getDeviceDetails as getDeviceDetailsFlow, type DeviceInfo, type DeviceDetails } from '@/ai/flows/get-device-details';
 import { runPlanDiagnostics as runPlanDiagnosticsFlow, type Plan, type DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
+import type { ProjectState } from '@/lib/types';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+
 
 // Helper to wrap flow calls for consistent error handling
 async function safeFlowCall<TInput, TOutput>(
@@ -50,4 +54,44 @@ export async function getDeviceDetailsAction(input: DeviceInfo) {
 
 export async function runPlanDiagnosticsAction(plan: Plan) {
     return safeFlowCall('runPlanDiagnostics', runPlanDiagnosticsFlow, plan);
+}
+
+
+// New actions for project management
+export async function listProjectsAction(): Promise<{ success: true; data: Pick<ProjectState, 'id' | 'projectName'>[] } | { success: false; error: string }> {
+    try {
+        const projectsCol = collection(db, 'projects');
+        const projectSnapshot = await getDocs(projectsCol);
+        const projectList = projectSnapshot.docs.map(doc => ({
+            id: doc.id,
+            projectName: doc.data().projectName || 'Untitled Project'
+        }));
+        return { success: true, data: projectList };
+    } catch (error: any) {
+        console.error(`Error in listProjectsAction:`, error);
+        return { success: false, error: error.message || `An unexpected error occurred.` };
+    }
+}
+
+export async function deleteProjectAction(projectId: string): Promise<{ success: true } | { success: false; error: string }> {
+    try {
+        await deleteDoc(doc(db, "projects", projectId));
+        return { success: true };
+    } catch (error: any) {
+        console.error(`Error in deleteProjectAction:`, error);
+        return { success: false, error: error.message || `An unexpected error occurred.` };
+    }
+}
+
+export async function updateProjectNameAction(projectId: string, newName: string): Promise<{ success: true } | { success: false; error: string }> {
+    try {
+        const projectRef = doc(db, "projects", projectId);
+        await updateDoc(projectRef, {
+            projectName: newName
+        });
+        return { success: true };
+    } catch (error: any) {
+        console.error(`Error in updateProjectNameAction:`, error);
+        return { success: false, error: error.message || `An unexpected error occurred.` };
+    }
 }

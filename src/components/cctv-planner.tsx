@@ -16,7 +16,7 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Sun, Moon, Network, Save, FolderOpen, Loader2 } from 'lucide-react';
+import { Sun, Moon, Network, Save, Loader2, FolderKanban } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
 import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
@@ -28,6 +28,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useIsMobile } from '@/hooks/use-mobile';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { ProjectManager } from './sidebar/project-manager';
 
 
 type Action =
@@ -143,7 +144,7 @@ export function CCTVPlanner() {
         vlans: [],
         subnets: [],
     });
-    const [isMounted, setIsMounted] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
@@ -153,6 +154,7 @@ export function CCTVPlanner() {
     const [drawingState, setDrawingState] = useState<{ isDrawing: boolean, startPoint: Point | null }>({ isDrawing: false, startPoint: null });
     const [floorPlanRect, setFloorPlanRect] = useState<DOMRect | null>(null);
     const [isTopologyViewOpen, setTopologyViewOpen] = useState(false);
+    const [isProjectManagerOpen, setProjectManagerOpen] = useState(false);
     const [isRackViewOpen, setRackViewOpen] = useState(false);
     const isMobile = useIsMobile();
     
@@ -161,7 +163,7 @@ export function CCTVPlanner() {
     const [isSuggesting, setIsSuggesting] = useState(false);
     const [isDiagnosing, setIsDiagnosing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    
 
 
     // System Status states
@@ -171,18 +173,18 @@ export function CCTVPlanner() {
     useEffect(() => {
         // Defer state initialization to the client to prevent hydration mismatch
         dispatch({ type: 'LOAD_PROJECT', payload: createInitialState() });
-        setIsMounted(true);
+        setIsLoading(false);
     }, []);
 
     useEffect(() => {
-        if (isMounted && !activeIds.buildingId && projectState.buildings.length > 0) {
+        if (!isLoading && !activeIds.buildingId && projectState.buildings.length > 0) {
             const firstBuilding = projectState.buildings[0];
             if (firstBuilding && firstBuilding.floors.length > 0) {
                 const firstFloor = firstBuilding.floors[0];
                 setActiveIds({ buildingId: firstBuilding.id, floorId: firstFloor.id });
             }
         }
-    }, [isMounted, projectState.buildings, activeIds.buildingId]);
+    }, [isLoading, projectState.buildings, activeIds.buildingId]);
 
     const activeBuilding = useMemo(() => projectState.buildings.find(b => b.id === activeIds.buildingId), [projectState.buildings, activeIds.buildingId]);
     const activeFloor = useMemo(() => activeBuilding?.floors.find(f => f.id === activeIds.floorId), [activeBuilding, activeIds.floorId]);
@@ -398,8 +400,7 @@ export function CCTVPlanner() {
         }
     };
 
-    const handleLoadProject = async () => {
-        const projectId = prompt("กรุณาใส่ Project ID ที่ต้องการโหลด:");
+    const handleLoadProject = async (projectId: string) => {
         if (!projectId) return;
 
         setIsLoading(true);
@@ -448,7 +449,7 @@ export function CCTVPlanner() {
         }
     }
 
-    if (!isMounted) {
+    if (isLoading) {
         return (
             <div className="w-full h-screen flex items-center justify-center bg-background">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -522,8 +523,8 @@ export function CCTVPlanner() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button variant="outline" onClick={() => setTopologyViewOpen(true)}><Network /> View Topology</Button>
-                                <Button variant="outline" onClick={handleLoadProject} disabled={isLoading || isSaving}>
-                                    {isLoading ? <Loader2 className="animate-spin"/> : <FolderOpen/>} Load
+                                <Button variant="outline" onClick={() => setProjectManagerOpen(true)} disabled={isLoading || isSaving}>
+                                    <FolderKanban/> จัดการโครงการ
                                 </Button>
                                 <Button onClick={handleSaveProject} disabled={isSaving || isLoading}>
                                     {isSaving ? <Loader2 className="animate-spin"/> : <Save />} Save
@@ -594,6 +595,13 @@ export function CCTVPlanner() {
                 onClose={() => setRackViewOpen(false)}
                 onUpdateRack={handleUpdateRack}
              />
+
+            <ProjectManager
+                isOpen={isProjectManagerOpen}
+                onClose={() => setProjectManagerOpen(false)}
+                onLoadProject={handleLoadProject}
+                currentProjectId={projectState.id}
+            />
         </SidebarProvider>
     );
 }
