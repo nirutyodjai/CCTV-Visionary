@@ -709,16 +709,14 @@ export function CCTVPlanner() {
                             <BillOfMaterials project={projectState} />
                         </div>
                     </SidebarContent>
-                    <SidebarFooter className="p-0 border-t border-border mt-auto">
-                        <SidebarToggle />
-                    </SidebarFooter>
                 </Sidebar>
                 
                 <div className="flex-1 flex min-w-0">
                     <SidebarInset className="flex-1 flex flex-col">
                         <div className="h-16 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-4 min-w-0">
                                 <SidebarTrigger className="md:hidden" />
+                                <SidebarToggle />
                                  <h2 className="text-lg font-semibold hidden md:block truncate">
                                     {activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "กรุณาเลือกแบบแปลน"}
                                 </h2>
