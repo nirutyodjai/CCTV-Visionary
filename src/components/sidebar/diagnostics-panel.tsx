@@ -41,10 +41,10 @@ export function DiagnosticsPanel({ diagnostics, onRunDiagnostics, isLoading }: D
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between p-4">
+      <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
         <div>
-          <CardTitle className="text-base">AI ตรวจสอบแบบแปลน</CardTitle>
-          <CardDescription className="text-xs">
+          <CardTitle className="text-sm font-semibold">AI ตรวจสอบแบบแปลน</CardTitle>
+          <CardDescription className="text-xs pt-1">
             วิเคราะห์ความถูกต้องของระบบ
           </CardDescription>
         </div>
@@ -52,7 +52,7 @@ export function DiagnosticsPanel({ diagnostics, onRunDiagnostics, isLoading }: D
           {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
         </Button>
       </CardHeader>
-      <CardContent className="p-4 pt-0 space-y-2">
+      <CardContent className="p-3 space-y-2">
         {sortedDiagnostics.length === 0 && (
             <div className="text-sm text-center text-muted-foreground py-4">
                 กดปุ่มรีเฟรชเพื่อเริ่มการวิเคราะห์

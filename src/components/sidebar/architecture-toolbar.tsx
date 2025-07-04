@@ -20,10 +20,10 @@ interface ArchitectureToolbarProps {
 export function ArchitectureToolbar({ selectedTool, onSelectTool }: ArchitectureToolbarProps) {
   return (
     <Card>
-      <CardHeader className="p-4">
-        <CardTitle className="text-base">เครื่องมือวาดแบบแปลน</CardTitle>
+      <CardHeader className="p-3 border-b">
+        <CardTitle className="text-sm font-semibold">เครื่องมือวาดแบบแปลน</CardTitle>
       </CardHeader>
-      <CardContent className="p-4 pt-0 grid grid-cols-3 gap-2">
+      <CardContent className="p-3 grid grid-cols-3 gap-2">
         {tools.map((tool) => (
           <Button
             key={tool.type}

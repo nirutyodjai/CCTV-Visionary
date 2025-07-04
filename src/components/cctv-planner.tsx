@@ -40,12 +40,31 @@ type Action =
     | { type: 'SET_DIAGNOSTICS', payload: { diagnostics: DiagnosticResult['diagnostics'], buildingId: string, floorId: string } }
     | { type: 'UPDATE_RACK', payload: { rack: RackContainer, buildingId: string, floorId: string } };
 
-const initialState: ProjectState = {
-    projectName: 'New CCTV Plan',
-    buildings: [],
-    vlans: [],
-    subnets: [],
-};
+function createInitialState(): ProjectState {
+    const initialFloor: Floor = {
+        id: 'floor_starter_1',
+        name: 'ชั้น 1',
+        floorPlanUrl: null,
+        devices: [],
+        connections: [],
+        architecturalElements: [],
+        diagnostics: [],
+    };
+
+    const initialBuilding: Building = {
+        id: 'bld_starter_1',
+        name: 'อาคาร 1',
+        floors: [initialFloor],
+    };
+
+    return {
+        projectName: 'โครงการใหม่',
+        buildings: [initialBuilding],
+        vlans: [],
+        subnets: [],
+    };
+}
+
 
 function projectReducer(state: ProjectState, action: Action): ProjectState {
      // Helper function to update a specific floor
@@ -140,8 +159,8 @@ const initialChecks: SystemCheck[] = [
 
 
 export function CCTVPlanner() {
-    const [projectState, dispatch] = useReducer(projectReducer, initialState);
-    const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
+    const [projectState, dispatch] = useReducer(projectReducer, createInitialState());
+    const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: 'bld_starter_1', floorId: 'floor_starter_1' });
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const [selectedDevice, setSelectedDevice] = useState<AnyDevice | null>(null);
@@ -162,21 +181,13 @@ export function CCTVPlanner() {
     const [systemStatuses, setSystemStatuses] = useState<SystemCheck[]>(initialChecks);
     const [isCheckingSystem, setIsCheckingSystem] = useState(false);
 
-    useEffect(() => {
-        const demoProject = generateDemoProject();
-        dispatch({ type: 'LOAD_PROJECT', payload: demoProject });
-        if (demoProject.buildings.length > 0 && demoProject.buildings[0].floors.length > 0) {
-            setActiveIds({
-                buildingId: demoProject.buildings[0].id,
-                floorId: demoProject.buildings[0].floors[0].id
-            });
-        }
-    }, []);
-
     const activeBuilding = useMemo(() => projectState.buildings.find(b => b.id === activeIds.buildingId), [projectState.buildings, activeIds.buildingId]);
     const activeFloor = useMemo(() => activeBuilding?.floors.find(f => f.id === activeIds.floorId), [activeBuilding, activeIds.floorId]);
 
     const handleFloorSelect = (buildingId: string, floorId: string) => {
+        if (activeIds.floorId !== floorId) {
+            setFloorPlanRect(null); // Reset canvas rect when floor changes
+        }
         setActiveIds({ buildingId, floorId });
         setSelectedDevice(null);
     };
@@ -386,7 +397,7 @@ export function CCTVPlanner() {
     return (
         <SidebarProvider>
             <div className="w-full h-screen flex bg-background text-foreground">
-                <Sidebar className="flex flex-col border-r border-border bg-card shadow-lg overflow-y-auto">
+                <Sidebar className="flex flex-col border-r border-border bg-card text-card-foreground shadow-lg overflow-y-auto">
                     <SidebarContent className="p-0">
                          <div className="p-4 border-b border-border flex justify-between items-center">
                             <div>
@@ -482,9 +493,9 @@ export function CCTVPlanner() {
             {isMobile && (
                  <Sheet open={!!selectedDevice} onOpenChange={(isOpen) => !isOpen && setSelectedDevice(null)}>
                     <SheetContent className="w-[85vw] p-0 border-l">
-                        <SheetHeader className="sr-only">
+                         <SheetHeader className="p-4 border-b">
                             <SheetTitle>Device Properties</SheetTitle>
-                        </SheetHeader>
+                         </SheetHeader>
                         {propertiesPanel}
                     </SheetContent>
                 </Sheet>

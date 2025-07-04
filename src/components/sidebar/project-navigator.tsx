@@ -18,8 +18,8 @@ export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect }: Pr
   }, [buildings]);
 
   return (
-    <div className="p-2">
-      <h3 className="text-lg font-semibold mb-2">Project Navigator</h3>
+    <div>
+      <h3 className="text-sm font-semibold mb-2 px-2 uppercase text-muted-foreground">Project Navigator</h3>
       <Accordion 
         type="multiple" 
         value={openItems}
