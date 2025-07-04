@@ -16,7 +16,7 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Sun, Moon, Network, Save, Loader2, FolderKanban, ChevronDown, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Network, Save, Loader2, FolderKanban, ChevronDown, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
 import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction, listProjectsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
@@ -42,6 +42,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PropertiesToggleButton from '@/components/ui/properties-toggle-button';
 import SaharaButton from '@/components/sahara-button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 
 type Action =
@@ -215,7 +216,6 @@ export function CCTVPlanner() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
     const { toast } = useToast();
-    const { theme, setTheme } = useTheme();
     const [selectedItem, setSelectedItem] = useState<SelectableItem | null>(null);
     const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
     const [selectedArchTool, setSelectedArchTool] = useState<ArchitecturalElementType | null>(null);
@@ -719,10 +719,13 @@ export function CCTVPlanner() {
                                     {activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "กรุณาเลือกแบบแปลน"}
                                 </h2>
                             </div>
-                            <PropertiesToggleButton 
-                                isOpen={isPropertiesPanelOpen}
-                                onClick={() => setPropertiesPanelOpen(!isPropertiesPanelOpen)}
-                            />
+                            <div className="flex items-center gap-4">
+                                <ThemeToggle />
+                                <PropertiesToggleButton 
+                                    isOpen={isPropertiesPanelOpen}
+                                    onClick={() => setPropertiesPanelOpen(!isPropertiesPanelOpen)}
+                                />
+                            </div>
                         </div>
 
                         <div className="flex-1 w-full h-full relative">
