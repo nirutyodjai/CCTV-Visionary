@@ -1,8 +1,9 @@
 
-import type { ProjectState } from '@/lib/types';
+import type { ProjectState, AnyDevice, RackDevice, RackContainer } from '@/lib/types';
 import { useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { DEVICE_CONFIG } from '@/lib/device-config';
 
 interface BillOfMaterialsProps {
   project: ProjectState;
@@ -10,11 +11,26 @@ interface BillOfMaterialsProps {
 
 export function BillOfMaterials({ project }: BillOfMaterialsProps) {
   const bom = useMemo(() => {
-    const allDevices = project.buildings.flatMap(b => b.floors.flatMap(f => f.devices));
-    
+    const allDevices: (AnyDevice | RackDevice)[] = [];
+    project.buildings.forEach(building => {
+        building.floors.forEach(floor => {
+            floor.devices.forEach(device => {
+                devices.push(device);
+                if (device.type.startsWith('rack') && (device as RackContainer).devices) {
+                    (device as RackContainer).devices.forEach(rackDevice => {
+                        devices.push(rackDevice);
+                    });
+                }
+            });
+        });
+    });
+
     const summary = allDevices.reduce((acc, device) => {
+      const config = DEVICE_CONFIG[device.type];
+      if (!config) return acc;
+
       if (!acc[device.type]) {
-        acc[device.type] = { count: 0, total_price: 0, name: device.label.split('-')[0] };
+        acc[device.type] = { count: 0, total_price: 0, name: config.name };
       }
       acc[device.type].count++;
       acc[device.type].total_price += device.price || 0;
