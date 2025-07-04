@@ -1,7 +1,13 @@
-import { action } from '@genkit-ai/core';
+'use server';
+/**
+ * @fileOverview Generates a 2D layout for a network topology diagram.
+ *
+ * - generateLogicalTopologyLayout - A function that arranges device nodes for clear visualization.
+ * - LayoutInputSchema - The input type for the generateLogicalTopologyLayout function.
+ * - LayoutOutputSchema - The return type for the generateLogicalTopologyLayout function.
+ */
+import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { geminiPro } from '@genkit-ai/googleai';
-import { generate } from '@genkit-ai/ai';
 
 const DeviceNodeSchema = z.object({
   id: z.string(),
@@ -14,31 +20,35 @@ const ConnectionEdgeSchema = z.object({
   to: z.string(),
 });
 
-const LayoutInputSchema = z.object({
+export const LayoutInputSchema = z.object({
   devices: z.array(DeviceNodeSchema),
   connections: z.array(ConnectionEdgeSchema),
 });
+export type LayoutInput = z.infer<typeof LayoutInputSchema>;
 
 const PointSchema = z.object({ x: z.number(), y: z.number() });
 
-const LayoutOutputSchema = z.object({
+export const LayoutOutputSchema = z.object({
   positions: z.record(z.string(), PointSchema), // Record<deviceId, {x, y}>
 });
+export type LayoutOutput = z.infer<typeof LayoutOutputSchema>;
 
-export const generateLogicalTopologyLayout = action(
-  {
-    name: 'generateLogicalTopologyLayout',
-    inputSchema: LayoutInputSchema,
-    outputSchema: LayoutOutputSchema,
-  },
-  async (input) => {
-    const prompt = `
+
+export async function generateLogicalTopologyLayout(input: LayoutInput): Promise<LayoutOutput> {
+    return generateLogicalTopologyLayoutFlow(input);
+}
+
+const generateLayoutPrompt = ai.definePrompt({
+    name: 'generateLayoutPrompt',
+    input: { schema: LayoutInputSchema },
+    output: { schema: LayoutOutputSchema },
+    prompt: `
       You are an expert in graph visualization. Your task is to generate a 2D layout for a network topology diagram.
       Arrange the nodes (devices) on a 1000x1000 canvas so that the diagram is clean, easy to read, and has minimal edge (connection) crossings.
 
       Here is the network graph data:
-      Nodes (Devices): ${JSON.stringify(input.devices)}
-      Edges (Connections): ${JSON.stringify(input.connections)}
+      Nodes (Devices): {{{json devices}}}
+      Edges (Connections): {{{json connections}}}
 
       Rules:
       1.  Create a hierarchical layout. Core devices like NVRs and main Switches should be at the top or center.
@@ -56,24 +66,27 @@ export const generateLogicalTopologyLayout = action(
           "cam-2": { "x": 800, "y": 500 }
         }
       }
-    `;
+    `,
+});
 
-    const llmResponse = await generate({
-      model: geminiPro,
-      prompt,
-      config: { temperature: 0.2 },
-    });
 
+const generateLogicalTopologyLayoutFlow = ai.defineFlow(
+  {
+    name: 'generateLogicalTopologyLayoutFlow',
+    inputSchema: LayoutInputSchema,
+    outputSchema: LayoutOutputSchema,
+  },
+  async (input) => {
     try {
-      return JSON.parse(llmResponse.text());
-    } catch (e) {
-      console.error("Failed to parse layout response:", e);
-      // Fallback to a random layout if AI fails
-      const positions: Record<string, { x: number; y: number }> = {};
-      input.devices.forEach(d => {
-        positions[d.id] = { x: Math.random() * 1000, y: Math.random() * 1000 };
-      });
-      return { positions };
+        const { output } = await generateLayoutPrompt(input);
+        return output!;
+    } catch(e) {
+        console.error("Failed to parse layout response, generating random layout:", e);
+        const positions: Record<string, { x: number; y: number }> = {};
+        input.devices.forEach(d => {
+            positions[d.id] = { x: Math.random() * 1000, y: Math.random() * 1000 };
+        });
+        return { positions };
     }
   }
 );

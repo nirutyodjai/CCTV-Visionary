@@ -1,69 +1,53 @@
 'use server';
 
-import { flow } from '@genkit-ai/flow';
-import { z } from 'zod';
-import { generateLogicalTopologyLayout as generateLayoutFlow } from '@/ai/flows/generate-logical-topology-layout';
-import { generateReportLayout as generateReportLayoutFlow } from '@/ai/flows/generate-report-layout';
-import { runPlanDiagnostics as runPlanDiagnosticsFlow } from '@/ai/flows/run-plan-diagnostics';
-import { findCablePath as findCablePathFlow, CablePathSchema } from '@/ai/flows/find-cable-path';
-import { getDeviceDetails as getDeviceDetailsFlow } from '@/ai/flows/get-device-details';
+import { analyzeCctvPlan as analyzeCctvPlanFlow, type AnalyzeCctvPlanInput, type AnalyzeCctvPlanOutput } from '@/ai/flows/analyze-cctv-plan';
+import { suggestDevicePlacements as suggestDevicePlacementsFlow, type SuggestDevicePlacementsInput, type SuggestDevicePlacementsOutput } from '@/ai/flows/suggest-device-placements';
+import { findCablePath as findCablePathFlow, type CablePathInput, type CablePathOutput } from '@/ai/flows/find-cable-path';
+import { generateLogicalTopologyLayout as generateLogicalTopologyLayoutFlow, type LayoutInput, type LayoutOutput } from '@/ai/flows/generate-logical-topology-layout';
+import { generateReportLayout as generateReportLayoutFlow, type ReportInfo, type ReportLayout } from '@/ai/flows/generate-report-layout';
+import { getDeviceDetails as getDeviceDetailsFlow, type DeviceInfo, type DeviceDetails } from '@/ai/flows/get-device-details';
+import { runPlanDiagnostics as runPlanDiagnosticsFlow, type Plan, type DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
 
-
-async function safeFlowInvoke(flowName: string, flowToRun: any, inputSchema: z.ZodType<any, any>, input: any) {
+// Helper to wrap flow calls for consistent error handling
+async function safeFlowCall<TInput, TOutput>(
+  flowName: string,
+  flow: (input: TInput) => Promise<TOutput>,
+  input: TInput
+): Promise<{ success: true; data: TOutput } | { success: false; error: string }> {
     try {
-        const result = await flow({
-            name: flowName,
-            inputSchema: inputSchema,
-            outputSchema: z.any(),
-            flow: flowToRun,
-        }).invoke(input);
+        const result = await flow(input);
         return { success: true, data: result };
-    } catch (error) {
+    } catch (error: any) {
         console.error(`Error in ${flowName} action:`, error);
-        return { success: false, error: error.message || 'An unexpected error occurred in the AI flow.' };
+        return { success: false, error: error.message || `An unexpected error occurred in ${flowName}.` };
     }
 }
 
-export async function generateLogicalTopologyLayoutAction(input: any) {
-    return await safeFlowInvoke('generateLogicalTopologyLayoutFlow', generateLayoutFlow, z.any(), input);
+// Exported Server Actions
+export async function analyzeCctvPlanAction(input: AnalyzeCctvPlanInput) {
+    return safeFlowCall('analyzeCctvPlan', analyzeCctvPlanFlow, input);
 }
 
-export async function generateReportLayoutAction(input: any) {
-    return await safeFlowInvoke('generateReportLayoutFlow', generateReportLayoutFlow, z.any(), input);
+export async function suggestDevicePlacementsAction(input: SuggestDevicePlacementsInput) {
+    return safeFlowCall('suggestDevicePlacements', suggestDevicePlacementsFlow, input);
 }
 
-export async function runPlanDiagnosticsAction(plan: any) {
-    return await safeFlowInvoke('runPlanDiagnosticsFlow', runPlanDiagnosticsFlow, z.any(), plan);
+export async function findCablePathAction(input: CablePathInput) {
+    return safeFlowCall('findCablePath', findCablePathFlow, input);
 }
 
-export async function findCablePathAction(input: z.infer<typeof CablePathSchema>) {
-    return await safeFlowInvoke('findCablePathFlow', findCablePathFlow, CablePathSchema, input);
+export async function generateLogicalTopologyLayoutAction(input: LayoutInput) {
+    return safeFlowCall('generateLogicalTopologyLayout', generateLogicalTopologyLayoutFlow, input);
 }
 
-export async function getDeviceDetails(prevState: any, formData: FormData) {
-    // This action uses useFormState, so its return signature is different
-    try {
-        const parsed = z.object({
-            ip: z.string().ip().optional(),
-            username: z.string().optional(),
-            deviceType: z.enum(['cctv', 'nvr', 'switch']),
-        }).safeParse(Object.fromEntries(formData));
+export async function generateReportLayoutAction(input: ReportInfo) {
+    return safeFlowCall('generateReportLayout', generateReportLayoutFlow, input);
+}
 
-        if (!parsed.success) {
-            return { success: false, message: 'Invalid input.' };
-        }
+export async function getDeviceDetailsAction(input: DeviceInfo) {
+     return safeFlowCall('getDeviceDetails', getDeviceDetailsFlow, input);
+}
 
-        const result = await flow({
-            name: 'getDeviceDetailsFlow',
-            inputSchema: z.any(),
-            outputSchema: z.any(),
-            flow: getDeviceDetailsFlow,
-        }).invoke(parsed.data);
-
-        return { success: true, ...result };
-
-    } catch (error) {
-        console.error('Error in getDeviceDetails action:', error);
-        return { success: false, message: error.message || 'Failed to connect to the device.' };
-    }
+export async function runPlanDiagnosticsAction(plan: Plan) {
+    return safeFlowCall('runPlanDiagnostics', runPlanDiagnosticsFlow, plan);
 }

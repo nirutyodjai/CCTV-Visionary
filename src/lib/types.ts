@@ -1,4 +1,7 @@
 
+
+import type { DiagnosticResult } from "@/ai/flows/run-plan-diagnostics";
+
 export type DeviceType =
   | 'cctv-bullet'
   | 'cctv-dome'
@@ -63,9 +66,16 @@ export interface SwitchDevice extends BaseDevice {
   uHeight: number;
 }
 
-export interface MonitorDevice extends BaseDevice {
-  type: 'monitor';
-  size: string;
+// Devices that can be placed inside a rack
+export interface RackDevice {
+    id: string;
+    type: DeviceType;
+    label: string;
+    uPosition: number; // Position from the bottom, starts at 1
+    uHeight: number;
+    price?: number;
+    powerConsumption?: number;
+    powerCapacity?: number; // For UPS/PDU
 }
 
 // Container devices
@@ -73,20 +83,9 @@ export interface RackContainer extends BaseDevice {
   type: 'rack-indoor' | 'rack-outdoor';
   rack_size: string; // e.g. '9U', '42U'
   ip_rating?: string;
-  devices?: RackDevice[];
+  devices: RackDevice[];
 }
 
-// Devices that can be placed inside a rack
-export interface RackDevice {
-    id: string;
-    type: DeviceType;
-    label: string;
-    uPosition: number;
-    uHeight: number;
-    price?: number;
-    powerConsumption?: number;
-    powerCapacity?: number;
-}
 
 export type AnyDevice = BaseDevice & { [key: string]: any };
 export type Device = AnyDevice;
@@ -115,7 +114,7 @@ export interface Floor {
   devices: AnyDevice[];
   connections: Connection[];
   architecturalElements: ArchitecturalElement[];
-  floorPlanRect?: DOMRect | null;
+  diagnostics: DiagnosticResult['diagnostics'];
 }
 
 export interface Building {
