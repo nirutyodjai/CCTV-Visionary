@@ -1,4 +1,4 @@
-
+import * as React from 'react';
 import type { Building } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -10,13 +10,20 @@ interface ProjectNavigatorProps {
 }
 
 export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect }: ProjectNavigatorProps) {
+  const [openItems, setOpenItems] = React.useState<string[]>([]);
+
+  // When buildings are loaded or change, update the open accordion items
+  React.useEffect(() => {
+    setOpenItems(buildings.map(b => b.id));
+  }, [buildings]);
+
   return (
     <div className="p-2">
       <h3 className="text-lg font-semibold mb-2">Project Navigator</h3>
       <Accordion 
         type="multiple" 
-        defaultValue={buildings.map(b => b.id)} 
-        key={buildings.map(b => b.id).join(',')}
+        value={openItems}
+        onValueChange={setOpenItems}
         className="w-full"
       >
         {buildings.map((building) => (
