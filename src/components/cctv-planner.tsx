@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useReducer, useState, useMemo, useEffect, useCallback } from 'react';
@@ -40,7 +39,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import SaharaButton from './sahara-button';
+import SaharaButton from '@/components/sahara-button';
+import PropertiesToggleButton from '@/components/ui/properties-toggle-button';
 
 
 type Action =
@@ -711,15 +711,10 @@ export function CCTVPlanner() {
                                     {activeFloor ? `${activeBuilding?.name} - ${activeFloor?.name}` : "กรุณาเลือกแบบแปลน"}
                                 </h2>
                             </div>
-                            <Button 
-                                variant="outline" 
-                                size="icon" 
-                                className="hidden md:inline-flex" 
+                            <PropertiesToggleButton 
+                                isOpen={isPropertiesPanelOpen}
                                 onClick={() => setPropertiesPanelOpen(!isPropertiesPanelOpen)}
-                            >
-                                {isPropertiesPanelOpen ? <PanelRightClose /> : <PanelRightOpen />}
-                                <span className="sr-only">Toggle Properties Panel</span>
-                            </Button>
+                            />
                         </div>
 
                         <div className="flex-1 w-full h-full relative">
@@ -795,5 +790,3 @@ export function CCTVPlanner() {
         </SidebarProvider>
     );
 }
-
-    
