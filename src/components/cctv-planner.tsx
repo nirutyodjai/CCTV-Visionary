@@ -16,7 +16,7 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Sun, Moon, Network, Save, FolderOpen, PanelLeft } from 'lucide-react';
+import { Sun, Moon, Network, Save, FolderOpen } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
 import { analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
@@ -24,7 +24,7 @@ import { LogicalTopologyView } from '@/components/topology/logical-topology-view
 import { RackElevationView } from '@/components/rack/rack-elevation-view';
 import { SystemStatusPanel, type SystemCheck } from './sidebar/system-status-panel';
 import { Sidebar, SidebarProvider, SidebarContent, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -483,6 +483,9 @@ export function CCTVPlanner() {
             {isMobile && (
                  <Sheet open={!!selectedDevice} onOpenChange={(isOpen) => !isOpen && setSelectedDevice(null)}>
                     <SheetContent className="w-[85vw] p-0 border-l">
+                        <SheetHeader className="sr-only">
+                            <SheetTitle>Device Properties</SheetTitle>
+                        </SheetHeader>
                         {propertiesPanel}
                     </SheetContent>
                 </Sheet>
