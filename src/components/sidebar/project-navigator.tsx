@@ -2,16 +2,17 @@ import * as React from 'react';
 import type { Building } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Building2 } from 'lucide-react';
+import { Building2, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ProjectNavigatorProps {
   buildings: Building[];
   activeFloorId: string | null;
   onFloorSelect: (buildingId: string, floorId: string) => void;
+  onAddFloor: (buildingId: string) => void;
 }
 
-export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect }: ProjectNavigatorProps) {
+export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect, onAddFloor }: ProjectNavigatorProps) {
   const [openItems, setOpenItems] = React.useState<string[]>([]);
 
   // When buildings are loaded or change, keep the accordions open
@@ -51,6 +52,14 @@ export function ProjectNavigator({ buildings, activeFloorId, onFloorSelect }: Pr
                             {floor.name}
                         </Button>
                         ))}
+                         <Button
+                            variant="ghost"
+                            className="w-full justify-start h-8 text-xs font-normal text-muted-foreground"
+                            onClick={() => onAddFloor(building.id)}
+                        >
+                            <PlusCircle className="w-3 h-3 mr-2" />
+                            เพิ่มชั้น
+                        </Button>
                     </div>
                     </AccordionContent>
                 </AccordionItem>

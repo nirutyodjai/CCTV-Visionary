@@ -53,6 +53,7 @@ type Action =
     | { type: 'SET_FLOOR_PLAN', payload: { url: string, buildingId: string, floorId: string } }
     | { type: 'ADD_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
     | { type: 'SET_DIAGNOSTICS', payload: { diagnostics: DiagnosticResult['diagnostics'], buildingId: string, floorId: string } }
+    | { type: 'ADD_FLOOR', payload: { buildingId: string } }
     | { type: 'UPDATE_RACK', payload: { rack: RackContainer, buildingId: string, floorId: string } };
 
 
@@ -138,6 +139,28 @@ function projectReducer(state: ProjectState, action: Action): ProjectState {
                     ...f, diagnostics: action.payload.diagnostics
                 }))
             };
+        case 'ADD_FLOOR': {
+            const { buildingId } = action.payload;
+            return {
+                ...state,
+                buildings: state.buildings.map(b => {
+                    if (b.id !== buildingId) {
+                        return b;
+                    }
+                    const newFloorNumber = b.floors.length + 1;
+                    const newFloor: Floor = {
+                        id: `floor_${b.id}_${Date.now()}`,
+                        name: `ชั้น ${newFloorNumber}`,
+                        floorPlanUrl: null,
+                        devices: [],
+                        connections: [],
+                        architecturalElements: [],
+                        diagnostics: [],
+                    };
+                    return { ...b, floors: [...b.floors, newFloor] };
+                })
+            };
+        }
         default:
             return state;
     }
@@ -289,6 +312,14 @@ export function CCTVPlanner() {
     const handleAddArchElement = (elem: ArchitecturalElement) => {
        if (!activeIds.buildingId || !activeIds.floorId) return;
        dispatch({ type: 'ADD_ARCH_ELEMENT', payload: { element: elem, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+    };
+
+    const handleAddFloor = (buildingId: string) => {
+        dispatch({
+            type: 'ADD_FLOOR',
+            payload: { buildingId }
+        });
+        toast({ title: 'เพิ่มชั้นใหม่แล้ว' });
     };
     
     const handleUpdateFloorPlanRect = useCallback((rect: DOMRect) => {
@@ -583,6 +614,7 @@ export function CCTVPlanner() {
                                 buildings={projectState.buildings}
                                 activeFloorId={activeIds.floorId}
                                 onFloorSelect={handleFloorSelect}
+                                onAddFloor={handleAddFloor}
                             />
                             
                             <DevicesToolbar onSelectDevice={handleAddDevice} />
