@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Minus, DoorOpen, PanelTop, Armchair, RectangleVertical, ShieldAlert, Layers, TreeDeciduous, Car, Bike, CarFront } from 'lucide-react';
+import { Minus, DoorOpen, PanelTop, Armchair, RectangleVertical, ShieldAlert, Layers, TreeDeciduous, Car, Bike, CarFront, RectangleHorizontal } from 'lucide-react';
 import type { ArchitecturalElementType } from '@/lib/types';
 import { TableIcon } from '@/components/icons/table-icon';
 
@@ -20,6 +20,7 @@ const tools: { type: ArchitecturalElementType, name: string; icon: React.ReactNo
   { type: 'car', name: 'รถยนต์', icon: <Car size={20} /> },
   { type: 'motorcycle', name: 'มอเตอร์ไซค์', icon: <Bike size={20} /> },
   { type: 'supercar', name: 'ซุปเปอร์คาร์', icon: <CarFront size={20} /> },
+  { type: 'area', name: 'พื้นที่', icon: <RectangleHorizontal size={20} /> },
 ];
 
 interface ArchitectureToolbarProps {

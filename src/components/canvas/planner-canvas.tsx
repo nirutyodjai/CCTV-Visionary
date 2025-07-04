@@ -182,7 +182,19 @@ export function PlannerCanvas({
 
       const startAbs = { x: floorPlanRect.x + el.start.x * floorPlanRect.width, y: floorPlanRect.y + el.start.y * floorPlanRect.height };
 
-      if (lineBasedTools.includes(el.type)) {
+      if (el.type === 'area') {
+        const endAbs = { x: floorPlanRect.x + el.end.x * floorPlanRect.width, y: floorPlanRect.y + el.end.y * floorPlanRect.height };
+        const width = endAbs.x - startAbs.x;
+        const height = endAbs.y - startAbs.y;
+
+        ctx.fillStyle = 'hsla(var(--primary), 0.2)';
+        ctx.strokeStyle = 'hsla(var(--primary), 0.6)';
+        ctx.lineWidth = 1;
+        
+        ctx.fillRect(startAbs.x, startAbs.y, width, height);
+        ctx.strokeRect(startAbs.x, startAbs.y, width, height);
+
+      } else if (lineBasedTools.includes(el.type)) {
           const endAbs = { x: floorPlanRect.x + el.end.x * floorPlanRect.width, y: floorPlanRect.y + el.end.y * floorPlanRect.height };
           ctx.strokeStyle = 'hsl(var(--foreground) / 0.5)';
           ctx.lineWidth = el.type === 'wall' ? 5 : 3;
