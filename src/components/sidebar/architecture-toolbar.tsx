@@ -3,11 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Minus, DoorOpen, PanelTop, Armchair, Upload, RectangleVertical, ShieldAlert, Layers } from 'lucide-react';
+import { Minus, DoorOpen, PanelTop, Armchair, RectangleVertical, ShieldAlert, Layers, TreeDeciduous, Car, Bike, CarFront } from 'lucide-react';
 import type { ArchitecturalElementType } from '@/lib/types';
 import { TableIcon } from '@/components/icons/table-icon';
 
-const tools: { type: ArchitecturalElementType | 'other', name: string; icon: React.ReactNode }[] = [
+const tools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
   { type: 'wall', name: 'กำแพง', icon: <Minus size={24} /> },
   { type: 'door', name: 'ประตู', icon: <DoorOpen size={20} /> },
   { type: 'window', name: 'หน้าต่าง', icon: <PanelTop size={20} /> },
@@ -16,7 +16,10 @@ const tools: { type: ArchitecturalElementType | 'other', name: string; icon: Rea
   { type: 'elevator', name: 'ลิฟท์', icon: <RectangleVertical size={20} /> },
   { type: 'fire-escape', name: 'ทางหนีไฟ', icon: <ShieldAlert size={20} /> },
   { type: 'shaft', name: 'ช่องชาร์ป', icon: <Layers size={20} /> },
-  { type: 'other', name: 'อื่นๆ', icon: <Upload size={20} /> },
+  { type: 'tree', name: 'ต้นไม้', icon: <TreeDeciduous size={20} /> },
+  { type: 'car', name: 'รถยนต์', icon: <Car size={20} /> },
+  { type: 'motorcycle', name: 'มอเตอร์ไซค์', icon: <Bike size={20} /> },
+  { type: 'supercar', name: 'ซุปเปอร์คาร์', icon: <CarFront size={20} /> },
 ];
 
 interface ArchitectureToolbarProps {
@@ -25,12 +28,7 @@ interface ArchitectureToolbarProps {
 }
 
 export function ArchitectureToolbar({ selectedTool, onSelectTool }: ArchitectureToolbarProps) {
-  const handleToolClick = (type: ArchitecturalElementType | 'other') => {
-    if (type === 'other') {
-      // Placeholder for future icon upload functionality
-      alert('ฟังก์ชันอัปโหลดไอคอนจะถูกเพิ่มในอนาคต');
-      return;
-    }
+  const handleToolClick = (type: ArchitecturalElementType) => {
     onSelectTool(selectedTool === type ? null : type);
   };
   
@@ -39,7 +37,7 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
       <CardHeader className="p-3 border-b">
         <CardTitle className="text-sm font-semibold">เครื่องมือวาดแบบแปลน</CardTitle>
       </CardHeader>
-      <CardContent className="p-3 grid grid-cols-3 gap-2">
+      <CardContent className="p-3 grid grid-cols-4 gap-2">
         {tools.map((tool) => (
           <Button
             key={tool.type}

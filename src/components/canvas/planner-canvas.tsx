@@ -177,28 +177,64 @@ export function PlannerCanvas({
     floor.architecturalElements?.forEach(el => {
       ctx.save();
       const lineBasedTools: ArchitecturalElementType[] = ['wall', 'door', 'window'];
-      
+      const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair', 'elevator', 'fire-escape', 'shaft'];
+      const rotatableSizableTools: ArchitecturalElementType[] = ['tree', 'motorcycle', 'car', 'supercar'];
+
+      const startAbs = { x: floorPlanRect.x + el.start.x * floorPlanRect.width, y: floorPlanRect.y + el.start.y * floorPlanRect.height };
+
       if (lineBasedTools.includes(el.type)) {
+          const endAbs = { x: floorPlanRect.x + el.end.x * floorPlanRect.width, y: floorPlanRect.y + el.end.y * floorPlanRect.height };
           ctx.strokeStyle = 'hsl(var(--foreground) / 0.5)';
-          ctx.lineWidth = 3;
+          ctx.lineWidth = el.type === 'wall' ? 5 : 3;
           if (el.type === 'door' || el.type === 'window') {
               ctx.setLineDash([5, 5]);
           }
-          const startX = floorPlanRect.x + el.start.x * floorPlanRect.width;
-          const startY = floorPlanRect.y + el.start.y * floorPlanRect.height;
-          const endX = floorPlanRect.x + el.end.x * floorPlanRect.width;
-          const endY = floorPlanRect.y + el.end.y * floorPlanRect.height;
           ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          ctx.lineTo(endX, endY);
+          ctx.moveTo(startAbs.x, startAbs.y);
+          ctx.lineTo(endAbs.x, endAbs.y);
           ctx.stroke();
-      } else {
-          // Point-based elements
-          const coords = {
-            x: floorPlanRect.x + el.start.x * floorPlanRect.width,
-            y: floorPlanRect.y + el.start.y * floorPlanRect.height,
-          };
+      } else if (rotatableSizableTools.includes(el.type)) {
+          const endAbs = { x: floorPlanRect.x + el.end.x * floorPlanRect.width, y: floorPlanRect.y + el.end.y * floorPlanRect.height };
+          const dx = endAbs.x - startAbs.x;
+          const dy = endAbs.y - startAbs.y;
+          const size = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+          const rotation = Math.atan2(dy, dx);
           
+          ctx.translate(startAbs.x, startAbs.y);
+          ctx.rotate(rotation);
+
+          if (el.type === 'tree') {
+              const radius = size;
+              ctx.fillStyle = 'hsl(120, 50%, 40%)';
+              ctx.beginPath();
+              ctx.arc(0, 0, radius, 0, Math.PI * 2);
+              ctx.fill();
+          } else if (el.type === 'car' || el.type === 'supercar') {
+              const carLength = size * 2;
+              const carWidth = size;
+              ctx.fillStyle = el.type === 'supercar' ? 'hsl(var(--destructive))' : 'hsl(var(--foreground) / 0.7)';
+              ctx.fillRect(-carLength / 2, -carWidth / 2, carLength, carWidth);
+              // windshield
+              ctx.fillStyle = 'hsl(var(--secondary))';
+              ctx.fillRect(carLength * 0.1, -carWidth/2 * 0.8, carLength * 0.3, carWidth * 0.8);
+          } else if (el.type === 'motorcycle') {
+              const bodyLength = size * 1.8;
+              const bodyHeight = size * 0.3;
+              const wheelRadius = size * 0.4;
+              ctx.fillStyle = 'hsl(var(--foreground) / 0.7)';
+              ctx.strokeStyle = 'hsl(var(--foreground) / 0.9)';
+              ctx.lineWidth = 2;
+              
+              ctx.fillRect(-bodyLength/2, -bodyHeight, bodyLength, bodyHeight);
+              ctx.beginPath();
+              ctx.arc(-bodyLength * 0.35, 0, wheelRadius, 0, 2 * Math.PI);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(bodyLength * 0.35, 0, wheelRadius, 0, 2 * Math.PI);
+              ctx.stroke();
+          }
+      } else if (pointBasedTools.includes(el.type)) {
+          const coords = startAbs;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.font = '10px Sarabun';
@@ -222,7 +258,6 @@ export function PlannerCanvas({
                   ctx.strokeStyle = 'hsl(var(--foreground) / 0.8)';
                   ctx.lineWidth = 2;
                   ctx.strokeRect(rectX, rectY, rectSize, rectSize);
-                  // Draw X inside
                   ctx.beginPath();
                   ctx.moveTo(rectX, rectY);
                   ctx.lineTo(rectX + rectSize, rectY + rectSize);
