@@ -25,29 +25,37 @@ const RadioTileItem = React.forwardRef<
     icon: React.ReactNode
   }
 >(({ className, icon, ...props }, ref) => {
+  // Use a unique ID if one isn't provided, for the label to reference.
+  const id = React.useId();
+  const inputId = props.id || id;
+
   return (
-    <RadioGroupPrimitive.Item
-      ref={ref}
-      {...props}
-      className={cn(className)}
-      asChild
-    >
+    // The label makes the entire area clickable.
+    <label htmlFor={inputId}>
+      {/* The actual radio input is hidden but accessible. */}
+      <RadioGroupPrimitive.Item
+        ref={ref}
+        id={inputId}
+        {...props}
+        className={cn("sr-only peer", className)}
+      />
+      {/* This is the visible part of the tile. */}
       <div
-      className={cn(
+        className={cn(
           "flex flex-col items-center justify-center p-1 w-full h-14 rounded-lg border-2 border-muted bg-card",
           "transition-all shadow-sm cursor-pointer",
-          "text-muted-foreground", // Default icon color
-          // These styles apply based on the state of the 'peer' (the RadioGroup.Item)
-          "data-[state=checked]:border-primary data-[state=checked]:shadow-lg data-[state=checked]:text-primary",
-          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "text-muted-foreground",
+          // These styles apply based on the state of the 'peer' (the radio input)
+          "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-lg peer-data-[state=checked]:text-primary",
+          "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2",
           "hover:border-primary/70"
-      )}
+        )}
       >
-          <div className="w-8 h-8 flex items-center justify-center [&>svg]:w-7 [&>svg]:h-7">
-              {icon}
-          </div>
+        <div className="w-8 h-8 flex items-center justify-center [&>svg]:w-7 [&>svg]:h-7">
+            {icon}
+        </div>
       </div>
-    </RadioGroupPrimitive.Item>
+    </label>
   )
 })
 RadioTileItem.displayName = "RadioTileItem"
