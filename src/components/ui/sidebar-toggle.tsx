@@ -33,14 +33,15 @@ export function SidebarToggle() {
             'absolute top-[2.5px] left-[2.5px] flex h-[25px] w-[40px] items-center justify-start rounded-full bg-gradient-to-br from-[#d9d9d9] to-[#bfbfbf] pl-[7px] shadow-[-2px_-2px_4px_#ffffff,2px_2px_4px_#b0b0b0] transition-all duration-300 ease-in-out',
             'peer-checked:left-[32.5px] peer-checked:bg-gradient-to-br peer-checked:from-[#cfcfcf] peer-checked:to-[#a9a9a9]',
             'dark:bg-gradient-to-br dark:from-gray-700 dark:to-gray-900 dark:shadow-[-2px_-2px_4px_#353535,2px_2px_4px_#1f1f1f]',
-            'dark:peer-checked:from-gray-600 dark:peer-checked:to-gray-800'
+            'dark:peer-checked:from-gray-600 dark:peer-checked:to-gray-800',
+            // Fix: Style child LED from the parent sibling using arbitrary variants
+            'peer-checked:[&>div]:bg-yellow-400 peer-checked:[&>div]:shadow-[0_0_8px_2px_#fbbf24]'
           )}
         >
           {/* LED light */}
           <div
             className={cn(
-              'h-[6px] w-[6px] rounded-full bg-gray-500 shadow-[0_0_5px_1px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out',
-              'peer-checked:bg-yellow-400 peer-checked:shadow-[0_0_8px_2px_#fbbf24]'
+              'h-[6px] w-[6px] rounded-full bg-gray-500 shadow-[0_0_5px_1px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out'
             )}
           />
         </div>
