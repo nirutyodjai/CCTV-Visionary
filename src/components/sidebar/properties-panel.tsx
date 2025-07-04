@@ -54,7 +54,6 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
     )
   }
 
-  // A device will have a `label`, an architectural element will not. This is a safer check.
   const isDevice = 'label' in selectedItem;
   const selectedDevice = isDevice ? selectedItem as AnyDevice : null;
   const selectedArchElement = !isDevice ? selectedItem as ArchitecturalElement : null;
@@ -88,13 +87,14 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
   };
 
   const getSelectedItemName = () => {
-      if (isDevice && selectedDevice) {
+      if (!selectedItem) return 'Select an item';
+      if (isDevice && selectedDevice?.label) {
         return `Editing ${selectedDevice.label}`;
       }
-      if (selectedArchElement) {
+      if (selectedArchElement?.type) {
         return `Editing ${ARCH_ELEMENT_NAMES[selectedArchElement.type] || 'Element'}`;
       }
-      return 'Select an item'; // Fallback
+      return 'Editing Item';
   }
   
   const renderDeviceSpecificFields = () => {
@@ -210,6 +210,129 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
     );
   };
 
+  const renderArchitecturalFields = () => {
+    if (!selectedArchElement) return null;
+
+    return (
+        <>
+            <div className="flex-1 overflow-y-auto p-4">
+                <Accordion type="multiple" defaultValue={['general', 'appearance', 'shadow']} className="w-full">
+                    <AccordionItem value="general">
+                        <AccordionTrigger>General</AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="element-type">Element Type</Label>
+                                <Input id="element-type" value={ARCH_ELEMENT_NAMES[selectedArchElement.type as ArchitecturalElementType]} disabled />
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="appearance">
+                        <AccordionTrigger>Appearance</AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                            <div className="space-y-2">
+                                <Label>Scale ({((selectedArchElement.scale ?? 1) * 100).toFixed(0)}%)</Label>
+                                <Slider
+                                    value={[selectedArchElement.scale ?? 1]}
+                                    onValueChange={([val]) => handleArchChange('scale', val)}
+                                    min={0.25}
+                                    max={3}
+                                    step={0.05}
+                                />
+                            </div>
+                            {selectedArchElement.type === 'area' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="element-color">Area Color</Label>
+                                <Input
+                                    id="element-color"
+                                    type="color"
+                                    value={selectedArchElement.color || '#3b82f6'}
+                                    onChange={(e) => handleArchChange('color', e.target.value)}
+                                    className="h-10 p-1 w-full"
+                                />
+                            </div>
+                            )}
+                        </AccordionContent>
+                    </AccordionItem>
+                    
+                    {selectedArchElement.type === 'area' && (
+                         <AccordionItem value="shadow">
+                            <AccordionTrigger>Shadow</AccordionTrigger>
+                            <AccordionContent className="space-y-4 pt-2">
+                                <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="shadow-enabled">Enable Shadow</Label>
+                                        <p className="text-[0.8rem] text-muted-foreground">
+                                            Add a drop shadow to the area.
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        id="shadow-enabled"
+                                        checked={selectedArchElement.shadow?.enabled ?? false}
+                                        onCheckedChange={(checked) => handleArchChange('shadow.enabled', checked)}
+                                    />
+                                </div>
+                                {selectedArchElement.shadow?.enabled && (
+                                    <div className="space-y-4 pt-4 border-t">
+                                        <div className="space-y-2">
+                                            <Label>Offset X ({selectedArchElement.shadow?.offsetX ?? 0}px)</Label>
+                                            <Slider
+                                                value={[selectedArchElement.shadow?.offsetX ?? 0]}
+                                                onValueChange={([val]) => handleArchChange('shadow.offsetX', val)}
+                                                min={-50} max={50} step={1}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Offset Y ({selectedArchElement.shadow?.offsetY ?? 4}px)</Label>
+                                            <Slider
+                                                value={[selectedArchElement.shadow?.offsetY ?? 4]}
+                                                onValueChange={([val]) => handleArchChange('shadow.offsetY', val)}
+                                                min={-50} max={50} step={1}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Blur ({selectedArchElement.shadow?.blur ?? 8}px)</Label>
+                                            <Slider
+                                                value={[selectedArchElement.shadow?.blur ?? 8]}
+                                                onValueChange={([val]) => handleArchChange('shadow.blur', val)}
+                                                min={0} max={100} step={1}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Opacity ({ (selectedArchElement.shadow?.opacity ?? 0.1).toFixed(2) })</Label>
+                                            <Slider
+                                                value={[selectedArchElement.shadow?.opacity ?? 0.1]}
+                                                onValueChange={([val]) => handleArchChange('shadow.opacity', val)}
+                                                min={0} max={1} step={0.01}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shadow-color">Shadow Color</Label>
+                                            <Input
+                                                id="shadow-color"
+                                                type="color"
+                                                value={selectedArchElement.shadow?.color || '#000000'}
+                                                onChange={(e) => handleArchChange('shadow.color', e.target.value)}
+                                                className="h-10 p-1 w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </AccordionContent>
+                        </AccordionItem>
+                    )}
+
+                </Accordion>
+            </div>
+            <div className="p-4 border-t border-border space-y-2">
+                <Button variant="destructive" className="w-full" onClick={() => onRemoveArchElement(selectedArchElement.id)}>
+                    <Trash2/> Delete Element
+                </Button>
+            </div>
+        </>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col">
        <div className="p-4 border-b border-border">
@@ -278,116 +401,7 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
                 </Button>
             </div>
         </>
-       ) : ( // Architectural Element View
-        selectedArchElement && (
-            <>
-                <div className="flex-1 overflow-y-auto p-4">
-                    <Accordion type="multiple" defaultValue={['general', 'appearance', 'shadow']} className="w-full">
-                        <AccordionItem value="general">
-                            <AccordionTrigger>General</AccordionTrigger>
-                            <AccordionContent className="space-y-4 pt-2">
-                                <div className="space-y-2">
-                                    <Label htmlFor="element-type">Element Type</Label>
-                                    <Input id="element-type" value={ARCH_ELEMENT_NAMES[selectedArchElement.type as ArchitecturalElementType]} disabled />
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                        
-                        {selectedArchElement.type === 'area' && (
-                            <AccordionItem value="appearance">
-                                <AccordionTrigger>Appearance</AccordionTrigger>
-                                <AccordionContent className="space-y-4 pt-2">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="element-color">Area Color</Label>
-                                        <Input
-                                            id="element-color"
-                                            type="color"
-                                            value={selectedArchElement.color || '#3b82f6'}
-                                            onChange={(e) => handleArchChange('color', e.target.value)}
-                                            className="h-10 p-1 w-full"
-                                        />
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        )}
-
-                        {selectedArchElement.type === 'area' && (
-                             <AccordionItem value="shadow">
-                                <AccordionTrigger>Shadow</AccordionTrigger>
-                                <AccordionContent className="space-y-4 pt-2">
-                                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                        <div className="space-y-0.5">
-                                            <Label htmlFor="shadow-enabled">Enable Shadow</Label>
-                                            <p className="text-[0.8rem] text-muted-foreground">
-                                                Add a drop shadow to the area.
-                                            </p>
-                                        </div>
-                                        <Switch
-                                            id="shadow-enabled"
-                                            checked={selectedArchElement.shadow?.enabled ?? false}
-                                            onCheckedChange={(checked) => handleArchChange('shadow.enabled', checked)}
-                                        />
-                                    </div>
-                                    {selectedArchElement.shadow?.enabled && (
-                                        <div className="space-y-4 pt-4 border-t">
-                                            <div className="space-y-2">
-                                                <Label>Offset X ({selectedArchElement.shadow?.offsetX ?? 0}px)</Label>
-                                                <Slider
-                                                    value={[selectedArchElement.shadow?.offsetX ?? 0]}
-                                                    onValueChange={([val]) => handleArchChange('shadow.offsetX', val)}
-                                                    min={-50} max={50} step={1}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Offset Y ({selectedArchElement.shadow?.offsetY ?? 4}px)</Label>
-                                                <Slider
-                                                    value={[selectedArchElement.shadow?.offsetY ?? 4]}
-                                                    onValueChange={([val]) => handleArchChange('shadow.offsetY', val)}
-                                                    min={-50} max={50} step={1}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Blur ({selectedArchElement.shadow?.blur ?? 8}px)</Label>
-                                                <Slider
-                                                    value={[selectedArchElement.shadow?.blur ?? 8]}
-                                                    onValueChange={([val]) => handleArchChange('shadow.blur', val)}
-                                                    min={0} max={100} step={1}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Opacity ({ (selectedArchElement.shadow?.opacity ?? 0.1).toFixed(2) })</Label>
-                                                <Slider
-                                                    value={[selectedArchElement.shadow?.opacity ?? 0.1]}
-                                                    onValueChange={([val]) => handleArchChange('shadow.opacity', val)}
-                                                    min={0} max={1} step={0.01}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="shadow-color">Shadow Color</Label>
-                                                <Input
-                                                    id="shadow-color"
-                                                    type="color"
-                                                    value={selectedArchElement.shadow?.color || '#000000'}
-                                                    onChange={(e) => handleArchChange('shadow.color', e.target.value)}
-                                                    className="h-10 p-1 w-full"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-                                </AccordionContent>
-                            </AccordionItem>
-                        )}
-
-                    </Accordion>
-                </div>
-                <div className="p-4 border-t border-border space-y-2">
-                    <Button variant="destructive" className="w-full" onClick={() => onRemoveArchElement(selectedArchElement.id)}>
-                        <Trash2/> Delete Element
-                    </Button>
-                </div>
-            </>
-        )
-       )}
+       ) : renderArchitecturalFields()}
     </div>
   );
 }

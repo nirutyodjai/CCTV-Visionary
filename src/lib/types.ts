@@ -116,6 +116,7 @@ export interface ArchitecturalElement {
   end: Point;
   color?: string;
   shadow?: Partial<Shadow>;
+  scale?: number;
 }
 
 export interface Floor {

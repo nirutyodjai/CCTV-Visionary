@@ -263,6 +263,8 @@ export function PlannerCanvas({
 
     floor.architecturalElements?.forEach(el => {
       ctx.save();
+      const scale = el.scale ?? 1;
+
       const lineBasedTools: ArchitecturalElementType[] = ['wall', 'door', 'window'];
       const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair', 'elevator', 'fire-escape', 'shaft'];
       const rotatableSizableTools: ArchitecturalElementType[] = ['tree', 'motorcycle', 'car', 'supercar'];
@@ -299,7 +301,6 @@ export function PlannerCanvas({
         const width = Math.abs(endAbs.x - startAbs.x);
         const height = Math.abs(endAbs.y - startAbs.y);
 
-        // Draw fill with shadow
         ctx.save();
         if (el.shadow?.enabled) {
             const rgb = hexToRgb(el.shadow.color || '#000000');
@@ -314,9 +315,8 @@ export function PlannerCanvas({
         const color = el.color || '#3b82f6';
         ctx.fillStyle = `${color}33`; // Add ~20% opacity
         ctx.fillRect(x1, y1, width, height);
-        ctx.restore(); // Restore context, removing shadow properties for subsequent draws
+        ctx.restore();
 
-        // Draw border without shadow
         ctx.strokeStyle = el.color || '#3b82f6';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(x1, y1, width, height);
@@ -329,12 +329,11 @@ export function PlannerCanvas({
             });
         }
       } else if (lineBasedTools.includes(el.type)) {
-          // ... (existing drawing logic for wall, door, window)
            const endAbs = getAbsoluteCoords(el.end);
           if (!endAbs) { ctx.restore(); return; }
 
           ctx.strokeStyle = 'hsl(var(--foreground) / 0.5)';
-          ctx.lineWidth = el.type === 'wall' ? 5 : 3;
+          ctx.lineWidth = (el.type === 'wall' ? 5 : 3) * scale;
           if (el.type === 'door' || el.type === 'window') {
               ctx.setLineDash([5, 5]);
           }
@@ -343,13 +342,13 @@ export function PlannerCanvas({
           ctx.lineTo(endAbs.x, endAbs.y);
           ctx.stroke();
       } else if (rotatableSizableTools.includes(el.type)) {
-          // ... (existing drawing logic for sizable objects)
            const endAbs = getAbsoluteCoords(el.end);
           if (!endAbs) { ctx.restore(); return; }
 
           const dx = endAbs.x - startAbs.x;
           const dy = endAbs.y - startAbs.y;
-          const size = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+          const baseSize = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+          const size = baseSize * scale;
           const rotation = Math.atan2(dy, dx);
           
           ctx.translate(startAbs.x, startAbs.y);
@@ -366,7 +365,6 @@ export function PlannerCanvas({
               const carWidth = size;
               ctx.fillStyle = el.type === 'supercar' ? 'hsl(var(--destructive))' : 'hsl(var(--foreground) / 0.7)';
               ctx.fillRect(-carLength / 2, -carWidth / 2, carLength, carWidth);
-              // windshield
               ctx.fillStyle = 'hsl(var(--secondary))';
               ctx.fillRect(carLength * 0.1, -carWidth/2 * 0.8, carLength * 0.3, carWidth * 0.8);
           } else if (el.type === 'motorcycle') {
@@ -386,7 +384,6 @@ export function PlannerCanvas({
               ctx.stroke();
           }
       } else if (pointBasedTools.includes(el.type)) {
-          // ... (existing drawing logic for point-based objects)
           const coords = startAbs;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -394,16 +391,16 @@ export function PlannerCanvas({
 
           if (el.type === 'table') {
               ctx.fillStyle = 'hsl(var(--foreground) / 0.6)';
-              const size = 16;
+              const size = 16 * scale;
               ctx.fillRect(coords.x - size / 1.5, coords.y - size / 2, size * 1.5, size);
           } else if (el.type === 'chair') {
               ctx.fillStyle = 'hsl(var(--foreground) / 0.6)';
-              const size = 16;
+              const size = 16 * scale;
               ctx.beginPath();
               ctx.arc(coords.x, coords.y, size / 2, 0, Math.PI * 2);
               ctx.fill();
           } else {
-              const rectSize = 30;
+              const rectSize = 30 * scale;
               const rectX = coords.x - rectSize / 2;
               const rectY = coords.y - rectSize / 2;
 
@@ -610,7 +607,7 @@ export function PlannerCanvas({
       if (startPoint) {
         const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair', 'elevator', 'fire-escape', 'shaft'];
         if (pointBasedTools.includes(selectedArchTool)) {
-            onAddArchElement({ id: `arch_${Date.now()}`, type: selectedArchTool, start: startPoint, end: startPoint });
+            onAddArchElement({ id: `arch_${Date.now()}`, type: selectedArchTool, start: startPoint, end: startPoint, scale: 1 });
         } else { // line-based tools, sizable objects, and 'area'
             onSetDrawingState({ isDrawing: true, startPoint });
         }
@@ -690,14 +687,21 @@ export function PlannerCanvas({
       const endPoint = getFloorPlanRelativeCoords(getRelativeCoords(e));
       if (endPoint) {
           const start = drawingState.startPoint;
-          const finalStart = { x: Math.min(start.x, endPoint.x), y: Math.min(start.y, endPoint.y) };
-          const finalEnd = { x: Math.max(start.x, endPoint.x), y: Math.max(start.y, endPoint.y) };
+          let finalStart = start;
+          let finalEnd = endPoint;
+
+          // For 'area', we always want normalized top-left and bottom-right corners.
+          if (selectedArchTool === 'area') {
+              finalStart = { x: Math.min(start.x, endPoint.x), y: Math.min(start.y, endPoint.y) };
+              finalEnd = { x: Math.max(start.x, endPoint.x), y: Math.max(start.y, endPoint.y) };
+          }
 
           onAddArchElement({
               id: `arch_${Date.now()}`,
               type: selectedArchTool,
               start: finalStart,
               end: finalEnd,
+              scale: 1,
           });
       }
       onSetDrawingState({ isDrawing: false, startPoint: null });
