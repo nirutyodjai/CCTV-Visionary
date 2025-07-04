@@ -27,6 +27,15 @@ export interface Point {
   y: number;
 }
 
+export interface Shadow {
+  enabled: boolean;
+  offsetX: number;
+  offsetY: number;
+  blur: number;
+  color: string;
+  opacity: number;
+}
+
 export interface BaseDevice {
   id: string;
   type: DeviceType;
@@ -106,6 +115,7 @@ export interface ArchitecturalElement {
   start: Point;
   end: Point;
   color?: string;
+  shadow?: Partial<Shadow>;
 }
 
 export interface Floor {

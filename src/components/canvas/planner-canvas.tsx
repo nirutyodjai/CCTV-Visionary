@@ -226,13 +226,34 @@ export function PlannerCanvas({
         const y1 = Math.min(startAbs.y, endAbs.y);
         const width = Math.abs(endAbs.x - startAbs.x);
         const height = Math.abs(endAbs.y - startAbs.y);
-
+        
+        if (el.shadow?.enabled) {
+            const hexToRgb = (hex: string) => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+            }
+            const rgb = hexToRgb(el.shadow.color || '#000000');
+            if (rgb) {
+                ctx.shadowColor = `rgba(${rgb}, ${el.shadow.opacity ?? 0.1})`;
+                ctx.shadowBlur = el.shadow.blur ?? 8;
+                ctx.shadowOffsetX = el.shadow.offsetX ?? 0;
+                ctx.shadowOffsetY = el.shadow.offsetY ?? 4;
+            }
+        }
+        
         const color = el.color || '#3b82f6';
         ctx.fillStyle = `${color}33`; // Add ~20% opacity
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         
         ctx.fillRect(x1, y1, width, height);
+        
+        // Reset shadow before stroking the border to keep the border crisp
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
         ctx.strokeRect(x1, y1, width, height);
 
         if (isSelected) {

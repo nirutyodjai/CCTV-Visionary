@@ -1,11 +1,14 @@
 
 
-import type { AnyDevice, RackContainer, SelectableItem, ArchitecturalElementType, ArchitecturalElement } from '@/lib/types';
+import type { AnyDevice, RackContainer, SelectableItem, ArchitecturalElementType, ArchitecturalElement, Shadow } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Trash2, Cable, Warehouse } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+
 
 interface PropertiesPanelProps {
   selectedItem: SelectableItem | null;
@@ -63,11 +66,23 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
         onUpdateDevice(updatedDevice);
       }
   };
-
-  const handleArchChange = (key: keyof ArchitecturalElement, value: any) => {
+  
+  const handleArchChange = (key: string, value: any) => {
     if(selectedArchElement){
-        const updatedElement = { ...selectedArchElement, [key]: value };
-        onUpdateArchElement(updatedElement);
+        if (key.startsWith('shadow.')) {
+            const shadowKey = key.split('.')[1];
+            const updatedElement = {
+                ...selectedArchElement,
+                shadow: {
+                    ...(selectedArchElement.shadow || {}),
+                    [shadowKey]: value,
+                }
+            };
+            onUpdateArchElement(updatedElement);
+        } else {
+            const updatedElement = { ...selectedArchElement, [key]: value };
+            onUpdateArchElement(updatedElement);
+        }
     }
   };
 
@@ -205,7 +220,7 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
         selectedArchElement && (
             <>
                 <div className="flex-1 overflow-y-auto p-4">
-                    <Accordion type="multiple" defaultValue={['general', 'appearance']} className="w-full">
+                    <Accordion type="multiple" defaultValue={['general', 'appearance', 'shadow']} className="w-full">
                         <AccordionItem value="general">
                             <AccordionTrigger>General</AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2">
@@ -215,6 +230,7 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
+                        
                         {selectedArchElement.type === 'area' && (
                             <AccordionItem value="appearance">
                                 <AccordionTrigger>Appearance</AccordionTrigger>
@@ -232,6 +248,74 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
                                 </AccordionContent>
                             </AccordionItem>
                         )}
+
+                        {selectedArchElement.type === 'area' && (
+                             <AccordionItem value="shadow">
+                                <AccordionTrigger>Shadow</AccordionTrigger>
+                                <AccordionContent className="space-y-4 pt-2">
+                                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor="shadow-enabled">Enable Shadow</Label>
+                                            <p className="text-[0.8rem] text-muted-foreground">
+                                                Add a drop shadow to the area.
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            id="shadow-enabled"
+                                            checked={selectedArchElement.shadow?.enabled ?? false}
+                                            onCheckedChange={(checked) => handleArchChange('shadow.enabled', checked)}
+                                        />
+                                    </div>
+                                    {selectedArchElement.shadow?.enabled && (
+                                        <div className="space-y-4 pt-4 border-t">
+                                            <div className="space-y-2">
+                                                <Label>Offset X ({selectedArchElement.shadow?.offsetX ?? 0}px)</Label>
+                                                <Slider
+                                                    value={[selectedArchElement.shadow?.offsetX ?? 0]}
+                                                    onValueChange={([val]) => handleArchChange('shadow.offsetX', val)}
+                                                    min={-50} max={50} step={1}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Offset Y ({selectedArchElement.shadow?.offsetY ?? 4}px)</Label>
+                                                <Slider
+                                                    value={[selectedArchElement.shadow?.offsetY ?? 4]}
+                                                    onValueChange={([val]) => handleArchChange('shadow.offsetY', val)}
+                                                    min={-50} max={50} step={1}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Blur ({selectedArchElement.shadow?.blur ?? 8}px)</Label>
+                                                <Slider
+                                                    value={[selectedArchElement.shadow?.blur ?? 8]}
+                                                    onValueChange={([val]) => handleArchChange('shadow.blur', val)}
+                                                    min={0} max={100} step={1}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Opacity ({ (selectedArchElement.shadow?.opacity ?? 0.1).toFixed(2) })</Label>
+                                                <Slider
+                                                    value={[selectedArchElement.shadow?.opacity ?? 0.1]}
+                                                    onValueChange={([val]) => handleArchChange('shadow.opacity', val)}
+                                                    min={0} max={1} step={0.01}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="shadow-color">Shadow Color</Label>
+                                                <Input
+                                                    id="shadow-color"
+                                                    type="color"
+                                                    value={selectedArchElement.shadow?.color || '#000000'}
+                                                    onChange={(e) => handleArchChange('shadow.color', e.target.value)}
+                                                    className="h-10 p-1 w-full"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </AccordionContent>
+                            </AccordionItem>
+                        )}
+
                     </Accordion>
                 </div>
                 <div className="p-4 border-t border-border space-y-2">
