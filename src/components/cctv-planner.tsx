@@ -655,7 +655,7 @@ export function CCTVPlanner() {
                                             <Loader2 className="h-5 w-5 animate-spin" />
                                         ) : (
                                             <>
-                                                <Save className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-12" />
+                                                <Save className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-110" />
                                                 <span className="transition-all duration-300 group-hover:tracking-wider">บันทึกโครงการ</span>
                                             </>
                                         )}

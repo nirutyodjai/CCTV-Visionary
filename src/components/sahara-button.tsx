@@ -11,7 +11,7 @@ const SaharaButton = React.forwardRef<
     <button
       ref={ref}
       className={cn(
-        "group relative z-10 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 p-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 hover:from-blue-500 hover:to-indigo-500 hover:shadow-xl active:-translate-y-0.5 active:scale-100 active:shadow-md disabled:pointer-events-none disabled:opacity-50",
+        "group relative z-10 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 p-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 hover:from-violet-500 hover:to-indigo-500 hover:shadow-xl active:-translate-y-0.5 active:scale-95 active:shadow-md disabled:pointer-events-none disabled:opacity-50",
         className
       )}
       {...props}
