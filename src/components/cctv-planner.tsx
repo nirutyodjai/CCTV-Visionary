@@ -723,7 +723,7 @@ export function CCTVPlanner() {
                                 <ThemeToggle />
                                 <PropertiesToggleButton 
                                     isOpen={isPropertiesPanelOpen}
-                                    onClick={() => setPropertiesPanelOpen(!isPropertiesPanelOpen)}
+                                    onChange={(checked) => setPropertiesPanelOpen(checked)}
                                 />
                             </div>
                         </div>
