@@ -2,12 +2,13 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyA5WdfDfmQa95T820E-HBQ1XzBm8sVHYv8",
+  authDomain: "project-comdee.firebaseapp.com",
+  projectId: "project-comdee",
+  storageBucket: "project-comdee.firebasestorage.app",
+  messagingSenderId: "591185484149",
+  appId: "1:591185484149:web:63977efd834411c19cdb3c",
+  measurementId: "G-Q9P0DB24KR"
 };
 
 // Initialize Firebase
