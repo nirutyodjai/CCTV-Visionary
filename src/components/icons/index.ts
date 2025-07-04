@@ -8,3 +8,4 @@ export * from './monitor-icon';
 export * from './utp-cat6-icon';
 export * from './fiber-optic-icon';
 export * from './rack-icon';
+export * from './table-icon';

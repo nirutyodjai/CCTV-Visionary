@@ -3,13 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Minus, DoorOpen, PanelTop } from 'lucide-react';
+import { Minus, DoorOpen, PanelTop, Armchair, Upload } from 'lucide-react';
 import type { ArchitecturalElementType } from '@/lib/types';
+import { TableIcon } from '@/components/icons/table-icon';
 
-const tools: { type: ArchitecturalElementType, name: string; icon: React.ReactNode }[] = [
+const tools: { type: ArchitecturalElementType | 'other', name: string; icon: React.ReactNode }[] = [
   { type: 'wall', name: 'กำแพง', icon: <Minus size={24} /> },
   { type: 'door', name: 'ประตู', icon: <DoorOpen size={20} /> },
   { type: 'window', name: 'หน้าต่าง', icon: <PanelTop size={20} /> },
+  { type: 'table', name: 'โต๊ะ', icon: <TableIcon className="w-5 h-5" /> },
+  { type: 'chair', name: 'เก้าอี้', icon: <Armchair size={20} /> },
+  { type: 'other', name: 'อื่นๆ', icon: <Upload size={20} /> },
 ];
 
 interface ArchitectureToolbarProps {
@@ -18,6 +22,15 @@ interface ArchitectureToolbarProps {
 }
 
 export function ArchitectureToolbar({ selectedTool, onSelectTool }: ArchitectureToolbarProps) {
+  const handleToolClick = (type: ArchitecturalElementType | 'other') => {
+    if (type === 'other') {
+      // Placeholder for future icon upload functionality
+      alert('ฟังก์ชันอัปโหลดไอคอนจะถูกเพิ่มในอนาคต');
+      return;
+    }
+    onSelectTool(selectedTool === type ? null : type);
+  };
+  
   return (
     <Card>
       <CardHeader className="p-3 border-b">
@@ -29,7 +42,7 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
             key={tool.type}
             variant={selectedTool === tool.type ? 'secondary' : 'outline'}
             className="h-16 flex flex-col items-center justify-center space-y-1"
-            onClick={() => onSelectTool(selectedTool === tool.type ? null : tool.type)}
+            onClick={() => handleToolClick(tool.type)}
           >
             {tool.icon}
             <span className="text-xs">{tool.name}</span>

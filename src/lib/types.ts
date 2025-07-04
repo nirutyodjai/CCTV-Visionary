@@ -19,7 +19,7 @@ export type DeviceType =
   | 'pdu'
   | 'ups';
 
-export type ArchitecturalElementType = 'wall' | 'door' | 'window';
+export type ArchitecturalElementType = 'wall' | 'door' | 'window' | 'table' | 'chair';
 export type CableType = 'utp-cat6' | 'fiber-optic';
 
 export interface Point {

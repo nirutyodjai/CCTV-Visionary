@@ -173,20 +173,45 @@ export function PlannerCanvas({
   
   const drawArchitecturalElements = useCallback((ctx: CanvasRenderingContext2D) => {
     if (!floorPlanRect) return;
-    ctx.save();
-    ctx.strokeStyle = 'hsl(var(--foreground) / 0.5)';
-    ctx.lineWidth = 3;
+
     floor.architecturalElements?.forEach(el => {
-      const startX = floorPlanRect.x + el.start.x * floorPlanRect.width;
-      const startY = floorPlanRect.y + el.start.y * floorPlanRect.height;
-      const endX = floorPlanRect.x + el.end.x * floorPlanRect.width;
-      const endY = floorPlanRect.y + el.end.y * floorPlanRect.height;
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(endX, endY);
-      ctx.stroke();
+      ctx.save();
+      const lineBasedTools: ArchitecturalElementType[] = ['wall', 'door', 'window'];
+      
+      if (lineBasedTools.includes(el.type)) {
+          ctx.strokeStyle = 'hsl(var(--foreground) / 0.5)';
+          ctx.lineWidth = 3;
+          if (el.type === 'door' || el.type === 'window') {
+              ctx.setLineDash([5, 5]);
+          }
+          const startX = floorPlanRect.x + el.start.x * floorPlanRect.width;
+          const startY = floorPlanRect.y + el.start.y * floorPlanRect.height;
+          const endX = floorPlanRect.x + el.end.x * floorPlanRect.width;
+          const endY = floorPlanRect.y + el.end.y * floorPlanRect.height;
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+      } else {
+          // Point-based elements
+          const coords = {
+            x: floorPlanRect.x + el.start.x * floorPlanRect.width,
+            y: floorPlanRect.y + el.start.y * floorPlanRect.height,
+          };
+          
+          ctx.fillStyle = 'hsl(var(--foreground) / 0.6)';
+          const size = 16;
+          
+          if (el.type === 'table') {
+              ctx.fillRect(coords.x - size / 1.5, coords.y - size / 2, size * 1.5, size);
+          } else if (el.type === 'chair') {
+              ctx.beginPath();
+              ctx.arc(coords.x, coords.y, size / 2, 0, Math.PI * 2);
+              ctx.fill();
+          }
+      }
+      ctx.restore();
     });
-    ctx.restore();
   }, [floor.architecturalElements, floorPlanRect]);
 
   const drawResizeHandles = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -293,7 +318,18 @@ export function PlannerCanvas({
     if (selectedArchTool) {
       const startPoint = getFloorPlanRelativeCoords(point);
       if (startPoint) {
-        onSetDrawingState({ isDrawing: true, startPoint });
+        const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair'];
+        if (pointBasedTools.includes(selectedArchTool)) {
+            onAddArchElement({
+                id: `arch_${Date.now()}`,
+                type: selectedArchTool,
+                start: startPoint,
+                end: startPoint, // For point objects, start and end are the same
+            });
+        } else {
+            // It's a line-based tool, start drawing
+            onSetDrawingState({ isDrawing: true, startPoint });
+        }
       }
       return;
     }
