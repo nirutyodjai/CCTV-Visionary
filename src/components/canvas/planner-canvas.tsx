@@ -162,6 +162,23 @@ export function PlannerCanvas({
     const isCablingStart = cablingMode.enabled && cablingMode.fromDeviceId === device.id;
 
     ctx.save();
+
+    // Draw background circle for cameras
+    if (device.type.startsWith('cctv-')) {
+        let bgColor = 'hsla(210, 90%, 85%, 0.7)'; // Default: Soft Blue
+        if (device.type === 'cctv-dome') bgColor = 'hsla(145, 63%, 85%, 0.7)'; // Soft Green
+        if (device.type === 'cctv-ptz') bgColor = 'hsla(45, 100%, 85%, 0.7)'; // Soft Yellow
+        
+        ctx.fillStyle = bgColor;
+        ctx.beginPath();
+        ctx.arc(x, y, ICON_SIZE / 2 + 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Also draw a border to make it pop
+        ctx.strokeStyle = bgColor.replace('0.7', '1');
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
     
     if (isCablingStart) {
       const pulseRadius = (ICON_SIZE / 2 + 5) * (1 + Math.sin(Date.now() / 300) * 0.1);

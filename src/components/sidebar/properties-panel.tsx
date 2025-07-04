@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, Cable, Warehouse } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 interface PropertiesPanelProps {
@@ -99,54 +100,115 @@ export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, 
   const renderDeviceSpecificFields = () => {
     if (!selectedDevice) return null;
 
-    const fields: {key: keyof AnyDevice, label: string, type?: string}[] = [];
+    const fields: {
+      key: keyof AnyDevice;
+      label: string;
+      type?: 'text' | 'number' | 'slider' | 'select';
+      min?: number;
+      max?: number;
+      step?: number;
+      options?: string[];
+    }[] = [];
 
-    switch(selectedDevice.type) {
-        case 'cctv-bullet':
-        case 'cctv-dome':
-        case 'cctv-ptz':
-            fields.push({ key: 'resolution', label: 'Resolution' });
-            fields.push({ key: 'fov', label: 'Field of View (°)', type: 'number' });
-            fields.push({ key: 'range', label: 'Range (m)', type: 'number' });
-            fields.push({ key: 'rotation', label: 'Rotation (°)', type: 'number' });
-            break;
-        case 'nvr':
-            fields.push({ key: 'channels', label: 'Channels', type: 'number' });
-            fields.push({ key: 'storage', label: 'Storage' });
-            break;
-        case 'switch':
-            fields.push({ key: 'ports', label: 'Ports', type: 'number' });
-            break;
-        case 'rack-indoor':
-        case 'rack-outdoor':
-            fields.push({ key: 'rack_size', label: 'Rack Size (U)' });
-            if (selectedDevice.type === 'rack-outdoor') {
-                fields.push({ key: 'ip_rating', label: 'IP Rating' });
-            }
-            break;
+    switch (selectedDevice.type) {
+      case 'cctv-bullet':
+      case 'cctv-dome':
+      case 'cctv-ptz':
+        fields.push({
+          key: 'resolution',
+          label: 'ความละเอียด',
+          type: 'select',
+          options: ['720p', '1080p', '2K', '4K'],
+        });
+        fields.push({
+          key: 'fov',
+          label: `มุมมองภาพ (${(Number(selectedDevice.fov) || 0).toFixed(0)}°)`,
+          type: 'slider',
+          min: 10,
+          max: 180,
+          step: 1,
+        });
+        fields.push({
+          key: 'range',
+          label: `ระยะ (${(Number(selectedDevice.range) || 0).toFixed(0)} ม.)`,
+          type: 'slider',
+          min: 1,
+          max: 100,
+          step: 1,
+        });
+        fields.push({
+          key: 'rotation',
+          label: `การหมุน (${(Number(selectedDevice.rotation) || 0).toFixed(0)}°)`,
+          type: 'slider',
+          min: 0,
+          max: 360,
+          step: 1,
+        });
+        break;
+      case 'nvr':
+        fields.push({ key: 'channels', label: 'Channels', type: 'number' });
+        fields.push({ key: 'storage', label: 'Storage' });
+        break;
+      case 'switch':
+        fields.push({ key: 'ports', label: 'Ports', type: 'number' });
+        break;
+      case 'rack-indoor':
+      case 'rack-outdoor':
+        fields.push({ key: 'rack_size', label: 'Rack Size (U)' });
+        if (selectedDevice.type === 'rack-outdoor') {
+          fields.push({ key: 'ip_rating', label: 'IP Rating' });
+        }
+        break;
     }
 
     if (fields.length === 0) return null;
 
     return (
-        <AccordionItem value="specifics">
-            <AccordionTrigger>Device Specifics</AccordionTrigger>
-            <AccordionContent className="space-y-4 pt-2">
-                {fields.map(field => (
-                     <div key={field.key} className="space-y-2">
-                        <Label htmlFor={`device-${field.key}`}>{field.label}</Label>
-                        <Input 
-                            id={`device-${field.key}`}
-                            type={field.type || 'text'}
-                            value={selectedDevice[field.key] || ''} 
-                            onChange={e => handleChange(field.key, e.target.value)} 
-                        />
-                    </div>
-                ))}
-            </AccordionContent>
-        </AccordionItem>
+      <AccordionItem value="specifics">
+        <AccordionTrigger>Device Specifics</AccordionTrigger>
+        <AccordionContent className="space-y-4 pt-2">
+          {fields.map((field) => (
+            <div key={field.key} className="space-y-2">
+              <Label htmlFor={`device-${field.key}`}>{field.label}</Label>
+              {field.type === 'slider' ? (
+                <Slider
+                  id={`device-${field.key}`}
+                  value={[Number(selectedDevice[field.key]) || 0]}
+                  onValueChange={([val]) => handleChange(field.key, val)}
+                  min={field.min}
+                  max={field.max}
+                  step={field.step}
+                />
+              ) : field.type === 'select' ? (
+                <Select
+                  value={String(selectedDevice[field.key] || '')}
+                  onValueChange={(val) => handleChange(field.key, val)}
+                >
+                  <SelectTrigger id={`device-${field.key}`}>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {field.options?.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id={`device-${field.key}`}
+                  type={field.type || 'text'}
+                  value={selectedDevice[field.key] || ''}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                />
+              )}
+            </div>
+          ))}
+        </AccordionContent>
+      </AccordionItem>
     );
-  }
+  };
 
   return (
     <div className="h-full flex flex-col">
