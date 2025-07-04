@@ -41,6 +41,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PropertiesToggleButton from '@/components/ui/properties-toggle-button';
+import SaharaButton from '@/components/sahara-button';
 
 
 type Action =
@@ -649,7 +650,7 @@ export function CCTVPlanner() {
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                    <button onClick={handleSaveProject} disabled={isSaving || isLoading} className="group relative z-10 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 p-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 hover:from-blue-500 hover:to-indigo-500 hover:shadow-xl active:-translate-y-0.5 active:scale-100 active:shadow-md disabled:pointer-events-none disabled:opacity-50">
+                                    <SaharaButton onClick={handleSaveProject} disabled={isSaving || isLoading}>
                                         {isSaving ? (
                                             <Loader2 className="h-5 w-5 animate-spin" />
                                         ) : (
@@ -658,7 +659,7 @@ export function CCTVPlanner() {
                                                 <span className="transition-all duration-300 group-hover:tracking-wider">บันทึกโครงการ</span>
                                             </>
                                         )}
-                                    </button>
+                                    </SaharaButton>
                                 </CardContent>
                             </Card>
                             
@@ -797,5 +798,3 @@ export function CCTVPlanner() {
         </SidebarProvider>
     );
 }
-
-    
