@@ -49,6 +49,22 @@ export function PlannerCanvas({
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
   const [resizingHandle, setResizingHandle] = useState<string | null>(null);
   const { resolvedTheme } = useTheme();
+  const initializedFloorRef = useRef<string | null>(null);
+
+  // Initialize the floor plan rectangle on mount or floor change
+  useEffect(() => {
+    if (containerRef.current && (!floorPlanRect || initializedFloorRef.current !== floor.id)) {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+            const initialWidth = rect.width * 0.9;
+            const initialHeight = rect.height * 0.9;
+            const initialX = (rect.width - initialWidth) / 2;
+            const initialY = (rect.height - initialHeight) / 2;
+            onUpdateFloorPlanRect(new DOMRect(initialX, initialY, initialWidth, initialHeight));
+            initializedFloorRef.current = floor.id;
+        }
+    }
+  }, [floor.id, floorPlanRect, onUpdateFloorPlanRect]);
 
   // Load floor plan image
   useEffect(() => {
