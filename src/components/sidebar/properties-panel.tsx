@@ -1,5 +1,6 @@
 
-import type { AnyDevice, RackContainer } from '@/lib/types';
+
+import type { AnyDevice, RackContainer, SelectableItem, ArchitecturalElementType } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -7,17 +8,39 @@ import { Button } from '@/components/ui/button';
 import { Trash2, Cable, Warehouse } from 'lucide-react';
 
 interface PropertiesPanelProps {
-  selectedDevice: AnyDevice | null;
+  selectedItem: SelectableItem | null;
   onUpdateDevice: (device: AnyDevice) => void;
   onRemoveDevice: (deviceId: string) => void;
   onStartCabling: (deviceId: string) => void;
   onViewRack: (rack: RackContainer) => void;
+  onRemoveArchElement: (elementId: string) => void;
 }
 
-export function PropertiesPanel({ selectedDevice, onUpdateDevice, onRemoveDevice, onStartCabling, onViewRack }: PropertiesPanelProps) {
+const ARCH_ELEMENT_TYPES: ArchitecturalElementType[] = ['wall', 'door', 'window', 'table', 'chair', 'elevator', 'fire-escape', 'shaft', 'tree', 'motorcycle', 'car', 'supercar', 'area'];
+const ARCH_ELEMENT_NAMES: Record<ArchitecturalElementType, string> = {
+    'wall': 'Wall',
+    'door': 'Door',
+    'window': 'Window',
+    'table': 'Table',
+    'chair': 'Chair',
+    'elevator': 'Elevator',
+    'fire-escape': 'Fire Escape',
+    'shaft': 'Shaft',
+    'tree': 'Tree',
+    'motorcycle': 'Motorcycle',
+    'car': 'Car',
+    'supercar': 'Supercar',
+    'area': 'Area'
+};
+
+
+export function PropertiesPanel({ selectedItem, onUpdateDevice, onRemoveDevice, onStartCabling, onViewRack, onRemoveArchElement }: PropertiesPanelProps) {
+  
+  const isDevice = selectedItem && !ARCH_ELEMENT_TYPES.includes(selectedItem.type as ArchitecturalElementType);
+  const selectedDevice = isDevice ? selectedItem as AnyDevice : null;
+
   const handleChange = (key: keyof AnyDevice, value: any) => {
       if(selectedDevice){
-        // For numeric fields, ensure the value is a number
         const numericFields = ['price', 'powerConsumption', 'rotation', 'fov', 'range', 'channels', 'ports'];
         const finalValue = numericFields.includes(key) ? parseFloat(value) || 0 : value;
         const updatedDevice = { ...selectedDevice, [key]: finalValue };
@@ -82,17 +105,26 @@ export function PropertiesPanel({ selectedDevice, onUpdateDevice, onRemoveDevice
         </AccordionItem>
     );
   }
+  
+  const getSelectedItemName = () => {
+      if (!selectedItem) return 'Select an item to see its properties.';
+      if (isDevice) {
+        return `Editing ${(selectedItem as AnyDevice).label}`;
+      }
+      return `Editing ${ARCH_ELEMENT_NAMES[selectedItem.type as ArchitecturalElementType]}`;
+  }
 
   return (
     <div className="h-full flex flex-col">
        <div className="p-4 border-b border-border">
          <h2 className="text-lg font-semibold tracking-tight">Properties</h2>
          <p className="text-sm text-muted-foreground">
-             {selectedDevice ? `Editing ${selectedDevice.label}` : 'Select a device to see its properties.'}
+             {getSelectedItemName()}
          </p>
       </div>
 
-       {selectedDevice ? (
+       {selectedItem ? (
+        isDevice && selectedDevice ? (
         <>
             <div className="flex-1 overflow-y-auto p-4">
                 <Accordion type="multiple" defaultValue={['general', 'network', 'placement', 'specifics']} className="w-full">
@@ -151,9 +183,31 @@ export function PropertiesPanel({ selectedDevice, onUpdateDevice, onRemoveDevice
                 </Button>
             </div>
         </>
+        ) : ( // Architectural Element View
+        <>
+            <div className="flex-1 overflow-y-auto p-4">
+                <Accordion type="multiple" defaultValue={['general']} className="w-full">
+                    <AccordionItem value="general">
+                        <AccordionTrigger>General</AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="element-type">Element Type</Label>
+                                <Input id="element-type" value={ARCH_ELEMENT_NAMES[selectedItem.type as ArchitecturalElementType]} disabled />
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            </div>
+            <div className="p-4 border-t border-border space-y-2">
+                <Button variant="destructive" className="w-full" onClick={() => onRemoveArchElement(selectedItem.id)}>
+                    <Trash2/> Delete Element
+                </Button>
+            </div>
+        </>
+        )
       ) : (
         <div className="flex-1 flex items-center justify-center p-4">
-            <p className="text-muted-foreground text-center">Select a device on the canvas to view and edit its properties here.</p>
+            <p className="text-muted-foreground text-center">Select an item on the canvas to view and edit its properties here.</p>
         </div>
       )}
     </div>

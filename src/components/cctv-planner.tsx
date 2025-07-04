@@ -3,7 +3,7 @@
 
 import React, { useReducer, useState, useMemo, useEffect, useCallback } from 'react';
 import { createInitialState } from '@/lib/demo-data';
-import type { ProjectState, AnyDevice, CablingMode, Point, ArchitecturalElementType, ArchitecturalElement, Floor, Connection, Building, DeviceType, RackContainer } from '@/lib/types';
+import type { ProjectState, AnyDevice, CablingMode, Point, ArchitecturalElementType, ArchitecturalElement, Floor, Connection, Building, DeviceType, RackContainer, SelectableItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { PlannerCanvas } from '@/components/canvas/planner-canvas';
@@ -53,6 +53,7 @@ type Action =
     | { type: 'ADD_CONNECTION', payload: { connection: Connection, buildingId: string, floorId: string } }
     | { type: 'SET_FLOOR_PLAN', payload: { url: string, buildingId: string, floorId: string } }
     | { type: 'ADD_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
+    | { type: 'REMOVE_ARCH_ELEMENT', payload: { elementId: string, buildingId: string, floorId: string } }
     | { type: 'SET_DIAGNOSTICS', payload: { diagnostics: DiagnosticResult['diagnostics'], buildingId: string, floorId: string } }
     | { type: 'ADD_FLOOR', payload: { buildingId: string } }
     | { type: 'UPDATE_RACK', payload: { rack: RackContainer, buildingId: string, floorId: string } };
@@ -142,6 +143,13 @@ function projectReducer(state: ProjectState, action: Action): ProjectState {
                     ...f, architecturalElements: [...f.architecturalElements, action.payload.element]
                 }))
             };
+        case 'REMOVE_ARCH_ELEMENT':
+            return {
+                ...state,
+                buildings: updateFloor(state.buildings, action.payload.buildingId, action.payload.floorId, f => ({
+                    ...f, architecturalElements: f.architecturalElements.filter(el => el.id !== action.payload.elementId)
+                }))
+            };
         case 'SET_DIAGNOSTICS':
              return {
                 ...state,
@@ -198,7 +206,7 @@ export function CCTVPlanner() {
     const [activeIds, setActiveIds] = useState<{ buildingId: string | null; floorId: string | null }>({ buildingId: null, floorId: null });
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
-    const [selectedDevice, setSelectedDevice] = useState<AnyDevice | null>(null);
+    const [selectedItem, setSelectedItem] = useState<SelectableItem | null>(null);
     const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
     const [selectedArchTool, setSelectedArchTool] = useState<ArchitecturalElementType | null>(null);
     const [drawingState, setDrawingState] = useState<{ isDrawing: boolean, startPoint: Point | null }>({ isDrawing: false, startPoint: null });
@@ -264,7 +272,7 @@ export function CCTVPlanner() {
     const handleFloorSelect = (buildingId: string, floorId: string) => {
         setFloorPlanRect(null); // Reset canvas rect when floor changes
         setActiveIds({ buildingId, floorId });
-        setSelectedDevice(null);
+        setSelectedItem(null);
     };
 
     const handleAddDevice = (type: DeviceType) => {
@@ -310,7 +318,7 @@ export function CCTVPlanner() {
     const handleRemoveDevice = (deviceId: string) => {
         if (!activeIds.buildingId || !activeIds.floorId) return;
         dispatch({ type: 'REMOVE_DEVICE', payload: { deviceId, buildingId: activeIds.buildingId, floorId: activeIds.floorId }});
-        setSelectedDevice(null);
+        setSelectedItem(null);
         toast({ title: "ลบอุปกรณ์แล้ว", variant: "destructive" });
     };
 
@@ -323,6 +331,13 @@ export function CCTVPlanner() {
     const handleAddArchElement = (elem: ArchitecturalElement) => {
        if (!activeIds.buildingId || !activeIds.floorId) return;
        dispatch({ type: 'ADD_ARCH_ELEMENT', payload: { element: elem, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+    };
+    
+    const handleRemoveArchElement = (elementId: string) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'REMOVE_ARCH_ELEMENT', payload: { elementId, buildingId: activeIds.buildingId, floorId: activeIds.floorId }});
+        setSelectedItem(null);
+        toast({ title: "ลบส่วนประกอบแล้ว", variant: "destructive" });
     };
 
     const handleAddFloor = (buildingId: string) => {
@@ -513,7 +528,7 @@ export function CCTVPlanner() {
                     setActiveIds({ buildingId: null, floorId: null });
                 }
 
-                setSelectedDevice(null);
+                setSelectedItem(null);
                 setFloorPlanRect(null); // Reset canvas rect
                 toast({
                     title: "โหลดโครงการสำเร็จ",
@@ -538,13 +553,15 @@ export function CCTVPlanner() {
         }
     }, [toast]);
 
-    const handleSelectDevice = (device: AnyDevice | null) => {
-        setSelectedDevice(device);
-        setCablingMode({ enabled: false, fromDeviceId: null });
-        if (!isMobile && device?.type.startsWith('rack')) {
-            setRackViewOpen(true);
+    const handleSelectItem = (item: SelectableItem | null) => {
+        setSelectedItem(item);
+        if (!item || ('x' in item && 'y' in item)) { // It is a device
+            setCablingMode({ enabled: false, fromDeviceId: null });
+            if (!isMobile && item?.type.startsWith('rack')) {
+                setRackViewOpen(true);
+            }
         }
-    }
+    };
 
     if (isLoading && projectState.id === 'loading') {
         return (
@@ -556,11 +573,12 @@ export function CCTVPlanner() {
 
     const propertiesPanel = (
          <PropertiesPanel 
-            selectedDevice={selectedDevice}
+            selectedItem={selectedItem}
             onUpdateDevice={handleUpdateDevice}
             onRemoveDevice={handleRemoveDevice}
             onStartCabling={(deviceId) => setCablingMode({ enabled: true, fromDeviceId: deviceId })}
             onViewRack={() => setRackViewOpen(true)}
+            onRemoveArchElement={handleRemoveArchElement}
         />
     );
 
@@ -700,10 +718,10 @@ export function CCTVPlanner() {
                             {activeFloor ? (
                                 <PlannerCanvas
                                     floor={activeFloor}
-                                    selectedDevice={selectedDevice}
-                                    onSelectDevice={handleSelectDevice}
+                                    selectedItem={selectedItem}
+                                    onSelectItem={handleSelectItem}
                                     onUpdateDevice={handleUpdateDevice}
-                                    onCanvasClick={() => setSelectedDevice(null)}
+                                    onCanvasClick={() => handleSelectItem(null)}
                                     cablingMode={cablingMode}
                                     onSetCablingMode={setCablingMode}
                                     onAddConnection={handleAddConnection}
@@ -732,10 +750,10 @@ export function CCTVPlanner() {
             </div>
 
             {isMobile && (
-                 <Sheet open={!!selectedDevice} onOpenChange={(isOpen) => !isOpen && setSelectedDevice(null)}>
+                 <Sheet open={!!selectedItem} onOpenChange={(isOpen) => !isOpen && setSelectedItem(null)}>
                     <SheetContent className="w-[85vw] p-0 border-l">
                          <SheetHeader className="p-4 border-b">
-                            <SheetTitle>Device Properties</SheetTitle>
+                            <SheetTitle>Item Properties</SheetTitle>
                          </SheetHeader>
                         {propertiesPanel}
                     </SheetContent>
@@ -750,7 +768,7 @@ export function CCTVPlanner() {
             />
 
             <RackElevationView
-                rack={selectedDevice?.type.startsWith('rack') ? selectedDevice as RackContainer : null}
+                rack={selectedItem?.type.startsWith('rack') ? selectedItem as RackContainer : null}
                 isOpen={isRackViewOpen}
                 onClose={() => setRackViewOpen(false)}
                 onUpdateRack={handleUpdateRack}

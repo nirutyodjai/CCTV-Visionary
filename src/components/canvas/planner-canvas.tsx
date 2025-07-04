@@ -2,17 +2,18 @@
 'use client';
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import type { Floor, AnyDevice, Connection, ArchitecturalElement, Point, CablingMode, ArchitecturalElementType } from '@/lib/types';
+import type { Floor, AnyDevice, Connection, ArchitecturalElement, Point, CablingMode, ArchitecturalElementType, SelectableItem } from '@/lib/types';
 import { DEVICE_CONFIG } from '@/lib/device-config';
 import { useTheme } from 'next-themes';
 
 const ICON_SIZE = 28;
 const RESIZE_HANDLE_SIZE = 10;
+const SELECTION_THRESHOLD = 10; // Click tolerance in pixels
 
 interface PlannerCanvasProps {
   floor: Floor;
-  selectedDevice: AnyDevice | null;
-  onSelectDevice: (device: AnyDevice | null) => void;
+  selectedItem: SelectableItem | null;
+  onSelectItem: (item: SelectableItem | null) => void;
   onUpdateDevice: (device: AnyDevice) => void;
   onCanvasClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   cablingMode: CablingMode;
@@ -28,8 +29,8 @@ interface PlannerCanvasProps {
 
 export function PlannerCanvas({
   floor,
-  selectedDevice,
-  onSelectDevice,
+  selectedItem,
+  onSelectItem,
   onUpdateDevice,
   onCanvasClick,
   cablingMode,
@@ -92,11 +93,11 @@ export function PlannerCanvas({
     };
   };
 
-  const getAbsoluteCoords = (device: { x: number; y: number }): Point | null => {
+  const getAbsoluteCoords = (relPoint: Point): Point | null => {
     if (!floorPlanRect) return null;
     return {
-      x: floorPlanRect.x + device.x * floorPlanRect.width,
-      y: floorPlanRect.y + device.y * floorPlanRect.height,
+      x: floorPlanRect.x + relPoint.x * floorPlanRect.width,
+      y: floorPlanRect.y + relPoint.y * floorPlanRect.height,
     };
   };
 
@@ -105,7 +106,7 @@ export function PlannerCanvas({
     if (!coords) return;
     const { x, y } = coords;
     
-    const isSelected = selectedDevice?.id === device.id;
+    const isSelected = selectedItem?.id === device.id;
     const isCablingStart = cablingMode.enabled && cablingMode.fromDeviceId === device.id;
 
     ctx.save();
@@ -150,7 +151,7 @@ export function PlannerCanvas({
     ctx.fillText(device.label, x, y + ICON_SIZE / 2 + 12);
     
     ctx.restore();
-  }, [getAbsoluteCoords, selectedDevice, cablingMode, resolvedTheme]);
+  }, [getAbsoluteCoords, selectedItem, cablingMode, resolvedTheme]);
 
   const drawConnections = useCallback((ctx: CanvasRenderingContext2D) => {
     floor.connections?.forEach(conn => {
@@ -180,10 +181,35 @@ export function PlannerCanvas({
       const pointBasedTools: ArchitecturalElementType[] = ['table', 'chair', 'elevator', 'fire-escape', 'shaft'];
       const rotatableSizableTools: ArchitecturalElementType[] = ['tree', 'motorcycle', 'car', 'supercar'];
 
-      const startAbs = { x: floorPlanRect.x + el.start.x * floorPlanRect.width, y: floorPlanRect.y + el.start.y * floorPlanRect.height };
+      const startAbs = getAbsoluteCoords(el.start);
+      if (!startAbs) {
+        ctx.restore();
+        return;
+      }
+      
+      const isSelected = selectedItem?.id === el.id;
+
+      if (isSelected) {
+        ctx.strokeStyle = 'hsla(var(--accent), 0.9)';
+        ctx.fillStyle = 'hsla(var(--accent), 0.2)';
+        ctx.lineWidth = 2;
+        // The selection highlight is drawn before the element itself to keep it as a background
+        const endAbs = getAbsoluteCoords(el.end);
+        if (endAbs) {
+            const minX = Math.min(startAbs.x, endAbs.x) - 5;
+            const minY = Math.min(startAbs.y, endAbs.y) - 5;
+            const width = Math.abs(endAbs.x - startAbs.x) + 10;
+            const height = Math.abs(endAbs.y - startAbs.y) + 10;
+            ctx.strokeRect(minX, minY, width, height);
+            ctx.fillRect(minX, minY, width, height);
+        }
+      }
+
 
       if (el.type === 'area') {
-        const endAbs = { x: floorPlanRect.x + el.end.x * floorPlanRect.width, y: floorPlanRect.y + el.end.y * floorPlanRect.height };
+        const endAbs = getAbsoluteCoords(el.end);
+        if (!endAbs) { ctx.restore(); return; }
+
         const width = endAbs.x - startAbs.x;
         const height = endAbs.y - startAbs.y;
 
@@ -195,7 +221,9 @@ export function PlannerCanvas({
         ctx.strokeRect(startAbs.x, startAbs.y, width, height);
 
       } else if (lineBasedTools.includes(el.type)) {
-          const endAbs = { x: floorPlanRect.x + el.end.x * floorPlanRect.width, y: floorPlanRect.y + el.end.y * floorPlanRect.height };
+          const endAbs = getAbsoluteCoords(el.end);
+          if (!endAbs) { ctx.restore(); return; }
+
           ctx.strokeStyle = 'hsl(var(--foreground) / 0.5)';
           ctx.lineWidth = el.type === 'wall' ? 5 : 3;
           if (el.type === 'door' || el.type === 'window') {
@@ -206,7 +234,9 @@ export function PlannerCanvas({
           ctx.lineTo(endAbs.x, endAbs.y);
           ctx.stroke();
       } else if (rotatableSizableTools.includes(el.type)) {
-          const endAbs = { x: floorPlanRect.x + el.end.x * floorPlanRect.width, y: floorPlanRect.y + el.end.y * floorPlanRect.height };
+          const endAbs = getAbsoluteCoords(el.end);
+          if (!endAbs) { ctx.restore(); return; }
+
           const dx = endAbs.x - startAbs.x;
           const dy = endAbs.y - startAbs.y;
           const size = Math.max(1, Math.sqrt(dx * dx + dy * dy));
@@ -300,7 +330,7 @@ export function PlannerCanvas({
       }
       ctx.restore();
     });
-  }, [floor.architecturalElements, floorPlanRect]);
+  }, [floor.architecturalElements, floorPlanRect, selectedItem, getAbsoluteCoords]);
 
   const drawResizeHandles = useCallback((ctx: CanvasRenderingContext2D) => {
     if (!floorPlanRect) return;
@@ -356,6 +386,46 @@ export function PlannerCanvas({
     render();
     return () => window.cancelAnimationFrame(animationFrameId);
   }, [draw]);
+  
+  const isPointOnElement = (clickPoint: Point, el: ArchitecturalElement): boolean => {
+    if (!floorPlanRect) return false;
+
+    const startAbs = getAbsoluteCoords(el.start);
+    if (!startAbs) return false;
+
+    if (['table', 'chair', 'elevator', 'fire-escape', 'shaft'].includes(el.type)) {
+        const distance = Math.sqrt(Math.pow(clickPoint.x - startAbs.x, 2) + Math.pow(clickPoint.y - startAbs.y, 2));
+        return distance < SELECTION_THRESHOLD * 1.5;
+    }
+
+    const endAbs = getAbsoluteCoords(el.end);
+    if (!endAbs) return false;
+    
+    if (el.type === 'area') {
+        const minX = Math.min(startAbs.x, endAbs.x);
+        const maxX = Math.max(startAbs.x, endAbs.x);
+        const minY = Math.min(startAbs.y, endAbs.y);
+        const maxY = Math.max(startAbs.y, endAbs.y);
+        return clickPoint.x >= minX && clickPoint.x <= maxX && clickPoint.y >= minY && clickPoint.y <= maxY;
+    }
+    
+    // For line-based and sizable objects
+    const px = endAbs.x - startAbs.x;
+    const py = endAbs.y - startAbs.y;
+    const lenSq = px * px + py * py;
+    if (lenSq === 0) { // start and end are the same point (e.g. for some sizable objects before drag)
+        const distance = Math.sqrt(Math.pow(clickPoint.x - startAbs.x, 2) + Math.pow(clickPoint.y - startAbs.y, 2));
+        return distance < SELECTION_THRESHOLD;
+    }
+    let u = ((clickPoint.x - startAbs.x) * px + (clickPoint.y - startAbs.y) * py) / lenSq;
+    u = Math.max(0, Math.min(1, u));
+    const x = startAbs.x + u * px;
+    const y = startAbs.y + u * py;
+    const dx = x - clickPoint.x;
+    const dy = y - clickPoint.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    return dist < SELECTION_THRESHOLD;
+  }
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const point = getRelativeCoords(e);
@@ -373,6 +443,15 @@ export function PlannerCanvas({
           return;
         }
       }
+    }
+    
+    // Check for architectural element interaction first (as they might be "under" devices)
+    for (const el of [...floor.architecturalElements].reverse()) {
+        if (isPointOnElement(point, el)) {
+            onSelectItem(el);
+            // We could add dragging for arch elements here in the future
+            return;
+        }
     }
 
     // Check for device interaction
@@ -394,7 +473,7 @@ export function PlannerCanvas({
             return;
           }
 
-          onSelectDevice(device);
+          onSelectItem(device);
           setDraggingDevice(device);
           setDragOffset({ x: point.x - deviceCoords.x, y: point.y - deviceCoords.y });
           return;
@@ -411,7 +490,6 @@ export function PlannerCanvas({
         if (selectedArchTool === 'area') {
             if (!floorPlanRect) return;
             const defaultSizePx = 150;
-            // Center the new area on the click point
             const startRel = {
                 x: startPoint.x - (defaultSizePx / 2) / floorPlanRect.width,
                 y: startPoint.y - (defaultSizePx / 2) / floorPlanRect.height

@@ -149,3 +149,5 @@ export interface CablingMode {
   enabled: boolean;
   fromDeviceId: string | null;
 }
+
+export type SelectableItem = AnyDevice | ArchitecturalElement;
