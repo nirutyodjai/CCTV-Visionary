@@ -64,25 +64,29 @@ export function ArchitectureToolbar({ selectedTool, onSelectTool }: Architecture
                 </Tooltip>
                 ))}
             </div>
+        
+            <Separator />
+            
+            <RadioTileGroup 
+                className="grid-cols-4"
+                value={selectedTool || ''}
+                onValueChange={(value) => onSelectTool(value as ArchitecturalElementType)}
+            >
+                {radioTools.map((tool) => (
+                    <Tooltip key={tool.type}>
+                        <TooltipTrigger asChild>
+                             <RadioTileItem 
+                                value={tool.type}
+                                icon={tool.icon}
+                            />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>เพิ่ม {tool.name}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                ))}
+            </RadioTileGroup>
         </TooltipProvider>
-
-        <Separator />
-        
-        <RadioTileGroup 
-            className="grid-cols-4"
-            value={selectedTool || ''}
-            onValueChange={(value) => onSelectTool(value as ArchitecturalElementType)}
-        >
-            {radioTools.map((tool) => (
-                <RadioTileItem 
-                    key={tool.type}
-                    value={tool.type}
-                    label={tool.name}
-                    icon={tool.icon}
-                />
-            ))}
-        </RadioTileGroup>
-        
       </CardContent>
     </Card>
   );
