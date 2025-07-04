@@ -15,10 +15,10 @@ export function BillOfMaterials({ project }: BillOfMaterialsProps) {
     project.buildings.forEach(building => {
         building.floors.forEach(floor => {
             floor.devices.forEach(device => {
-                devices.push(device);
+                allDevices.push(device);
                 if (device.type.startsWith('rack') && (device as RackContainer).devices) {
                     (device as RackContainer).devices.forEach(rackDevice => {
-                        devices.push(rackDevice);
+                        allDevices.push(rackDevice);
                     });
                 }
             });
