@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useSidebar } from './sidebar';
+import { cn } from '@/lib/utils';
 
 export function SidebarToggle() {
   const { open, toggleSidebar, isMobile } = useSidebar();
@@ -9,54 +10,65 @@ export function SidebarToggle() {
   if (isMobile) {
     return null;
   }
+  
+  const scale = 0.4; // 120px * 0.4 = 48px (w-12), 60px * 0.4 = 24px (h-6)
+  const baseWidth = 120;
+  const baseHeight = 60;
 
-  // The provided CSS has fixed sizes, which is too large for the header.
-  // We scale it down to match the other toggles.
-  const scale = 0.4;
 
   return (
-    <div className="flex items-center justify-center p-2 group-data-[collapsible=icon]:hidden holo-switch-wrapper">
-       <div 
-          className="toggle-container"
-          // We need to adjust the container height to compensate for the scale, to avoid large empty space.
-          style={{ transform: `scale(${scale})`, height: `calc(60px * ${scale})` }}
-        >
-        <div className="toggle-wrap">
-          <input 
-            className="toggle-input" 
-            id="sidebar-holo-toggle" 
-            type="checkbox"
-            checked={open}
-            onChange={toggleSidebar}
-            aria-label="Toggle Sidebar"
-          />
-          <label className="toggle-track" htmlFor="sidebar-holo-toggle">
-            <div className="track-lines">
-              <div className="track-line" />
-            </div>
-            <div className="toggle-thumb">
-              <div className="thumb-core" />
-              <div className="thumb-inner" />
-              <div className="thumb-scan" />
-              <div className="thumb-particles">
-                <div className="thumb-particle" /><div className="thumb-particle" /><div className="thumb-particle" /><div className="thumb-particle" /><div className="thumb-particle" />
+     <div
+      className={cn("group-data-[collapsible=icon]:hidden", "flex items-center justify-center")}
+      style={{
+        width: `${baseWidth * scale}px`,
+        height: `${baseHeight * scale}px`,
+      }}
+    >
+      <div 
+        className="holo-switch-wrapper"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center', 
+        }}
+      >
+        <div className="toggle-container">
+          <div className="toggle-wrap">
+            <input 
+              className="toggle-input" 
+              id="sidebar-holo-toggle" 
+              type="checkbox"
+              checked={open}
+              onChange={toggleSidebar}
+              aria-label="Toggle Sidebar"
+            />
+            <label className="toggle-track" htmlFor="sidebar-holo-toggle">
+              <div className="track-lines">
+                <div className="track-line" />
               </div>
-            </div>
-            <div className="toggle-data">
-              <div className="data-text off">CLOSE</div>
-              <div className="data-text on">OPEN</div>
-              <div className="status-indicator off" />
-              <div className="status-indicator on" />
-            </div>
-            <div className="energy-rings">
-              <div className="energy-ring" /><div className="energy-ring" /><div className="energy-ring" />
-            </div>
-            <div className="interface-lines">
-              <div className="interface-line" /><div className="interface-line" /><div className="interface-line" /><div className="interface-line" /><div className="interface-line" /><div className="interface-line" />
-            </div>
-            <div className="toggle-reflection" />
-            <div className="holo-glow" />
-          </label>
+              <div className="toggle-thumb">
+                <div className="thumb-core" />
+                <div className="thumb-inner" />
+                <div className="thumb-scan" />
+                <div className="thumb-particles">
+                  <div className="thumb-particle" /><div className="thumb-particle" /><div className="thumb-particle" /><div className="thumb-particle" /><div className="thumb-particle" />
+                </div>
+              </div>
+              <div className="toggle-data">
+                <div className="data-text off">CLOSE</div>
+                <div className="data-text on">OPEN</div>
+                <div className="status-indicator off" />
+                <div className="status-indicator on" />
+              </div>
+              <div className="energy-rings">
+                <div className="energy-ring" /><div className="energy-ring" /><div className="energy-ring" />
+              </div>
+              <div className="interface-lines">
+                <div className="interface-line" /><div className="interface-line" /><div className="interface-line" /><div className="interface-line" /><div className="interface-line" /><div className="interface-line" />
+              </div>
+              <div className="toggle-reflection" />
+              <div className="holo-glow" />
+            </label>
+          </div>
         </div>
       </div>
     </div>
