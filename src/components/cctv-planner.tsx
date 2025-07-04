@@ -76,8 +76,7 @@ function planReducer(state: PlanState, action: Action): PlanState {
     case 'ADD_SUGGESTIONS': {
       const { floor, suggestions } = action.payload;
       const existingDevices = state.devicesByFloor[floor] || [];
-      const canvasSize = 1000; // Assuming a base canvas size for relative coords
-      const newDevices = suggestions.map(s => createDevice(s.type, s.x * canvasSize, s.y * canvasSize, existingDevices));
+      const newDevices = suggestions.map(s => createDevice(s.type, s.x, s.y, existingDevices));
       return { ...state, devicesByFloor: { ...state.devicesByFloor, [floor]: [...existingDevices, ...newDevices] } };
     }
     default:
