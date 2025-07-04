@@ -398,38 +398,41 @@ export function PlannerCanvas({
               const tableHeight = baseHeight * scale;
               const legSize = 3 * scale;
 
-              // Draw legs first
-              ctx.fillStyle = 'hsl(35, 20%, 60%)';
+              // Draw tabletop
+              ctx.fillStyle = 'hsl(35, 25%, 75%)'; // Light brown
+              ctx.strokeStyle = 'hsl(35, 20%, 60%)'; // Darker brown
+              ctx.lineWidth = 1.5 * scale;
+              ctx.fillRect(-tableWidth / 2, -tableHeight / 2, tableWidth, tableHeight);
+              ctx.strokeRect(-tableWidth / 2, -tableHeight / 2, tableWidth, tableHeight);
+
+              // Draw legs on top
+              ctx.fillStyle = 'hsl(35, 20%, 50%)'; // Even darker brown for legs
               ctx.fillRect(-tableWidth/2, -tableHeight/2, legSize, legSize);
               ctx.fillRect(tableWidth/2 - legSize, -tableHeight/2, legSize, legSize);
               ctx.fillRect(-tableWidth/2, tableHeight/2 - legSize, legSize, legSize);
               ctx.fillRect(tableWidth/2 - legSize, tableHeight/2 - legSize, legSize, legSize);
-
-              // Draw tabletop
-              ctx.fillStyle = 'hsl(35, 25%, 75%)';
-              ctx.strokeStyle = 'hsl(35, 20%, 60%)';
-              ctx.lineWidth = 1.5 * scale;
-              ctx.fillRect(-tableWidth / 2, -tableHeight / 2, tableWidth, tableHeight);
-              ctx.strokeRect(-tableWidth / 2, -tableHeight / 2, tableWidth, tableHeight);
               ctx.restore();
           } else if (el.type === 'chair') {
               ctx.save();
               ctx.translate(coords.x, coords.y);
               const baseSize = 12;
-              const size = baseSize * scale;
-              const backHeight = size * 1.2;
+              const radius = baseSize * scale / 2;
 
               ctx.fillStyle = 'hsl(35, 25%, 75%)';
               ctx.strokeStyle = 'hsl(35, 20%, 60%)';
-              ctx.lineWidth = 1 * scale;
+              ctx.lineWidth = 1.5 * scale;
 
-              // Draw back
-              ctx.fillRect(-size/2, -size - (size/2), size, backHeight);
-              ctx.strokeRect(-size/2, -size - (size/2), size, backHeight);
+              // Draw seat (circle)
+              ctx.beginPath();
+              ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+              ctx.fill();
+              ctx.stroke();
 
-              // Draw seat
-              ctx.fillRect(-size/2, -size/2, size, size);
-              ctx.strokeRect(-size/2, -size/2, size, size);
+              // Draw backrest (arc)
+              ctx.beginPath();
+              ctx.arc(0, 0, radius, Math.PI * 1.2, Math.PI * 1.8);
+              ctx.stroke();
+
               ctx.restore();
           } else {
               const rectSize = 30 * scale;
