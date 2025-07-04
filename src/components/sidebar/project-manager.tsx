@@ -231,35 +231,39 @@ export function ProjectManager({ isOpen, onClose, onLoadProject, currentProjectI
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!deletingProject} onOpenChange={(open) => !open && setDeletingProject(null)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>ยืนยันการลบ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    คุณแน่ใจหรือไม่ที่จะลบโครงการ "{deletingProject?.projectName}" (ID: {deletingProject?.id})? การกระทำนี้ไม่สามารถย้อนกลับได้
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setDeletingProject(null)}>ยกเลิก</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90">ยืนยันการลบ</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {deletingProject && (
+        <AlertDialog open={!!deletingProject} onOpenChange={(open) => !open && setDeletingProject(null)}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>ยืนยันการลบ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      คุณแน่ใจหรือไม่ที่จะลบโครงการ "{deletingProject?.projectName}" (ID: {deletingProject?.id})? การกระทำนี้ไม่สามารถย้อนกลับได้
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setDeletingProject(null)}>ยกเลิก</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90">ยืนยันการลบ</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
-      <AlertDialog open={isConfirmingBulkDelete} onOpenChange={(open) => !open && setConfirmingBulkDelete(false)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>ยืนยันการลบ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    คุณแน่ใจหรือไม่ที่จะลบ {numSelected} โครงการที่เลือก? การกระทำนี้ไม่สามารถย้อนกลับได้
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setConfirmingBulkDelete(false)}>ยกเลิก</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBulkDeleteConfirm} className="bg-destructive hover:bg-destructive/90">ยืนยันการลบ</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {isConfirmingBulkDelete && (
+        <AlertDialog open={isConfirmingBulkDelete} onOpenChange={(open) => !open && setConfirmingBulkDelete(false)}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>ยืนยันการลบ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      คุณแน่ใจหรือไม่ที่จะลบ {numSelected} โครงการที่เลือก? การกระทำนี้ไม่สามารถย้อนกลับได้
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setConfirmingBulkDelete(false)}>ยกเลิก</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleBulkDeleteConfirm} className="bg-destructive hover:bg-destructive/90">ยืนยันการลบ</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 }
