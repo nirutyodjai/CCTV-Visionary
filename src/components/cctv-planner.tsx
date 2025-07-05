@@ -24,6 +24,7 @@ import { RackElevationView } from '@/components/rack/rack-elevation-view';
 import { PlanManagement } from './sidebar/plan-management';
 import { ProjectManager } from './sidebar/project-manager';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { SidebarToggle } from '@/components/ui/sidebar-toggle';
 import { SelectionProvider, useSelection } from '@/contexts/SelectionContext';
@@ -48,7 +49,7 @@ type Action =
   | { type: 'ADD_ARCH_ELEMENT'; payload: { element: ArchitecturalElement; buildingId: string; floorId: string } }
   | { type: 'UPDATE_ARCH_ELEMENT'; payload: { element: ArchitecturalElement; buildingId: string; floorId: string } }
   | { type: 'REMOVE_ARCH_ELEMENT'; payload: { elementId: string; buildingId: string; floorId: string } }
-  | { type: 'UPDATE_BUILDING_NAME'; payload: { buildingId: string; newName: string } }
+  | { type: 'UPDATE_BUILDing_NAME'; payload: { buildingId: string; newName: string } }
   | { type: 'ADD_FLOOR'; payload: { buildingId: string } }
   | { type: 'UPDATE_RACK'; payload: { rack: RackContainer; buildingId: string; floorId: string } };
 
