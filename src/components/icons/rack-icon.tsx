@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 
 export const RackIcon = (props: React.SVGProps<SVGSVGElement>) => (

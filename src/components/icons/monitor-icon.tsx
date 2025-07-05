@@ -1,3 +1,4 @@
+'use client';
 import type { SVGProps } from "react";
 
 export const MonitorIcon = (props: SVGProps<SVGSVGElement>) => (

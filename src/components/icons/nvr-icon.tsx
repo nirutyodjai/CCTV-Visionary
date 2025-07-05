@@ -1,3 +1,4 @@
+'use client';
 import type { SVGProps } from "react";
 
 export const NvrIcon = (props: SVGProps<SVGSVGElement>) => (
