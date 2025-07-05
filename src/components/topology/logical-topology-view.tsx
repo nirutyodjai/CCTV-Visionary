@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
-import ReactFlow, { ReactFlowProvider, MiniMap, Controls, Background } from 'react-flow-renderer';
+import React, { useEffect, useState } from 'react';
+import ReactFlow, { ReactFlowProvider, MiniMap, Controls, Background } from 'reactflow';
+import 'reactflow/dist/style.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { generateLogicalTopologyLayoutAction } from '@/app/actions';
 import type { AnyDevice, Connection } from '@/lib/types';
