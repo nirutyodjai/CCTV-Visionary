@@ -19,7 +19,7 @@ const ObstacleSchema = z.object({
   end: PointSchema,
 });
 
-export const CablePathInputSchema = z.object({
+const CablePathInputSchema = z.object({
   startPoint: PointSchema,
   endPoint: PointSchema,
   obstacles: z.array(ObstacleSchema),
@@ -27,7 +27,7 @@ export const CablePathInputSchema = z.object({
 });
 export type CablePathInput = z.infer<typeof CablePathInputSchema>;
 
-export const CablePathOutputSchema = z.object({
+const CablePathOutputSchema = z.object({
   path: z.array(PointSchema),
 });
 export type CablePathOutput = z.infer<typeof CablePathOutputSchema>;
