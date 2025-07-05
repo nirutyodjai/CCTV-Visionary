@@ -9,6 +9,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarProvider,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -366,7 +367,7 @@ function CCTVPlannerInner() {
             <SidebarProvider>
                 <Sidebar>
                     <SidebarHeader>
-                        <Button variant="ghost" size="icon"><PanelLeft/></Button>
+                        <SidebarTrigger />
                     </SidebarHeader>
                     <SidebarContent>
                        <SidePanelContent />
@@ -456,5 +457,7 @@ export function CCTVPlanner() {
         </SelectionProvider>
     )
 }
+
+    
 
     
