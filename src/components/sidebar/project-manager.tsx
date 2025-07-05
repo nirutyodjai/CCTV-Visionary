@@ -33,6 +33,7 @@ import { listProjectsAction, deleteProjectAction, updateProjectNameAction } from
 import type { ProjectState } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from "@/components/ui/checkbox";
+import { firebaseConfig } from '@/lib/firebase';
 
 interface ProjectManagerProps {
   isOpen: boolean;
@@ -157,6 +158,12 @@ export function ProjectManager({ isOpen, onClose, onLoadProject, currentProjectI
               {numSelected > 0
                 ? `${numSelected} โครงการที่เลือก`
                 : "โหลด, เปลี่ยนชื่อ, หรือลบโครงการที่บันทึกไว้"}
+               <div className="text-xs text-muted-foreground pt-2">
+                เชื่อมต่อกับโปรเจกต์:
+                <code className="font-mono bg-muted rounded-md px-1.5 py-1 ml-1.5">
+                  {firebaseConfig.projectId}
+                </code>
+              </div>
             </DialogDescription>
           </DialogHeader>
 
