@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Sarabun } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const sarabun = Sarabun({
   subsets: ['thai', 'latin'],
