@@ -9,7 +9,7 @@ import { getDeviceDetails as getDeviceDetailsFlow, type DeviceInfo, type DeviceD
 import { runPlanDiagnostics as runPlanDiagnosticsFlow, type Plan, type DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
 import type { ProjectState } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 
 
 // Helper to wrap flow calls for consistent error handling
@@ -57,7 +57,7 @@ export async function runPlanDiagnosticsAction(plan: Plan) {
 }
 
 
-// New actions for project management
+// Project Management Actions
 export async function listProjectsAction(): Promise<{ success: true; data: Pick<ProjectState, 'id' | 'projectName'>[] } | { success: false; error: string }> {
     try {
         const projectsCol = collection(db, 'projects');
@@ -69,6 +69,31 @@ export async function listProjectsAction(): Promise<{ success: true; data: Pick<
         return { success: true, data: projectList };
     } catch (error: any) {
         console.error(`Error in listProjectsAction:`, error);
+        return { success: false, error: error.message || `An unexpected error occurred.` };
+    }
+}
+
+export async function saveProjectAction(projectState: ProjectState): Promise<{ success: true; } | { success: false; error: string }> {
+    try {
+        const projectRef = doc(db, "projects", projectState.id);
+        await setDoc(projectRef, projectState);
+        return { success: true };
+    } catch (error: any) {
+        console.error(`Error in saveProjectAction:`, error);
+        return { success: false, error: error.message || `An unexpected error occurred.` };
+    }
+}
+
+export async function loadProjectAction(projectId: string): Promise<{ success: true; data: ProjectState } | { success: false; error: string }> {
+    try {
+        const projectRef = doc(db, "projects", projectId);
+        const projectSnap = await getDoc(projectRef);
+        if (!projectSnap.exists()) {
+            return { success: false, error: "Project not found." };
+        }
+        return { success: true, data: projectSnap.data() as ProjectState };
+    } catch (error: any) {
+        console.error(`Error in loadProjectAction:`, error);
         return { success: false, error: error.message || `An unexpected error occurred.` };
     }
 }

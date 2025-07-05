@@ -15,6 +15,7 @@ export function createInitialState(): ProjectState {
         connections: [],
         architecturalElements: [],
         diagnostics: [],
+        floorPlanRect: null,
     };
 
     const initialBuilding: Building = {

@@ -1,42 +1,50 @@
 'use client';
 
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Loader2, FolderUp } from 'lucide-react';
 
 interface PlanManagementProps {
   planName: string;
+  isSaving: boolean;
   onPlanNameChange: (name: string) => void;
+  onSave: () => void;
+  onOpenManager: () => void;
 }
 
-export function PlanManagement({ planName, onPlanNameChange }: PlanManagementProps) {
+export function PlanManagement({ planName, onPlanNameChange, onSave, isSaving, onOpenManager }: PlanManagementProps) {
   return (
     <Card>
-      <CardHeader className="p-4">
-        <CardTitle className="text-base">การจัดการแผน</CardTitle>
+      <CardHeader className="p-3 border-b">
+         <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-semibold">Project Control</CardTitle>
+              <CardDescription className="text-xs pt-1">
+                Name and save your current project
+              </CardDescription>
+            </div>
+            <Button size="icon" variant="outline" onClick={onOpenManager}>
+                <FolderUp className="w-4 h-4" />
+                <span className="sr-only">Open Project Manager</span>
+            </Button>
+        </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0 space-y-2">
+      <CardContent className="p-3">
         <div className="flex items-center space-x-2">
           <Input
             id="planName"
-            placeholder="ใส่ชื่อแผน"
-            className="h-8"
+            placeholder="Enter project name"
+            className="h-9"
             value={planName}
             onChange={(e) => onPlanNameChange(e.target.value)}
           />
-          <Button size="sm" className="h-8 whitespace-nowrap" disabled>
-            บันทึก
+          <Button onClick={onSave} disabled={isSaving || !planName} className="h-9 whitespace-nowrap">
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isSaving ? 'Saving...' : 'Save Project'}
           </Button>
         </div>
-        <div className="flex items-center space-x-2">
-          <Input id="planIdInput" placeholder="ใส่ ID แผนเพื่อโหลด" className="h-8" disabled />
-          <Button size="sm" variant="secondary" className="h-8" disabled>
-            โหลด
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground pt-1">
-          ฟังก์ชันบันทึก/โหลดจะถูกนำมาใช้ในอนาคต
-        </p>
       </CardContent>
     </Card>
   );

@@ -237,7 +237,7 @@ export function ProjectManager({ isOpen, onClose, onLoadProject, currentProjectI
               <AlertDialogHeader>
                   <AlertDialogTitle>ยืนยันการลบ?</AlertDialogTitle>
                   <AlertDialogDescription>
-                      คุณแน่ใจหรือไม่ที่จะลบโครงการ "{deletingProject?.projectName}" (ID: {deletingProject?.id})? การกระทำนี้ไม่สามารถย้อนกลับได้
+                      คุณแน่ใจหรือไม่ที่จะลบโครงการ "{deletingProject.projectName}" (ID: {deletingProject.id})? การกระทำนี้ไม่สามารถย้อนกลับได้
                   </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

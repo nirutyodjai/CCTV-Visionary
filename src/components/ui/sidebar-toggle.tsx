@@ -1,16 +1,37 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSidebar } from './sidebar';
 import { cn } from '@/lib/utils';
+import { Skeleton } from './skeleton';
 
 export function SidebarToggle() {
   const { open, toggleSidebar, isMobile, openMobile } = useSidebar();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const scale = 0.4; // 120px * 0.4 = 48px (w-12), 60px * 0.4 = 24px (h-6)
   const baseWidth = 120;
   const baseHeight = 60;
 
+  const isChecked = isMobile ? openMobile : open;
+
+  if (!mounted) {
+    return (
+      <div
+        className={cn("flex items-center justify-center")}
+        style={{
+          width: `${baseWidth * scale}px`,
+          height: `${baseHeight * scale}px`,
+        }}
+      >
+        <Skeleton className="w-full h-full rounded-full" />
+      </div>
+    );
+  }
 
   return (
      <div
@@ -33,7 +54,7 @@ export function SidebarToggle() {
               className="toggle-input" 
               id="sidebar-holo-toggle" 
               type="checkbox"
-              checked={isMobile ? openMobile : open}
+              checked={isChecked}
               onChange={toggleSidebar}
               aria-label="Toggle Sidebar"
             />

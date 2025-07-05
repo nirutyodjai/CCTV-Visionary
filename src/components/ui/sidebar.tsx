@@ -181,6 +181,11 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+      setMounted(true)
+    }, [])
 
     if (collapsible === "none") {
       return (
@@ -193,6 +198,22 @@ const Sidebar = React.forwardRef<
           {...props}
         >
           {children}
+        </div>
+      )
+    }
+
+    if (!mounted) {
+      return (
+        <div
+          ref={ref}
+          className="group peer hidden md:block text-sidebar-foreground"
+        >
+          <div
+            className={cn(
+              "duration-200 relative h-svh bg-transparent transition-[width] ease-linear",
+              "w-[--sidebar-width]"
+            )}
+          />
         </div>
       )
     }
