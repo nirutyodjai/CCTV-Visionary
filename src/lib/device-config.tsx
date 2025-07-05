@@ -13,28 +13,28 @@ const PlaceholderRackDeviceIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
-export const DEVICE_CONFIG: Record<string, { name: string; icon: React.ComponentType<any>; defaults: Partial<Device> & { uHeight?: number; powerConsumption?: number; powerCapacity?: number; } }> = {
+export const DEVICE_CONFIG: Record<string, { name: string; icon: React.ComponentType<any>; color?: string; defaults: Partial<Device> & { uHeight?: number; powerConsumption?: number; powerCapacity?: number; } }> = {
   // Field devices
-  'cctv-bullet': { name: 'กล้องกระบอก', icon: CctvBulletIcon, defaults: { resolution: '1080p', fov: 90, range: 20, rotation: 0, price: 1500, powerConsumption: 5 } },
-  'cctv-dome': { name: 'กล้องโดม', icon: CctvDomeIcon, defaults: { resolution: '1080p', fov: 90, range: 20, rotation: 0, price: 1400, powerConsumption: 5 } },
-  'cctv-ptz': { name: 'กล้อง PTZ', icon: CctvPtzIcon, defaults: { resolution: '1080p', fov: 120, range: 30, rotation: 0, price: 4500, powerConsumption: 20 } },
-  'wifi-ap': { name: 'WiFi AP', icon: WifiApIcon, defaults: { range: 15, price: 2500, powerConsumption: 15 } },
+  'cctv-bullet': { name: 'กล้องกระบอก', icon: CctvBulletIcon, color: 'hsl(221, 83%, 53%)', defaults: { resolution: '1080p', fov: 90, range: 20, rotation: 0, price: 1500, powerConsumption: 5 } },
+  'cctv-dome': { name: 'กล้องโดม', icon: CctvDomeIcon, color: 'hsl(221, 83%, 53%)', defaults: { resolution: '1080p', fov: 90, range: 20, rotation: 0, price: 1400, powerConsumption: 5 } },
+  'cctv-ptz': { name: 'กล้อง PTZ', icon: CctvPtzIcon, color: 'hsl(221, 83%, 53%)', defaults: { resolution: '1080p', fov: 120, range: 30, rotation: 0, price: 4500, powerConsumption: 20 } },
+  'wifi-ap': { name: 'WiFi AP', icon: WifiApIcon, color: 'hsl(142, 71%, 45%)', defaults: { range: 15, price: 2500, powerConsumption: 15 } },
   
   // Rack containers (placed on floor plan)
-  'rack-indoor': { name: 'ตู้ Rack (Indoor)', icon: RackIcon, defaults: { rack_size: '9U', price: 2800, devices: [] } },
-  'rack-outdoor': { name: 'ตู้ Rack (Outdoor)', icon: RackIcon, defaults: { rack_size: '9U', ip_rating: 'IP65', price: 4200, devices: [] } },
+  'rack-indoor': { name: 'ตู้ Rack (Indoor)', icon: RackIcon, color: 'hsl(215, 20%, 65%)', defaults: { rack_size: '9U', price: 2800, devices: [] } },
+  'rack-outdoor': { name: 'ตู้ Rack (Outdoor)', icon: RackIcon, color: 'hsl(215, 20%, 65%)', defaults: { rack_size: '9U', ip_rating: 'IP65', price: 4200, devices: [] } },
 
-  // Head-end / Rack-mountable devices
-  'nvr': { name: 'NVR/DVR', icon: NvrIcon, defaults: { channels: 16, storage: '4TB', price: 8000, uHeight: 2, powerConsumption: 50 } },
-  'switch': { name: 'สวิตช์', icon: SwitchIcon, defaults: { ports: 8, price: 2200, uHeight: 1, powerConsumption: 30 } },
+  // Head-end / Rack-mountable devices (some might be on canvas)
+  'nvr': { name: 'NVR/DVR', icon: NvrIcon, color: 'hsl(24, 95%, 53%)', defaults: { channels: 16, storage: '4TB', price: 8000, uHeight: 2, powerConsumption: 50 } },
+  'switch': { name: 'สวิตช์', icon: SwitchIcon, color: 'hsl(24, 95%, 53%)', defaults: { ports: 8, price: 2200, uHeight: 1, powerConsumption: 30 } },
   'patch-panel': { name: 'Patch Panel', icon: PlaceholderRackDeviceIcon, defaults: { uHeight: 1, price: 1200, powerConsumption: 0 } },
   'pdu': { name: 'PDU', icon: PlaceholderRackDeviceIcon, defaults: { uHeight: 1, price: 2500, powerConsumption: 0, powerCapacity: 2200 } },
   'ups': { name: 'UPS', icon: PlaceholderRackDeviceIcon, defaults: { uHeight: 2, price: 9000, powerConsumption: 10, powerCapacity: 1200 } },
   
   // Other (not placed on canvas)
   'monitor': { name: 'จอภาพ', icon: MonitorIcon, defaults: { size: '24"', price: 4000 } },
-  'utp-cat6': { name: 'UTP CAT6', icon: UtpCat6Icon, defaults: { length: 1, price: 20 } },
-  'fiber-optic': { name: 'Fiber Optic', icon: FiberOpticIcon, defaults: { length: 1, price: 40 } },
+  'utp-cat6': { name: 'สาย UTP CAT6', icon: UtpCat6Icon, defaults: { length: 1, price: 20 } },
+  'fiber-optic': { name: 'สาย Fiber Optic', icon: FiberOpticIcon, defaults: { length: 1, price: 40 } },
 };
 
 export function createDevice(type: DeviceType, x: number, y: number, existingDevices: Device[]): Device {

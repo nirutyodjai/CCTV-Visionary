@@ -16,13 +16,15 @@ const ICON_WRAPPER_SIZE = 32;
 
 export function DeviceRenderer({ device, onDeviceDown, containerRect }: DeviceRendererProps) {
   const { selectedItem } = useSelection();
-  const IconComponent = DEVICE_CONFIG[device.type]?.icon;
+  const config = DEVICE_CONFIG[device.type];
+  const IconComponent = config?.icon;
 
-  if (!IconComponent || !containerRect) {
+  if (!IconComponent || !containerRect || !config) {
     return null;
   }
 
   const isSelected = selectedItem?.id === device.id;
+  const deviceColor = config.color;
 
   const left = device.x * containerRect.width - ICON_WRAPPER_SIZE / 2;
   const top = device.y * containerRect.height - ICON_WRAPPER_SIZE / 2;
@@ -40,17 +42,14 @@ export function DeviceRenderer({ device, onDeviceDown, containerRect }: DeviceRe
     >
       <div
         className={cn(
-          'w-full h-full rounded-full flex items-center justify-center transition-all duration-150 border-2',
-          isSelected
-            ? 'bg-primary border-primary-foreground/50 shadow-lg scale-110'
-            : 'bg-card border-border shadow-sm group-hover:scale-110 group-hover:border-primary'
+          'w-full h-full rounded-full flex items-center justify-center transition-all duration-150 border-2 border-transparent shadow-sm group-hover:scale-110',
+          isSelected && 'ring-2 ring-offset-2 ring-primary ring-offset-background scale-110'
         )}
-        style={{ cursor: 'grab' }}
+        style={{ backgroundColor: deviceColor, cursor: 'grab' }}
       >
         <IconComponent
           className={cn(
-            'w-5 h-5 transition-colors',
-            isSelected ? 'text-primary-foreground' : 'text-foreground'
+            'w-5 h-5 text-white' // Use white for high contrast on colored backgrounds
           )}
         />
       </div>
