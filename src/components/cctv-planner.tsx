@@ -41,7 +41,6 @@ import {
   findCablePathAction,
 } from '@/app/actions';
 import { PanelLeft, Map, Settings, Bot, Presentation, Network, BarChart2, Loader2, Eye } from 'lucide-react';
-import { ReportService } from '@/lib/report.service';
 
 function CCTVPlannerInner() {
     const [projectState, setProjectState] = useState<ProjectState>(createInitialState());
@@ -270,6 +269,7 @@ function CCTVPlannerInner() {
     const handleGenerateReport = async () => {
         setIsGeneratingReport(true);
         try {
+            const { ReportService } = await import('@/lib/report.service');
             const reportService = new ReportService(projectState);
             await reportService.generateReport();
             toast({ title: 'Report Generated', description: 'Your PDF report has been downloaded.' });

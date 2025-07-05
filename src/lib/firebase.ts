@@ -2,7 +2,7 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA5WdfDfmQa95T820E-HBQ1XzBm8sVHYv8",
+  apiKey: "AIzaSyDjBkK20C1wY5AfFw21QNeCXOGvNpfS2gs",
   authDomain: "cctv-pro.web.app",
   projectId: "cctv-pro",
   storageBucket: "cctv-pro.appspot.com",
