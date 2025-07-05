@@ -1,3 +1,4 @@
+'use client';
 
 import { DEVICE_CONFIG } from '@/lib/device-config';
 import type { DeviceType } from '@/lib/types';

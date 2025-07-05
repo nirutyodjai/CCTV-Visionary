@@ -1,3 +1,5 @@
+'use client';
+
 import type { AnyDevice, RackContainer, ArchitecturalElement } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Trash2, Cable, Warehouse } from 'lucide-react';

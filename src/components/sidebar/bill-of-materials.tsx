@@ -1,3 +1,4 @@
+'use client';
 
 import type { ProjectState, AnyDevice, RackDevice, RackContainer, Connection } from '@/lib/types';
 import { useMemo } from 'react';

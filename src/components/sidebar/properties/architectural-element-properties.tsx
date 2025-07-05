@@ -1,3 +1,4 @@
+'use client';
 import type { ArchitecturalElement, ArchitecturalElementType } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Label } from '@/components/ui/label';
