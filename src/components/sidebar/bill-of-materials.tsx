@@ -1,8 +1,9 @@
 
-import type { ProjectState, AnyDevice, RackDevice, RackContainer } from '@/lib/types';
+import type { ProjectState, AnyDevice, RackDevice, RackContainer, Connection } from '@/lib/types';
 import { useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { DEVICE_CONFIG } from '@/lib/device-config';
 
 interface BillOfMaterialsProps {
@@ -10,25 +11,25 @@ interface BillOfMaterialsProps {
 }
 
 export function BillOfMaterials({ project }: BillOfMaterialsProps) {
-  const bom = useMemo(() => {
+  const { deviceSummary, cableSummary, grandTotal } = useMemo(() => {
     const allDevices: (AnyDevice | RackDevice)[] = [];
+    const allConnections: Connection[] = [];
+
     project.buildings.forEach(building => {
         building.floors.forEach(floor => {
+            allConnections.push(...floor.connections);
             floor.devices.forEach(device => {
                 allDevices.push(device);
                 if (device.type.startsWith('rack') && (device as RackContainer).devices) {
-                    (device as RackContainer).devices.forEach(rackDevice => {
-                        allDevices.push(rackDevice);
-                    });
+                    allDevices.push(...(device as RackContainer).devices);
                 }
             });
         });
     });
 
-    const summary = allDevices.reduce((acc, device) => {
+    const deviceSummaryMap = allDevices.reduce((acc, device) => {
       const config = DEVICE_CONFIG[device.type];
       if (!config) return acc;
-
       if (!acc[device.type]) {
         acc[device.type] = { count: 0, total_price: 0, name: config.name };
       }
@@ -37,46 +38,93 @@ export function BillOfMaterials({ project }: BillOfMaterialsProps) {
       return acc;
     }, {} as Record<string, { count: number; total_price: number; name: string }>);
 
-    return Object.entries(summary).map(([type, data]) => ({
-      type,
-      ...data
-    }));
+    const cableSummaryMap = allConnections.reduce((acc, conn) => {
+        const config = DEVICE_CONFIG[conn.cableType];
+        if (!config) return acc;
+        if (!acc[conn.cableType]) {
+            acc[conn.cableType] = { length: 0, total_price: 0, name: config.name };
+        }
+        acc[conn.cableType].length += conn.length || 0;
+        acc[conn.cableType].total_price += conn.price || 0;
+        return acc;
+    }, {} as Record<string, { length: number; total_price: number; name: string }>);
+    
+    const deviceList = Object.values(deviceSummaryMap);
+    const cableList = Object.values(cableSummaryMap);
+
+    const totalDevicePrice = deviceList.reduce((sum, item) => sum + item.total_price, 0);
+    const totalCablePrice = cableList.reduce((sum, item) => sum + item.total_price, 0);
+    const grandTotal = totalDevicePrice + totalCablePrice;
+
+    return { 
+        deviceSummary: deviceList, 
+        cableSummary: cableList, 
+        grandTotal 
+    };
   }, [project]);
 
-  const grandTotal = useMemo(() => {
-    return bom.reduce((total, item) => total + item.total_price, 0);
-  }, [bom]);
 
   return (
-    <div className="p-2">
-       <Accordion type="single" collapsible>
-        <AccordionItem value="bom">
-            <AccordionTrigger className="text-lg font-semibold px-2">Bill of Materials</AccordionTrigger>
-            <AccordionContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Item</TableHead>
-                        <TableHead className="text-right">Quantity</TableHead>
-                        <TableHead className="text-right">Total Price</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {bom.map(item => (
-                        <TableRow key={item.type}>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell className="text-right">{item.count}</TableCell>
-                            <TableCell className="text-right">{item.total_price.toLocaleString()} THB</TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <div className="text-right font-bold text-lg pr-4 mt-4">
-                    Grand Total: {grandTotal.toLocaleString()} THB
-                </div>
-            </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </div>
+    <Card>
+        <CardHeader className="p-3 border-b">
+            <CardTitle className="text-sm font-semibold">Bill of Materials</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+             <Accordion type="single" collapsible defaultValue="devices">
+                <AccordionItem value="devices">
+                    <AccordionTrigger className="px-3 text-sm font-medium">Devices</AccordionTrigger>
+                    <AccordionContent className="text-xs">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Item</TableHead>
+                                    <TableHead className="text-center">Qty</TableHead>
+                                    <TableHead className="text-right">Price</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {deviceSummary.map(item => (
+                                <TableRow key={item.name}>
+                                    <TableCell>{item.name}</TableCell>
+                                    <TableCell className="text-center">{item.count}</TableCell>
+                                    <TableCell className="text-right">{item.total_price.toLocaleString()} THB</TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="cabling">
+                    <AccordionTrigger className="px-3 text-sm font-medium">Cabling</AccordionTrigger>
+                    <AccordionContent className="text-xs">
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Cable Type</TableHead>
+                                    <TableHead className="text-center">Length</TableHead>
+                                    <TableHead className="text-right">Price</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {cableSummary.map(item => (
+                                <TableRow key={item.name}>
+                                    <TableCell>{item.name}</TableCell>
+                                    <TableCell className="text-center">{item.length.toLocaleString()} m</TableCell>
+                                    <TableCell className="text-right">{item.total_price.toLocaleString()} THB</TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </CardContent>
+        <CardFooter className="p-3 mt-2 border-t">
+            <div className="w-full flex justify-between items-center">
+                <span className="text-sm font-semibold">Grand Total:</span>
+                <span className="text-lg font-bold">{grandTotal.toLocaleString()} THB</span>
+            </div>
+        </CardFooter>
+    </Card>
   );
 }

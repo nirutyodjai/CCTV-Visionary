@@ -1,5 +1,4 @@
 
-
 import type { DiagnosticResult } from "@/ai/flows/run-plan-diagnostics";
 
 export type DeviceType =
@@ -107,6 +106,7 @@ export interface Connection {
   cableType: CableType;
   length?: number;
   price?: number;
+  path?: Point[];
 }
 
 export interface ArchitecturalElement {

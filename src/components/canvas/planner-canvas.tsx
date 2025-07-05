@@ -1,177 +1,194 @@
-
 'use client';
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import type { Floor, AnyDevice, Point, Connection, ArchitecturalElement, ArchitecturalElementType } from '@/lib/types';
-import { useSelection } from '@/contexts/SelectionContext';
+import type { Floor, AnyDevice, ArchitecturalElement } from '@/lib/types';
 import { DeviceRenderer } from './device-renderer';
 
 interface PlannerCanvasProps {
   floor: Floor;
-  onUpdateDevice: (device: AnyDevice) => void;
-  floorPlanImage: HTMLImageElement | null;
+  cablingMode: { enabled: boolean; fromDeviceId: string | null };
+  onDeviceClick: (device: AnyDevice) => void;
+  onArchElementClick: (element: ArchitecturalElement) => void;
+  onCanvasClick: () => void;
+  onDeviceMove: (deviceId: string, pos: { x: number; y: number }) => void;
 }
 
 export function PlannerCanvas({
   floor,
-  onUpdateDevice,
-  floorPlanImage,
+  cablingMode,
+  onDeviceClick,
+  onArchElementClick,
+  onCanvasClick,
+  onDeviceMove,
 }: PlannerCanvasProps) {
-  const { setSelectedItem } = useSelection();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const [draggingDevice, setDraggingDevice] = useState<AnyDevice | null>(null);
-  const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
   const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
 
-  const getRelativeCoords = useCallback((absPoint: Point): Point | null => {
+  const [draggingDevice, setDraggingDevice] = useState<AnyDevice | null>(null);
+  const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Update container rect on resize
+  useEffect(() => {
+    const updateRect = () => {
+      if (containerRef.current) {
+        setContainerRect(containerRef.current.getBoundingClientRect());
+      }
+    };
+    updateRect();
+    const resizeObserver = new ResizeObserver(updateRect);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const getRelativeCoords = useCallback((e: React.PointerEvent) => {
     if (!containerRect) return null;
-    const parentRect = containerRef.current!.getBoundingClientRect();
     return {
-      x: Math.max(0, Math.min(1, (absPoint.x - parentRect.left) / containerRect.width)),
-      y: Math.max(0, Math.min(1, (absPoint.y - parentRect.top) / containerRect.height)),
+      x: (e.clientX - containerRect.left) / containerRect.width,
+      y: (e.clientY - containerRect.top) / containerRect.height,
     };
   }, [containerRect]);
 
-  const draw = useCallback(() => {
+  const getAbsoluteCoords = useCallback((relativePos: { x: number; y: number }) => {
+    if (!containerRect) return null;
+    return {
+      x: relativePos.x * containerRect.width,
+      y: relativePos.y * containerRect.height,
+    };
+  }, [containerRect]);
+
+    const drawConnections = useCallback((ctx: CanvasRenderingContext2D) => {
+        if (!floor.connections) return;
+        floor.connections.forEach(conn => {
+            const fromDevice = floor.devices.find(d => d.id === conn.fromDeviceId);
+            const toDevice = floor.devices.find(d => d.id === conn.toDeviceId);
+            if (!fromDevice || !toDevice) return;
+
+            ctx.beginPath();
+            
+            if (!conn.path || conn.path.length < 2) {
+                // Fallback to a straight line
+                const start = getAbsoluteCoords({ x: fromDevice.x, y: fromDevice.y });
+                const end = getAbsoluteCoords({ x: toDevice.x, y: toDevice.y });
+                if (start && end) {
+                    ctx.moveTo(start.x, start.y);
+                    ctx.lineTo(end.x, end.y);
+                    ctx.strokeStyle = 'hsl(var(--accent) / 0.5)';
+                    ctx.setLineDash([5, 5]);
+                    ctx.lineWidth = 1.5;
+                }
+            } else {
+                // Draw the AI-generated path
+                const startPoint = getAbsoluteCoords(conn.path[0]);
+                if (!startPoint) return;
+                ctx.moveTo(startPoint.x, startPoint.y);
+
+                for (let i = 1; i < conn.path.length; i++) {
+                    const point = getAbsoluteCoords(conn.path[i]);
+                    if (point) ctx.lineTo(point.x, point.y);
+                }
+                ctx.strokeStyle = 'hsl(var(--accent))';
+                ctx.setLineDash([]);
+                ctx.lineWidth = 2;
+            }
+            
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset for next loop
+        });
+    }, [floor.connections, floor.devices, getAbsoluteCoords]);
+
+
+  // Main drawing logic
+  useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    const container = containerRef.current;
+    if (!ctx || !containerRect) return;
 
-    if (!ctx || !canvas || !container) return;
+    ctx.clearRect(0, 0, containerRect.width, containerRect.height);
 
-    const { width, height } = container.getBoundingClientRect();
-    canvas.width = width;
-    canvas.height = height;
-    ctx.clearRect(0, 0, width, height);
-
-    if (floorPlanImage) {
-      const canvasAspect = width / height;
-      const imageAspect = floorPlanImage.width / floorPlanImage.height;
-      let drawWidth, drawHeight, x, y;
-
-      if (canvasAspect > imageAspect) {
-        drawHeight = height;
-        drawWidth = drawHeight * imageAspect;
-        x = (width - drawWidth) / 2;
-        y = 0;
-      } else {
-        drawWidth = width;
-        drawHeight = drawWidth / imageAspect;
-        x = 0;
-        y = (height - drawHeight) / 2;
+    if (floor.floorPlanUrl) {
+      const img = new Image();
+      img.src = floor.floorPlanUrl;
+      img.onload = () => {
+        const hRatio = containerRect.width / img.width;
+        const vRatio = containerRect.height / img.height;
+        const ratio = Math.min(hRatio, vRatio);
+        const centerShiftX = (containerRect.width - img.width * ratio) / 2;
+        const centerShiftY = (containerRect.height - img.height * ratio) / 2;
+        ctx.drawImage(img, 0, 0, img.width, img.height, centerShiftX, centerShiftY, img.width * ratio, img.height * ratio);
+        drawConnections(ctx);
+      };
+      img.onerror = () => {
+          drawConnections(ctx); // Draw connections even if image fails
       }
-      ctx.drawImage(floorPlanImage, x, y, drawWidth, drawHeight);
     } else {
-      ctx.strokeStyle = `hsl(var(--border))`;
-      ctx.strokeRect(0, 0, width, height);
+        drawConnections(ctx);
     }
+  }, [floor.floorPlanUrl, floor.connections, containerRect, drawConnections]);
 
-    // Draw connections
-    floor.connections?.forEach(conn => {
-      const fromDevice = floor.devices.find(d => d.id === conn.fromDeviceId);
-      const toDevice = floor.devices.find(d => d.id === conn.toDeviceId);
-      if (!fromDevice || !toDevice) return;
-
-      const start = {
-        x: fromDevice.x * width,
-        y: fromDevice.y * height
-      };
-      const end = {
-        x: toDevice.x * width,
-        y: toDevice.y * height
-      };
-
-      ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
-      ctx.strokeStyle = `hsl(var(--accent))`;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    });
-  }, [floor.connections, floor.devices, floorPlanImage]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const resizeObserver = new ResizeObserver(entries => {
-      for (let entry of entries) {
-        setContainerRect(entry.contentRect);
-        draw();
-      }
-    });
-
-    resizeObserver.observe(container);
-    setContainerRect(container.getBoundingClientRect());
-    draw();
-
-    return () => resizeObserver.disconnect();
-  }, [draw]);
 
   const handleDeviceDown = (e: React.PointerEvent, device: AnyDevice) => {
-    e.preventDefault();
     e.stopPropagation();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    (e.target as HTMLElement).style.cursor = 'grabbing';
+    onDeviceClick(device);
 
-    setSelectedItem(device);
-    setDraggingDevice(device);
-
-    const deviceAbsX = device.x * containerRect!.width;
-    const deviceAbsY = device.y * containerRect!.height;
-    
-    const parentRect = containerRef.current!.getBoundingClientRect();
-    
-    setDragOffset({
-      x: e.clientX - parentRect.left - deviceAbsX,
-      y: e.clientY - parentRect.top - deviceAbsY,
-    });
+    if (!cablingMode.enabled) {
+      setDraggingDevice(device);
+      const relativePos = getRelativeCoords(e);
+      if (relativePos) {
+        dragOffset.current = {
+          x: device.x - relativePos.x,
+          y: device.y - relativePos.y,
+        };
+      }
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (draggingDevice && containerRect) {
-      e.preventDefault();
-
-      const newAbsPos = {
-        x: e.clientX,
-        y: e.clientY,
-      };
-
-      const newRelPos = getRelativeCoords(newAbsPos);
-
-      if (newRelPos) {
-        onUpdateDevice({ ...draggingDevice, x: newRelPos.x, y: newRelPos.y });
+    if (draggingDevice) {
+      const newPos = getRelativeCoords(e);
+      if (newPos) {
+        const finalPos = {
+            x: Math.max(0, Math.min(1, newPos.x + dragOffset.current.x)),
+            y: Math.max(0, Math.min(1, newPos.y + dragOffset.current.y)),
+        }
+        onDeviceMove(draggingDevice.id, finalPos);
       }
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (draggingDevice) {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-      (e.target as HTMLElement).style.cursor = 'grab';
       setDraggingDevice(null);
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     }
   };
 
-  const handleContainerDown = (e: React.PointerEvent) => {
-    if (e.target === containerRef.current || e.target === canvasRef.current) {
-      setSelectedItem(null);
+  const handleCanvasClick = (e: React.PointerEvent) => {
+    if(e.target === e.currentTarget){
+        onCanvasClick();
     }
-  };
+  }
 
   return (
     <div
       ref={containerRef}
-      className="w-full h-full relative bg-card overflow-hidden"
-      onPointerDown={handleContainerDown}
+      className="w-full h-full relative bg-card overflow-hidden touch-none"
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      onPointerDown={handleCanvasClick}
+      style={{ cursor: cablingMode.enabled ? 'crosshair' : 'default' }}
     >
-      <canvas ref={canvasRef} className="absolute inset-0 z-0" />
-      <div className="absolute inset-0 z-10 pointer-events-none">
+      <canvas
+        ref={canvasRef}
+        width={containerRect?.width || 0}
+        height={containerRect?.height || 0}
+        className="absolute inset-0"
+      />
+      <div className="absolute inset-0 pointer-events-none">
         {floor.devices.map(device => (
           <DeviceRenderer
             key={device.id}
