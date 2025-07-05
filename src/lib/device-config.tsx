@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { CctvBulletIcon, CctvDomeIcon, CctvPtzIcon, WifiApIcon, NvrIcon, SwitchIcon, MonitorIcon, UtpCat6Icon, FiberOpticIcon, RackIcon } from "@/components/icons";
 import type { Device, DeviceType } from './types';

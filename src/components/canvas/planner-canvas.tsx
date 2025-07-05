@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import type { Floor, AnyDevice, ArchitecturalElement } from '@/lib/types';
 import { DeviceRenderer } from './device-renderer';
+import { ArchitecturalElementRenderer } from './architectural-element-renderer';
 
 interface PlannerCanvasProps {
   floor: Floor;
@@ -60,6 +61,7 @@ export function PlannerCanvas({
   }, [containerRect]);
 
     const drawConnections = useCallback((ctx: CanvasRenderingContext2D) => {
+        if (!containerRect) return;
         if (!floor.connections) return;
         floor.connections.forEach(conn => {
             const fromDevice = floor.devices.find(d => d.id === conn.fromDeviceId);
@@ -97,7 +99,7 @@ export function PlannerCanvas({
             ctx.stroke();
             ctx.setLineDash([]); // Reset for next loop
         });
-    }, [floor.connections, floor.devices, getAbsoluteCoords]);
+    }, [floor.connections, floor.devices, getAbsoluteCoords, containerRect]);
 
 
   // Main drawing logic
@@ -146,6 +148,12 @@ export function PlannerCanvas({
     }
   };
 
+  const handleArchElementDown = (e: React.PointerEvent, element: ArchitecturalElement) => {
+    e.stopPropagation();
+    onArchElementClick(element);
+    // For now, architectural elements are not draggable.
+  }
+
   const handlePointerMove = (e: React.PointerEvent) => {
     if (draggingDevice) {
       const newPos = getRelativeCoords(e);
@@ -189,6 +197,16 @@ export function PlannerCanvas({
         className="absolute inset-0"
       />
       <div className="absolute inset-0 pointer-events-none">
+        {/* Render architectural elements first so they are in the background */}
+        {floor.architecturalElements.map(element => (
+          <ArchitecturalElementRenderer
+            key={element.id}
+            element={element}
+            onElementClick={handleArchElementDown}
+            containerRect={containerRect}
+          />
+        ))}
+
         {floor.devices.map(device => (
           <DeviceRenderer
             key={device.id}
