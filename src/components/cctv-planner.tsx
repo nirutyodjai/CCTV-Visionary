@@ -186,6 +186,7 @@ function CCTVPlannerInner() {
         { id: 'switch-check', name: 'Switch Port Check', status: 'pending' },
         { id: 'connectivity-check', name: 'Connectivity Check', status: 'pending' },
         { id: 'power-check', name: 'Power Load Check', status: 'pending' },
+        { id: 'grounding-check', name: 'ตรวจสอบระบบสายดิน', status: 'pending' },
     ]);
 
     useEffect(() => {
@@ -234,6 +235,7 @@ function CCTVPlannerInner() {
         } else {
             toast({ title: 'Load Failed', description: result.error, variant: 'destructive' });
         }
+        setIsSaving(false);
     };
 
     const handleSetFloorPlan = (file: File) => {
@@ -588,3 +590,7 @@ export function CCTVPlanner() {
         </SelectionProvider>
     );
 }
+
+    
+
+    
