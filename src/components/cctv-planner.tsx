@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useReducer, useState, useMemo, useEffect, useCallback } from 'react';
-import { createInitialState } from '@/lib/demo-data';
+import { createInitialState, generateDemoProject } from '@/lib/demo-data';
 import type { ProjectState, AnyDevice, CablingMode, Point, ArchitecturalElementType, ArchitecturalElement, Floor, Connection, Building, DeviceType, RackContainer, SelectableItem } from '@/lib/types';
 import { PlannerCanvas } from '@/components/canvas/planner-canvas';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
@@ -15,7 +15,7 @@ import { AiAssistant } from './sidebar/ai-assistant';
 import { DiagnosticsPanel } from './sidebar/diagnostics-panel';
 import { ArchitectureToolbar } from './sidebar/architecture-toolbar';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Milestone, Presentation } from 'lucide-react';
+import { Loader2, Milestone, Presentation, Network, Settings, Files, Bot } from 'lucide-react';
 import { createDevice } from '@/lib/device-config';
 import { saveProjectAction, loadProjectAction, analyzeCctvPlanAction, suggestDevicePlacementsAction, runPlanDiagnosticsAction } from '@/app/actions';
 import type { DiagnosticResult } from '@/ai/flows/run-plan-diagnostics';
@@ -28,298 +28,174 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { SidebarToggle } from '@/components/ui/sidebar-toggle';
 import { SelectionProvider, useSelection } from '@/contexts/SelectionContext';
 import { Separator } from '@/components/ui/separator';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { SystemStatusPanel, type SystemCheck } from './sidebar/system-status-panel';
+import { ReportService } from '@/lib/report.service';
+import { NetworkSettings } from './sidebar/network-settings';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 type Action =
-    | { type: 'LOAD_PROJECT', payload: ProjectState }
-    | { type: 'UPDATE_PROJECT_NAME', payload: string }
-    | { type: 'UPDATE_BUILDING_NAME', payload: { buildingId: string, name: string } }
-    | { type: 'ADD_DEVICE', payload: { device: AnyDevice, buildingId: string, floorId: string } }
-    | { type: 'UPDATE_DEVICE', payload: { device: AnyDevice, buildingId: string, floorId: string } }
-    | { type: 'REMOVE_DEVICE', payload: { deviceId: string, buildingId: string, floorId: string } }
-    | { type: 'ADD_CONNECTION', payload: { connection: Connection, buildingId: string, floorId: string } }
-    | { type: 'SET_FLOOR_PLAN', payload: { url: string, buildingId: string, floorId: string, rect?: DOMRect | null } }
-    | { type: 'SET_FLOOR_PLAN_RECT', payload: { buildingId: string, floorId: string, rect: DOMRect | null } }
-    | { type: 'ADD_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
-    | { type: 'UPDATE_ARCH_ELEMENT', payload: { element: ArchitecturalElement, buildingId: string, floorId: string } }
-    | { type: 'REMOVE_ARCH_ELEMENT', payload: { elementId: string, buildingId: string, floorId: string } }
-    | { type: 'SET_DIAGNOSTICS', payload: { diagnostics: DiagnosticResult['diagnostics'], buildingId: string, floorId: string } }
-    | { type: 'ADD_FLOOR', payload: { buildingId: string } }
-    | { type: 'UPDATE_RACK', payload: { rack: RackContainer, buildingId: string, floorId: string } };
+  | { type: 'SET_PROJECT'; payload: ProjectState }
+  | { type: 'UPDATE_PROJECT_NAME'; payload: string }
+  | { type: 'ADD_DEVICE'; payload: { device: AnyDevice; buildingId: string; floorId: string } }
+  | { type: 'UPDATE_DEVICE'; payload: { device: AnyDevice; buildingId: string; floorId: string } }
+  | { type: 'REMOVE_DEVICE'; payload: { deviceId: string; buildingId: string; floorId: string } }
+  | { type: 'ADD_CONNECTION'; payload: { connection: Connection; buildingId: string; floorId: string } }
+  | { type: 'SET_FLOOR_PLAN'; payload: { url: string; rect: DOMRect; buildingId: string; floorId: string } }
+  | { type: 'SET_DIAGNOSTICS'; payload: { diagnostics: DiagnosticResult['diagnostics']; buildingId: string; floorId: string } }
+  | { type: 'ADD_ARCH_ELEMENT'; payload: { element: ArchitecturalElement; buildingId: string; floorId: string } }
+  | { type: 'UPDATE_ARCH_ELEMENT'; payload: { element: ArchitecturalElement; buildingId: string; floorId: string } }
+  | { type: 'REMOVE_ARCH_ELEMENT'; payload: { elementId: string; buildingId: string; floorId: string } }
+  | { type: 'UPDATE_BUILDING_NAME'; payload: { buildingId: string; newName: string } }
+  | { type: 'ADD_FLOOR'; payload: { buildingId: string } }
+  | { type: 'UPDATE_RACK'; payload: { rack: RackContainer; buildingId: string; floorId: string } };
 
 function projectReducer(state: ProjectState, action: Action): ProjectState {
-    const updateFloor = (buildings: Building[], bId: string, fId: string, updateFn: (floor: Floor) => Floor): Building[] => {
-        return buildings.map(b => 
-            b.id === bId 
-                ? { ...b, floors: b.floors.map(f => f.id === fId ? updateFn(f) : f) } 
-                : b
-        );
-    };
+  switch (action.type) {
+    case 'SET_PROJECT':
+      return action.payload;
+    case 'UPDATE_PROJECT_NAME':
+      return { ...state, projectName: action.payload };
+    case 'ADD_DEVICE':
+    case 'UPDATE_DEVICE':
+    case 'REMOVE_DEVICE':
+    case 'ADD_CONNECTION':
+    case 'SET_FLOOR_PLAN':
+    case 'SET_DIAGNOSTICS':
+    case 'ADD_ARCH_ELEMENT':
+    case 'UPDATE_ARCH_ELEMENT':
+    case 'REMOVE_ARCH_ELEMENT':
+    case 'UPDATE_RACK':
+    case 'ADD_FLOOR':
+    case 'UPDATE_BUILDING_NAME': {
+        const { buildingId } = action.payload;
+        return {
+            ...state,
+            buildings: state.buildings.map(b => {
+                if (b.id !== buildingId) return b;
 
-    switch (action.type) {
-        case 'LOAD_PROJECT':
-            return action.payload;
-        case 'UPDATE_PROJECT_NAME':
-            return { ...state, projectName: action.payload };
-        case 'UPDATE_BUILDING_NAME': {
-            return {
-                ...state,
-                buildings: state.buildings.map(b => b.id === action.payload.buildingId ? { ...b, name: action.payload.name } : b)
-            };
-        }
-        case 'ADD_DEVICE': {
-            const { device, buildingId, floorId } = action.payload;
-            return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({ ...f, devices: [...f.devices, device] }))
-            };
-        }
-        case 'UPDATE_DEVICE': {
-            const { device, buildingId, floorId } = action.payload;
-            return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    devices: f.devices.map(d => d.id === device.id ? device : d)
-                }))
-            };
-        }
-        case 'REMOVE_DEVICE': {
-            const { deviceId, buildingId, floorId } = action.payload;
-            return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    devices: f.devices.filter(d => d.id !== deviceId)
-                }))
-            };
-        }
-        case 'ADD_CONNECTION': {
-            const { connection, buildingId, floorId } = action.payload;
-            return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    connections: [...f.connections, connection]
-                }))
-            };
-        }
-        case 'SET_FLOOR_PLAN': {
-            const { url, buildingId, floorId, rect } = action.payload;
-            return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    floorPlanUrl: url,
-                }))
-            };
-        }
-        case 'SET_FLOOR_PLAN_RECT': {
-            const { buildingId, floorId, rect } = action.payload;
-            const targetFloor = state.buildings.find(b => b.id === buildingId)?.floors.find(f => f.id === floorId);
-            if (targetFloor) {
-                targetFloor.floorPlanRect = rect;
-            }
-            return {...state};
-        }
-        case 'ADD_ARCH_ELEMENT': {
-            const { element, buildingId, floorId } = action.payload;
-            return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    architecturalElements: [...f.architecturalElements, element]
-                }))
-            };
-        }
-        case 'UPDATE_ARCH_ELEMENT': {
-            const { element, buildingId, floorId } = action.payload;
-            return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    architecturalElements: f.architecturalElements.map(el => el.id === element.id ? element : el)
-                }))
-            };
-        }
-        case 'REMOVE_ARCH_ELEMENT': {
-            const { elementId, buildingId, floorId } = action.payload;
-            return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    architecturalElements: f.architecturalElements.filter(el => el.id !== elementId)
-                }))
-            };
-        }
-        case 'SET_DIAGNOSTICS': {
-            const { diagnostics, buildingId, floorId } = action.payload;
-             return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    diagnostics: diagnostics
-                }))
-            };
-        }
-        case 'ADD_FLOOR': {
-             const { buildingId } = action.payload;
-             return {
-                ...state,
-                buildings: state.buildings.map(b => {
-                    if (b.id === buildingId) {
-                        const newFloorNumber = b.floors.length + 1;
-                        const newFloor: Floor = {
-                            id: `floor_${Date.now()}`,
-                            name: `ชั้น ${newFloorNumber}`,
-                            floorPlanUrl: null,
-                            devices: [],
-                            connections: [],
-                            architecturalElements: [],
-                            diagnostics: [],
-                            floorPlanRect: null,
-                        };
-                        return { ...b, floors: [...b.floors, newFloor] };
-                    }
-                    return b;
-                })
-             }
-        }
-        case 'UPDATE_RACK': {
-             const { rack, buildingId, floorId } = action.payload;
-             return {
-                ...state,
-                buildings: updateFloor(state.buildings, buildingId, floorId, f => ({
-                    ...f,
-                    devices: f.devices.map(d => d.id === rack.id ? rack : d)
-                }))
-            };
-        }
-        default:
-            return state;
+                if (action.type === 'UPDATE_BUILDING_NAME') {
+                    return { ...b, name: action.payload.newName };
+                }
+                if (action.type === 'ADD_FLOOR') {
+                    const newFloorNumber = b.floors.length + 1;
+                    const newFloor: Floor = {
+                        id: `flr_${Date.now()}`,
+                        name: `ชั้น ${newFloorNumber}`,
+                        floorPlanUrl: null,
+                        devices: [],
+                        connections: [],
+                        architecturalElements: [],
+                        diagnostics: [],
+                        floorPlanRect: null,
+                    };
+                    return { ...b, floors: [...b.floors, newFloor] };
+                }
+
+                const { floorId } = action.payload as any; // Action types with floorId
+                return {
+                    ...b,
+                    floors: b.floors.map(f => {
+                        if (f.id !== floorId) return f;
+
+                        let newDevices = f.devices;
+                        switch (action.type) {
+                            case 'ADD_DEVICE': newDevices = [...f.devices, action.payload.device]; break;
+                            case 'UPDATE_DEVICE': newDevices = f.devices.map(d => d.id === action.payload.device.id ? action.payload.device : d); break;
+                            case 'REMOVE_DEVICE': newDevices = f.devices.filter(d => d.id !== action.payload.deviceId); break;
+                            case 'UPDATE_RACK': newDevices = f.devices.map(d => d.id === action.payload.rack.id ? action.payload.rack : d); break;
+                        }
+
+                        let newConnections = f.connections;
+                        if (action.type === 'ADD_CONNECTION') newConnections = [...f.connections, action.payload.connection];
+
+                        let newArchElements = f.architecturalElements;
+                        switch (action.type) {
+                             case 'ADD_ARCH_ELEMENT': newArchElements = [...f.architecturalElements, action.payload.element]; break;
+                             case 'UPDATE_ARCH_ELEMENT': newArchElements = f.architecturalElements.map(e => e.id === action.payload.element.id ? action.payload.element : e); break;
+                             case 'REMOVE_ARCH_ELEMENT': newArchElements = f.architecturalElements.filter(e => e.id !== action.payload.elementId); break;
+                        }
+
+                        let newFloorPlanUrl = f.floorPlanUrl;
+                        let newFloorPlanRect = f.floorPlanRect;
+                        if (action.type === 'SET_FLOOR_PLAN') {
+                            newFloorPlanUrl = action.payload.url;
+                            newFloorPlanRect = action.payload.rect;
+                        }
+                        
+                        let newDiagnostics = f.diagnostics;
+                        if (action.type === 'SET_DIAGNOSTICS') newDiagnostics = action.payload.diagnostics;
+
+                        return { ...f, devices: newDevices, connections: newConnections, architecturalElements: newArchElements, floorPlanUrl: newFloorPlanUrl, diagnostics: newDiagnostics, floorPlanRect: newFloorPlanRect };
+                    })
+                };
+            })
+        };
     }
+    default:
+      return state;
+  }
 }
 
 
 function CCTVPlannerInner() {
     const [projectState, dispatch] = useReducer(projectReducer, createInitialState());
     const { selectedItem, setSelectedItem } = useSelection();
-
-    const [activeIds, setActiveIds] = useState<{ buildingId: string | null, floorId: string | null }>({ buildingId: null, floorId: null });
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [isSuggesting, setIsSuggesting] = useState(false);
-    const [isDiagnosing, setIsDiagnosing] = useState(false);
+    const isMobile = useIsMobile();
     
-    const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
-    const [selectedArchTool, setSelectedArchTool] = useState<ArchitecturalElementType | null>(null);
-    const [drawingState, setDrawingState] = useState<{ isDrawing: boolean; startPoint: Point | null }>({ isDrawing: false, startPoint: null });
-
-    const [isTopologyOpen, setTopologyOpen] = useState(false);
-    const [isRackViewOpen, setRackViewOpen] = useState(false);
-    const [selectedRack, setSelectedRack] = useState<RackContainer | null>(null);
-    const [isProjectManagerOpen, setProjectManagerOpen] = useState(false);
-
-    const [showRightSidebar, setShowRightSidebar] = useState(true);
-
+    // UI State
+    const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(true);
+    const [isProjectManagerOpen, setIsProjectManagerOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isTopologyViewOpen, setIsTopologyViewOpen] = useState(false);
+    const [activeRack, setActiveRack] = useState<RackContainer | null>(null);
     const { toast } = useToast();
 
-    useEffect(() => {
-        if (projectState.id !== 'loading' && projectState.buildings.length > 0 && !activeIds.buildingId) {
-            const firstBuilding = projectState.buildings[0];
-            if (firstBuilding.floors.length > 0) {
-                setActiveIds({ buildingId: firstBuilding.id, floorId: firstBuilding.floors[0].id });
-            }
-        }
-        setIsLoading(false);
-    }, [projectState, activeIds.buildingId]);
-    
+    // Canvas/Floor State
+    const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
+    const [selectedArchTool, setSelectedArchTool] = useState<ArchitecturalElementType | null>(null);
+    const [drawingState, setDrawingState] = useState({ isDrawing: false, startPoint: null });
+    const [floorPlanRect, setFloorPlanRect] = useState<DOMRect | null>(null);
+    const [activeIds, setActiveIds] = useState(() => {
+        const firstBuilding = projectState.buildings[0];
+        const firstFloor = firstBuilding?.floors[0];
+        return {
+            buildingId: firstBuilding?.id || null,
+            floorId: firstFloor?.id || null
+        };
+    });
 
     const activeBuilding = useMemo(() => {
-        if (!activeIds.buildingId) return null;
-        return projectState.buildings.find(b => b.id === activeIds.buildingId) ?? null;
+        return projectState.buildings.find(b => b.id === activeIds.buildingId);
     }, [projectState.buildings, activeIds.buildingId]);
 
     const activeFloor = useMemo(() => {
-        if (!activeBuilding || !activeIds.floorId) return null;
-        return activeBuilding.floors.find(f => f.id === activeIds.floorId) ?? null;
+        return activeBuilding?.floors.find(f => f.id === activeIds.floorId);
     }, [activeBuilding, activeIds.floorId]);
 
-    
-    const handleAddDevice = (type: DeviceType) => {
-        if (activeFloor && activeIds.buildingId) {
-            const newDevice = createDevice(type, 0.5, 0.5, activeFloor.devices);
-            dispatch({ type: 'ADD_DEVICE', payload: { device: newDevice, buildingId: activeIds.buildingId, floorId: activeFloor.id } });
-            setSelectedItem(newDevice);
-            toast({ title: "เพิ่มอุปกรณ์เรียบร้อย", description: `เพิ่ม ${newDevice.label} ลงในแผน` });
-        } else {
-            toast({ title: "ไม่สามารถเพิ่มอุปกรณ์", description: "กรุณาเลือกชั้นก่อน", variant: 'destructive' });
-        }
-    };
 
-    const handleUpdateDevice = (device: AnyDevice) => {
-        if (!activeIds.buildingId || !activeIds.floorId) return;
-        dispatch({ type: 'UPDATE_DEVICE', payload: { device, buildingId: activeIds.buildingId, floorId: activeIds.floorId }});
-    };
+    // AI State
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSuggesting, setIsSuggesting] = useState(false);
+    const [isDiagnosing, setIsDiagnosing] = useState(false);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     
-    const handleUpdateArchElement = (element: ArchitecturalElement) => {
-        if (!activeIds.buildingId || !activeIds.floorId) return;
-        dispatch({ type: 'UPDATE_ARCH_ELEMENT', payload: { element, buildingId: activeIds.buildingId, floorId: activeIds.floorId }});
-    }
-    
-    const handleUpdateFloorPlanRect = (rect: DOMRect | null) => {
-        if (activeFloor && activeIds.buildingId) {
-            dispatch({ type: 'SET_FLOOR_PLAN_RECT', payload: { rect, buildingId: activeIds.buildingId, floorId: activeFloor.id }});
-        }
-    }
+    const [systemChecks, setSystemChecks] = useState<SystemCheck[]>([
+        { id: 'nvr-check', name: 'NVR Capacity Check', status: 'pending' },
+        { id: 'switch-check', name: 'Switch Port Check', status: 'pending' },
+        { id: 'connectivity-check', name: 'Connectivity Check', status: 'pending' },
+        { id: 'power-check', name: 'Power Load Check', status: 'pending' },
+    ]);
 
 
     const handleFloorSelect = (buildingId: string, floorId: string) => {
         setActiveIds({ buildingId, floorId });
-        setSelectedItem(null);
+        setSelectedItem(null); // Deselect item when changing floors
     };
 
-    const handleRemoveDevice = (deviceId: string) => {
-        if (!activeIds.buildingId || !activeIds.floorId) return;
-        dispatch({ type: 'REMOVE_DEVICE', payload: { deviceId, buildingId: activeIds.buildingId, floorId: activeIds.floorId }});
-        setSelectedItem(null);
-        toast({ title: "ลบอุปกรณ์แล้ว", variant: "destructive" });
-    };
-
-    const handleRemoveArchElement = (elementId: string) => {
-        if (!activeIds.buildingId || !activeIds.floorId) return;
-        dispatch({ type: 'REMOVE_ARCH_ELEMENT', payload: { elementId, buildingId: activeIds.buildingId, floorId: activeIds.floorId }});
-        setSelectedItem(null);
-        toast({ title: "ลบส่วนประกอบแล้ว", variant: "destructive" });
-    };
-
-    const handleSetFloorPlan = (file: File) => {
-        if (!activeIds.buildingId || !activeIds.floorId) {
-            toast({ title: 'Please select a floor first', variant: 'destructive' });
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (typeof e.target?.result === 'string') {
-                dispatch({ type: 'SET_FLOOR_PLAN', payload: { url: e.target.result, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! } });
-            }
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleAddConnection = (connection: Connection) => {
-        if (!activeIds.buildingId || !activeIds.floorId) return;
-        dispatch({ type: 'ADD_CONNECTION', payload: { connection, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
-    }
-    
-    const handleAddArchElement = (element: ArchitecturalElement) => {
-        if (!activeIds.buildingId || !activeIds.floorId) return;
-        dispatch({ type: 'ADD_ARCH_ELEMENT', payload: { element, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
-        setSelectedArchTool(null);
-    };
-
-    const handleProjectNameChange = (name: string) => {
+    const handleUpdateProjectName = (name: string) => {
         dispatch({ type: 'UPDATE_PROJECT_NAME', payload: name });
     };
 
@@ -327,38 +203,109 @@ function CCTVPlannerInner() {
         setIsSaving(true);
         const result = await saveProjectAction(projectState);
         if (result.success) {
-            toast({ title: "บันทึกโครงการสำเร็จ!", description: `โครงการ "${projectState.projectName}" ได้รับการบันทึกแล้ว` });
+            toast({ title: 'Project Saved!', description: `Project "${projectState.projectName}" has been successfully saved.` });
         } else {
-            toast({ title: "เกิดข้อผิดพลาดในการบันทึก", description: result.error, variant: 'destructive' });
+            toast({ title: 'Save Failed', description: result.error, variant: 'destructive' });
         }
         setIsSaving(false);
     };
     
     const handleLoadProject = async (projectId: string) => {
-        setIsLoading(true);
         const result = await loadProjectAction(projectId);
         if (result.success) {
-            dispatch({ type: 'LOAD_PROJECT', payload: result.data });
+            dispatch({ type: 'SET_PROJECT', payload: result.data });
             const firstBuilding = result.data.buildings[0];
-            if (firstBuilding && firstBuilding.floors.length > 0) {
-                 setActiveIds({ buildingId: firstBuilding.id, floorId: firstBuilding.floors[0].id });
-            } else {
-                 setActiveIds({ buildingId: null, floorId: null });
-            }
-            toast({ title: "โหลดโครงการสำเร็จ", description: `โครงการ "${result.data.projectName}" ถูกโหลดแล้ว` });
+            const firstFloor = firstBuilding?.floors[0];
+            setActiveIds({
+                buildingId: firstBuilding?.id || null,
+                floorId: firstFloor?.id || null
+            });
+            toast({ title: 'Project Loaded', description: `"${result.data.projectName}" is now active.` });
         } else {
-            toast({ title: "เกิดข้อผิดพลาดในการโหลด", description: result.error, variant: 'destructive' });
+            toast({ title: 'Load Failed', description: result.error, variant: 'destructive' });
         }
-        setIsLoading(false);
+    };
+
+    const handleSetFloorPlan = (file: File) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const url = e.target?.result as string;
+            if (url) {
+                 const img = new Image();
+                 img.onload = () => {
+                    const rect = { x: 0, y: 0, width: img.width, height: img.height, top: 0, right: img.width, bottom: img.height, left: 0 } as DOMRect;
+                    dispatch({ type: 'SET_FLOOR_PLAN', payload: { url, rect, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! }});
+                    toast({ title: 'Floor plan updated!' });
+                 };
+                 img.src = url;
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleAddDevice = (type: DeviceType) => {
+        if (!activeFloor || !floorPlanRect) {
+            toast({ title: "Cannot Add Device", description: "Please upload and define a floor plan area first.", variant: 'destructive' });
+            return;
+        }
+        const newDevice = createDevice(type, 0.5, 0.5, activeFloor.devices);
+        dispatch({ type: 'ADD_DEVICE', payload: { device: newDevice, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! } });
+        setSelectedItem(newDevice);
+    };
+    
+    const handleUpdateDevice = (device: AnyDevice) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'UPDATE_DEVICE', payload: { device, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+        setSelectedItem(device);
+    };
+
+    const handleRemoveDevice = (deviceId: string) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'REMOVE_DEVICE', payload: { deviceId, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+        setSelectedItem(null);
+    };
+
+    const handleAddArchElement = (element: ArchitecturalElement) => {
+         if (!activeIds.buildingId || !activeIds.floorId) return;
+         dispatch({ type: 'ADD_ARCH_ELEMENT', payload: { element, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+         setSelectedArchTool(null); // Deselect tool after drawing
+    };
+    
+    const handleUpdateArchElement = (element: ArchitecturalElement) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'UPDATE_ARCH_ELEMENT', payload: { element, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+        setSelectedItem(element);
+    }
+    
+    const handleRemoveArchElement = (elementId: string) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'REMOVE_ARCH_ELEMENT', payload: { elementId, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+        setSelectedItem(null);
+    }
+
+    const handleStartCabling = (deviceId: string) => {
+        setCablingMode({ enabled: true, fromDeviceId: deviceId });
+        toast({ title: 'Cabling Mode', description: 'Select another device to complete the connection.' });
+    };
+
+    const handleAddConnection = (connection: Connection) => {
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'ADD_CONNECTION', payload: { connection, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
     };
 
     const handleAnalyzePlan = async () => {
         if (!activeFloor) return;
         setIsAnalyzing(true);
         const deviceSummary = activeFloor.devices.map(d => d.label).join(', ');
-        const result = await analyzeCctvPlanAction({ deviceSummary, totalFloors: 1 });
+        const result = await analyzeCctvPlanAction({ deviceSummary, totalFloors: projectState.buildings.reduce((acc, b) => acc + b.floors.length, 0) });
         if (result.success) {
-            toast({ title: "AI Analysis Complete", description: result.data.analysis });
+            toast({
+                title: "AI Analysis Complete",
+                description: result.data.analysis,
+                duration: 9000,
+            });
         } else {
             toast({ title: "Analysis Failed", description: result.error, variant: 'destructive' });
         }
@@ -366,103 +313,123 @@ function CCTVPlannerInner() {
     };
 
     const handleSuggestPlacements = async () => {
-        if (!activeFloor || !activeFloor.floorPlanUrl) {
-            toast({ title: 'Suggestion Failed', description: 'Please upload a floor plan first.', variant: 'destructive' });
+        if (!activeFloor?.floorPlanUrl) {
+            toast({ title: "No Floor Plan", description: "Please upload a floor plan before suggesting placements.", variant: 'destructive' });
             return;
         }
         setIsSuggesting(true);
         const result = await suggestDevicePlacementsAction({ floorPlanDataUri: activeFloor.floorPlanUrl });
-        if (result.success) {
-            const suggestions = result.data;
-            suggestions.forEach(suggestion => {
-                const newDevice = createDevice(suggestion.type, suggestion.x, suggestion.y, activeFloor!.devices);
-                newDevice.label = `${suggestion.reason}`;
-                dispatch({ type: 'ADD_DEVICE', payload: { device: newDevice, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! } });
+        
+        if (result.success && activeIds.buildingId && activeIds.floorId) {
+            const bId = activeIds.buildingId;
+            const fId = activeIds.floorId;
+            const currentDevices = activeFloor?.devices || [];
+            result.data.forEach(suggestion => {
+                const newDevice = createDevice(suggestion.type as DeviceType, suggestion.x, suggestion.y, currentDevices);
+                dispatch({ type: 'ADD_DEVICE', payload: { device: newDevice, buildingId: bId, floorId: fId }});
             });
-            toast({ title: 'AI Suggestions Added', description: `Added ${suggestions.length} devices to the plan.` });
-        } else {
-            toast({ title: 'Suggestion Failed', description: result.error, variant: 'destructive' });
+            toast({ title: "AI Suggestions Added", description: `Added ${result.data.length} new devices to the plan.` });
+        } else if (!result.success) {
+            toast({ title: "Suggestion Failed", description: result.error, variant: 'destructive' });
         }
         setIsSuggesting(false);
     };
-
+    
     const handleRunDiagnostics = async () => {
-        if (!activeFloor || !activeIds.buildingId) return;
-
+        if (!activeFloor || !activeIds.buildingId || !activeIds.floorId) return;
         setIsDiagnosing(true);
-        const plan = {
-            devices: activeFloor.devices.map(d => ({ id: d.id, label: d.label, type: d.type, channels: d.channels, ports: d.ports })),
-            connections: activeFloor.connections.map(c => ({ fromDeviceId: c.fromDeviceId, toDeviceId: c.toDeviceId }))
-        }
-        const result = await runPlanDiagnosticsAction(plan);
+        
+        const planData = {
+            devices: activeFloor.devices.map(d => ({
+                id: d.id, label: d.label, type: d.type,
+                channels: d.channels, ports: d.ports
+            })),
+            connections: activeFloor.connections.map(c => ({
+                fromDeviceId: c.fromDeviceId, toDeviceId: c.toDeviceId
+            })),
+        };
+
+        const result = await runPlanDiagnosticsAction(planData);
         if (result.success) {
-            dispatch({ type: 'SET_DIAGNOSTICS', payload: { diagnostics: result.data.diagnostics, buildingId: activeIds.buildingId, floorId: activeFloor.id }});
+            dispatch({
+                type: 'SET_DIAGNOSTICS',
+                payload: { diagnostics: result.data.diagnostics, buildingId: activeIds.buildingId, floorId: activeIds.floorId }
+            });
             toast({ title: 'Diagnostics Complete' });
         } else {
-            toast({ title: 'Diagnostics Failed', description: result.error, variant: 'destructive' });
+            toast({ title: "Diagnostics Failed", description: result.error, variant: 'destructive' });
         }
         setIsDiagnosing(false);
-    }
-    
-    const handleUpdateBuildingName = (buildingId: string, name: string) => {
-        dispatch({ type: 'UPDATE_BUILDING_NAME', payload: { buildingId, name }});
-    }
-    
-    const handleAddFloor = (buildingId: string) => {
-        dispatch({ type: 'ADD_FLOOR', payload: { buildingId }});
-    }
+    };
 
     const handleUpdateRack = (rack: RackContainer) => {
-        if(activeFloor && activeIds.buildingId) {
-            dispatch({type: 'UPDATE_RACK', payload: { rack, buildingId: activeIds.buildingId, floorId: activeFloor.id }});
-        }
+        if (!activeIds.buildingId || !activeIds.floorId) return;
+        dispatch({ type: 'UPDATE_RACK', payload: { rack, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
+        setActiveRack(rack); // Keep the dialog updated
+    };
+
+    const handleAddFloor = (buildingId: string) => {
+        dispatch({ type: 'ADD_FLOOR', payload: { buildingId } });
+    };
+
+    const handleUpdateBuildingName = (buildingId: string, newName: string) => {
+        dispatch({ type: 'UPDATE_BUILDING_NAME', payload: { buildingId, newName } });
     }
     
-    const handleViewRack = (rack: RackContainer) => {
-        setSelectedRack(rack);
-        setRackViewOpen(true);
-    }
-    
-    const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!selectedArchTool) {
-             setSelectedItem(null);
+    const handleGenerateReport = async () => {
+        setIsGeneratingReport(true);
+        try {
+            const reportService = new ReportService(projectState);
+            await reportService.generateReport();
+            toast({ title: 'Report Generated', description: 'Your PDF report has been downloaded.' });
+        } catch (error: any) {
+            toast({ title: 'Report Failed', description: error.message, variant: 'destructive' });
         }
+        setIsGeneratingReport(false);
     };
 
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-screen w-full">
-                <Loader2 className="w-16 h-16 animate-spin text-primary" />
-            </div>
-        )
-    }
-
-    return (
-        <SidebarProvider>
-            <Sidebar>
-                <SidebarHeader>
-                    <PlanManagement 
-                        planName={projectState.projectName}
-                        onPlanNameChange={handleProjectNameChange}
-                        onSave={handleSaveProject}
-                        isSaving={isSaving}
-                        onOpenManager={() => setProjectManagerOpen(true)}
-                    />
-                </SidebarHeader>
-                <SidebarContent className="p-0">
-                    <div className="p-2 space-y-3">
+    const SidePanelContent = () => (
+        <>
+            <SidebarHeader>
+                 <PlanManagement
+                    planName={projectState.projectName}
+                    isSaving={isSaving}
+                    onPlanNameChange={handleUpdateProjectName}
+                    onSave={handleSaveProject}
+                    onOpenManager={() => setIsProjectManagerOpen(true)}
+                />
+            </SidebarHeader>
+             <SidebarContent className="p-0">
+                <Tabs defaultValue="plan" className="flex flex-col h-full">
+                    <TabsList className="grid w-full grid-cols-4 mx-auto max-w-sm rounded-none h-auto p-0 border-b">
+                         <TabsTrigger value="plan" className="rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 border-primary">
+                             <Files className="w-4 h-4 mr-2"/> Plan
+                         </TabsTrigger>
+                         <TabsTrigger value="ai" className="rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 border-primary">
+                             <Bot className="w-4 h-4 mr-2"/> AI Tools
+                         </TabsTrigger>
+                         <TabsTrigger value="network" className="rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 border-primary">
+                              <Network className="w-4 h-4 mr-2"/> Network
+                         </TabsTrigger>
+                         <TabsTrigger value="settings" className="rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 border-primary">
+                             <Settings className="w-4 h-4 mr-2"/> Settings
+                         </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="plan" className="p-2 space-y-3 mt-0 flex-1 overflow-y-auto">
                         <ProjectNavigator 
                             buildings={projectState.buildings}
                             activeBuildingId={activeIds.buildingId}
                             activeFloorId={activeIds.floorId}
                             onFloorSelect={handleFloorSelect}
-                            onUpdateBuildingName={handleUpdateBuildingName}
                             onAddFloor={handleAddFloor}
+                            onUpdateBuildingName={handleUpdateBuildingName}
                         />
                          <FloorPlanUpload onSetFloorPlan={handleSetFloorPlan} />
-                        <DevicesToolbar onSelectDevice={handleAddDevice} />
-                        <ArchitectureToolbar selectedTool={selectedArchTool} onSelectTool={setSelectedArchTool} />
+                         <DevicesToolbar onSelectDevice={handleAddDevice} />
+                         <ArchitectureToolbar selectedTool={selectedArchTool} onSelectTool={setSelectedArchTool} />
+                    </TabsContent>
+                    <TabsContent value="ai" className="p-2 space-y-3 mt-0 flex-1 overflow-y-auto">
                          <AiAssistant 
                             onAnalyze={handleAnalyzePlan}
                             onSuggest={handleSuggestPlacements}
@@ -474,101 +441,130 @@ function CCTVPlannerInner() {
                             onRunDiagnostics={handleRunDiagnostics}
                             isLoading={isDiagnosing}
                         />
-                    </div>
-                    <Separator />
-                    <BillOfMaterials project={projectState} />
-                </SidebarContent>
-                 <SidebarFooter>
-                    {/* Footer content can go here if needed later */}
-                </SidebarFooter>
+                         <Card>
+                            <CardHeader className="p-3">
+                                <CardTitle className="text-sm font-semibold">Generate Report</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-3">
+                                <Button onClick={handleGenerateReport} disabled={isGeneratingReport} className="w-full">
+                                    {isGeneratingReport ? <Loader2 className="animate-spin" /> : <Presentation />}
+                                    {isGeneratingReport ? 'Generating...' : 'Create PDF Report'}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="network" className="p-2 space-y-3 mt-0 flex-1 overflow-y-auto">
+                         <NetworkSettings vlans={projectState.vlans} subnets={projectState.subnets} onAddVlan={()=>{}} onAddSubnet={()=>{}}/>
+                    </TabsContent>
+                    <TabsContent value="settings" className="p-2 space-y-3 mt-0 flex-1 overflow-y-auto">
+                        <BillOfMaterials project={projectState} />
+                        <SystemStatusPanel statuses={systemChecks} onRunChecks={() => {}} isLoading={false} />
+                    </TabsContent>
+                </Tabs>
+            </SidebarContent>
+        </>
+    );
+
+    return (
+         <SidebarProvider>
+            {isMobile ? (
+                <Sheet open={isPropertiesPanelOpen} onOpenChange={setIsPropertiesPanelOpen}>
+                    <SheetContent side="right" className="p-0 w-[85vw]">
+                        <PropertiesPanel 
+                            onUpdateDevice={handleUpdateDevice}
+                            onRemoveDevice={handleRemoveDevice}
+                            onStartCabling={handleStartCabling}
+                            onViewRack={(rack) => setActiveRack(rack)}
+                            onRemoveArchElement={handleRemoveArchElement}
+                            onUpdateArchElement={handleUpdateArchElement}
+                        />
+                    </SheetContent>
+                </Sheet>
+            ) : (
+                <div className={`transition-all duration-300 ${isPropertiesPanelOpen ? 'mr-[350px]' : 'mr-0'}`}></div>
+            )}
+            
+            <Sidebar>
+                <SidePanelContent />
             </Sidebar>
 
-            <div className="flex-1 flex flex-col">
-                <header className="flex items-center justify-between p-2 border-b h-14">
+            <div className="flex-1 flex flex-col min-h-screen">
+                 <header className="p-2 h-14 flex items-center justify-between border-b gap-4 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
                     <div className="flex items-center gap-2">
-                       <SidebarToggle />
+                         <SidebarToggle />
                     </div>
-                    
-                    <div className="absolute left-1/2 -translate-x-1/2">
-                        <h1 className="text-lg font-semibold truncate">
-                            {projectState.projectName}
-                        </h1>
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2">
+                        <h1 className="text-lg font-semibold truncate px-4">{projectState.projectName}</h1>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                         <Button variant="outline" size="sm" onClick={() => setTopologyOpen(true)}>
-                            <Milestone className="w-4 h-4 mr-2"/>
-                            Topology
-                        </Button>
-                         <Button variant="outline" size="sm" onClick={() => {}}>
-                            <Presentation className="w-4 h-4 mr-2"/>
-                            Report
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="sm" onClick={() => setIsTopologyViewOpen(true)}>
+                            <Network className="mr-2"/> Topology
                         </Button>
                         <ThemeToggle />
-                        <PropertiesToggleButton isOpen={showRightSidebar} onChange={setShowRightSidebar} />
+                        <PropertiesToggleButton 
+                           isOpen={isPropertiesPanelOpen}
+                           onChange={setIsPropertiesPanelOpen}
+                        />
                     </div>
                 </header>
-
-                <main className="flex-1 flex">
-                    <div className="flex-1 relative">
-                        {activeFloor ? (
-                            <PlannerCanvas
-                                floor={activeFloor}
-                                selectedItem={selectedItem}
-                                onSelectItem={(item) => setSelectedItem(item)}
-                                onUpdateDevice={handleUpdateDevice}
-                                onCanvasClick={handleCanvasClick}
-                                cablingMode={cablingMode}
-                                onSetCablingMode={setCablingMode}
-                                onAddConnection={handleAddConnection}
-                                selectedArchTool={selectedArchTool}
-                                drawingState={drawingState}
-                                onSetDrawingState={setDrawingState}
-                                onAddArchElement={handleAddArchElement}
-                                onUpdateArchElement={handleUpdateArchElement}
-                                floorPlanRect={activeFloor.floorPlanRect || null}
-                                onUpdateFloorPlanRect={handleUpdateFloorPlanRect}
-                            />
-                        ) : (
-                            <div className="flex items-center justify-center h-full">
-                                <p className="text-muted-foreground">Please select a floor to begin.</p>
+                <main className="flex-1 flex flex-col min-h-0 relative">
+                    {activeFloor ? (
+                        <PlannerCanvas
+                            floor={activeFloor}
+                            onUpdateDevice={handleUpdateDevice}
+                            cablingMode={cablingMode}
+                            onSetCablingMode={setCablingMode}
+                            onAddConnection={handleAddConnection}
+                            selectedArchTool={selectedArchTool}
+                            drawingState={drawingState}
+                            onSetDrawingState={setDrawingState}
+                            onAddArchElement={handleAddArchElement}
+                            onUpdateArchElement={handleUpdateArchElement}
+                            floorPlanRect={floorPlanRect}
+                            onUpdateFloorPlanRect={setFloorPlanRect}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                            <div className="text-center text-muted-foreground p-4">
+                                <p className="font-semibold text-lg">No active floor</p>
+                                <p className="text-sm">Please select a floor from the navigator or load a project.</p>
                             </div>
-                        )}
-                    </div>
-                    
-                    {showRightSidebar && (
-                        <aside className="w-96 h-full flex flex-col border-l border-border bg-card shadow-lg">
-                            <PropertiesPanel
-                                selectedItem={selectedItem}
-                                onUpdateDevice={handleUpdateDevice}
-                                onRemoveDevice={handleRemoveDevice}
-                                onStartCabling={(deviceId) => setCablingMode({ enabled: true, fromDeviceId: deviceId })}
-                                onViewRack={handleViewRack}
-                                onRemoveArchElement={handleRemoveArchElement}
-                                onUpdateArchElement={handleUpdateArchElement}
-                            />
-                        </aside>
+                        </div>
                     )}
                 </main>
             </div>
             
+             {!isMobile && (
+                 <div className={`fixed top-0 right-0 h-screen bg-card border-l transition-transform duration-300 ease-in-out ${isPropertiesPanelOpen ? 'translate-x-0' : 'translate-x-full'}`} style={{ width: '350px' }}>
+                    <PropertiesPanel 
+                         onUpdateDevice={handleUpdateDevice}
+                         onRemoveDevice={handleRemoveDevice}
+                         onStartCabling={handleStartCabling}
+                         onViewRack={(rack) => setActiveRack(rack)}
+                         onRemoveArchElement={handleRemoveArchElement}
+                         onUpdateArchElement={handleUpdateArchElement}
+                    />
+                 </div>
+            )}
+
+
             <LogicalTopologyView 
-                isOpen={isTopologyOpen} 
-                onClose={() => setTopologyOpen(false)}
                 devices={projectState.buildings.flatMap(b => b.floors.flatMap(f => f.devices))}
                 connections={projectState.buildings.flatMap(b => b.floors.flatMap(f => f.connections))}
-            />
-            
-            <RackElevationView
-                isOpen={isRackViewOpen}
-                onClose={() => setRackViewOpen(false)}
-                rack={selectedRack}
-                onUpdateRack={handleUpdateRack}
+                isOpen={isTopologyViewOpen}
+                onClose={() => setIsTopologyViewOpen(false)}
             />
 
-            <ProjectManager
+             <RackElevationView
+                rack={activeRack}
+                isOpen={!!activeRack}
+                onClose={() => setActiveRack(null)}
+                onUpdateRack={handleUpdateRack}
+            />
+            
+            <ProjectManager 
                 isOpen={isProjectManagerOpen}
-                onClose={() => setProjectManagerOpen(false)}
+                onClose={() => setIsProjectManagerOpen(false)}
                 onLoadProject={handleLoadProject}
                 currentProjectId={projectState.id}
             />
