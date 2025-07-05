@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useReducer, useState, useMemo, useEffect, useCallback } from 'react';
@@ -471,6 +472,13 @@ function CCTVPlannerInner() {
             {isMobile ? (
                 <Sheet open={isPropertiesPanelOpen} onOpenChange={setIsPropertiesPanelOpen}>
                     <SheetContent side="right" className="p-0 w-[85vw]">
+                        {/* Adding a visually hidden header to satisfy accessibility requirements */}
+                        <SheetHeader className="sr-only">
+                            <SheetTitle>Properties Panel</SheetTitle>
+                            <SheetDescription>
+                                View and edit the properties of the selected item on the canvas.
+                            </SheetDescription>
+                        </SheetHeader>
                         <PropertiesPanel 
                             onUpdateDevice={handleUpdateDevice}
                             onRemoveDevice={handleRemoveDevice}
