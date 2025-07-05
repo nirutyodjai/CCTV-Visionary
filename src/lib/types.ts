@@ -127,7 +127,6 @@ export interface Floor {
   connections: Connection[];
   architecturalElements: ArchitecturalElement[];
   diagnostics: DiagnosticResult['diagnostics'];
-  floorPlanRect: DOMRect | null;
 }
 
 export interface Building {

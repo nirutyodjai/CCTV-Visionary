@@ -45,7 +45,7 @@ type Action =
   | { type: 'UPDATE_DEVICE'; payload: { device: AnyDevice; buildingId: string; floorId: string } }
   | { type: 'REMOVE_DEVICE'; payload: { deviceId: string; buildingId: string; floorId: string } }
   | { type: 'ADD_CONNECTION'; payload: { connection: Connection; buildingId: string; floorId: string } }
-  | { type: 'SET_FLOOR_PLAN'; payload: { url: string; rect: DOMRect; buildingId: string; floorId: string } }
+  | { type: 'SET_FLOOR_PLAN'; payload: { url: string; buildingId: string; floorId: string } }
   | { type: 'SET_DIAGNOSTICS'; payload: { diagnostics: DiagnosticResult['diagnostics']; buildingId: string; floorId: string } }
   | { type: 'ADD_ARCH_ELEMENT'; payload: { element: ArchitecturalElement; buildingId: string; floorId: string } }
   | { type: 'UPDATE_ARCH_ELEMENT'; payload: { element: ArchitecturalElement; buildingId: string; floorId: string } }
@@ -91,7 +91,6 @@ function projectReducer(state: ProjectState, action: Action): ProjectState {
                         connections: [],
                         architecturalElements: [],
                         diagnostics: [],
-                        floorPlanRect: null,
                     };
                     return { ...b, floors: [...b.floors, newFloor] };
                 }
@@ -121,16 +120,14 @@ function projectReducer(state: ProjectState, action: Action): ProjectState {
                         }
 
                         let newFloorPlanUrl = f.floorPlanUrl;
-                        let newFloorPlanRect = f.floorPlanRect;
                         if (action.type === 'SET_FLOOR_PLAN') {
                             newFloorPlanUrl = action.payload.url;
-                            newFloorPlanRect = action.payload.rect;
                         }
                         
                         let newDiagnostics = f.diagnostics;
                         if (action.type === 'SET_DIAGNOSTICS') newDiagnostics = action.payload.diagnostics;
 
-                        return { ...f, devices: newDevices, connections: newConnections, architecturalElements: newArchElements, floorPlanUrl: newFloorPlanUrl, diagnostics: newDiagnostics, floorPlanRect: newFloorPlanRect };
+                        return { ...f, devices: newDevices, connections: newConnections, architecturalElements: newArchElements, floorPlanUrl: newFloorPlanUrl, diagnostics: newDiagnostics };
                     })
                 };
             })
@@ -159,7 +156,7 @@ function CCTVPlannerInner() {
     const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
     const [selectedArchTool, setSelectedArchTool] = useState<ArchitecturalElementType | null>(null);
     const [drawingState, setDrawingState] = useState({ isDrawing: false, startPoint: null });
-    const [floorPlanRect, setFloorPlanRect] = useState<DOMRect | null>(null);
+    const [floorPlanImage, setFloorPlanImage] = useState<HTMLImageElement | null>(null);
     const [activeIds, setActiveIds] = useState(() => {
         const firstBuilding = projectState.buildings[0];
         const firstFloor = firstBuilding?.floors[0];
@@ -191,11 +188,21 @@ function CCTVPlannerInner() {
         { id: 'power-check', name: 'Power Load Check', status: 'pending' },
     ]);
 
+    useEffect(() => {
+      if (activeFloor?.floorPlanUrl) {
+        const img = new Image();
+        img.onload = () => setFloorPlanImage(img);
+        img.onerror = () => setFloorPlanImage(null);
+        img.src = activeFloor.floorPlanUrl;
+      } else {
+        setFloorPlanImage(null);
+      }
+    }, [activeFloor?.floorPlanUrl]);
+
 
     const handleFloorSelect = (buildingId: string, floorId: string) => {
         setActiveIds({ buildingId, floorId });
         setSelectedItem(null); // Deselect item when changing floors
-        setFloorPlanRect(null); // Force canvas to recalculate its bounds
     };
 
     const handleUpdateProjectName = (name: string) => {
@@ -238,8 +245,8 @@ function CCTVPlannerInner() {
             if (url) {
                  const img = new Image();
                  img.onload = () => {
-                    const rect = { x: 0, y: 0, width: img.width, height: img.height, top: 0, right: img.width, bottom: img.height, left: 0 } as DOMRect;
-                    dispatch({ type: 'SET_FLOOR_PLAN', payload: { url, rect, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! }});
+                    dispatch({ type: 'SET_FLOOR_PLAN', payload: { url, buildingId: activeIds.buildingId!, floorId: activeIds.floorId! }});
+                    setFloorPlanImage(img);
                     toast({ title: 'Floor plan updated!' });
                  };
                  img.src = url;
@@ -249,8 +256,8 @@ function CCTVPlannerInner() {
     };
 
     const handleAddDevice = (type: DeviceType) => {
-        if (!activeFloor || !floorPlanRect) {
-            toast({ title: "Cannot Add Device", description: "Please upload and define a floor plan area first.", variant: 'destructive' });
+        if (!activeFloor) {
+            toast({ title: "Cannot Add Device", description: "Please select a floor first.", variant: 'destructive' });
             return;
         }
         const newDevice = createDevice(type, 0.5, 0.5, activeFloor.devices);
@@ -261,7 +268,9 @@ function CCTVPlannerInner() {
     const handleUpdateDevice = (device: AnyDevice) => {
         if (!activeIds.buildingId || !activeIds.floorId) return;
         dispatch({ type: 'UPDATE_DEVICE', payload: { device, buildingId: activeIds.buildingId, floorId: activeIds.floorId } });
-        setSelectedItem(device);
+        if (selectedItem?.id === device.id) {
+          setSelectedItem(device);
+        }
     };
 
     const handleRemoveDevice = (deviceId: string) => {
@@ -473,10 +482,10 @@ function CCTVPlannerInner() {
             {isMobile ? (
                 <Sheet open={isPropertiesPanelOpen} onOpenChange={setIsPropertiesPanelOpen}>
                     <SheetContent side="right" className="p-0 w-[85vw]">
-                        <SheetHeader className="sr-only">
-                            <SheetTitle>Properties Panel</SheetTitle>
-                            <SheetDescription>
-                                View and edit the properties of the selected item on the canvas.
+                        <SheetHeader>
+                            <SheetTitle className="sr-only">Properties</SheetTitle>
+                            <SheetDescription className="sr-only">
+                                View and edit the properties of the selected item.
                             </SheetDescription>
                         </SheetHeader>
                         <PropertiesPanel 
@@ -502,7 +511,7 @@ function CCTVPlannerInner() {
                     <div className="flex items-center gap-2">
                          <SidebarToggle />
                     </div>
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2">
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                         <h1 className="text-lg font-semibold truncate px-4">{projectState.projectName}</h1>
                     </div>
                     <div className="flex items-center gap-4">
@@ -521,16 +530,7 @@ function CCTVPlannerInner() {
                         <PlannerCanvas
                             floor={activeFloor}
                             onUpdateDevice={handleUpdateDevice}
-                            cablingMode={cablingMode}
-                            onSetCablingMode={setCablingMode}
-                            onAddConnection={handleAddConnection}
-                            selectedArchTool={selectedArchTool}
-                            drawingState={drawingState}
-                            onSetDrawingState={setDrawingState}
-                            onAddArchElement={handleAddArchElement}
-                            onUpdateArchElement={handleUpdateArchElement}
-                            floorPlanRect={floorPlanRect}
-                            onUpdateFloorPlanRect={setFloorPlanRect}
+                            floorPlanImage={floorPlanImage}
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted/50">
