@@ -3,9 +3,9 @@ import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA5WdfDfmQa95T820E-HBQ1XzBm8sVHYv8",
-  authDomain: "project-comdee.firebaseapp.com",
-  projectId: "project-comdee",
-  storageBucket: "project-comdee.firebasestorage.app",
+  authDomain: "cctv-pro.web.app",
+  projectId: "cctv-pro",
+  storageBucket: "cctv-pro.appspot.com",
   messagingSenderId: "591185484149",
   appId: "1:591185484149:web:63977efd834411c19cdb3c",
   measurementId: "G-Q9P0DB24KR"
