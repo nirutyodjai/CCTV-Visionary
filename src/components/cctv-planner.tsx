@@ -195,6 +195,7 @@ function CCTVPlannerInner() {
     const handleFloorSelect = (buildingId: string, floorId: string) => {
         setActiveIds({ buildingId, floorId });
         setSelectedItem(null); // Deselect item when changing floors
+        setFloorPlanRect(null); // Force canvas to recalculate its bounds
     };
 
     const handleUpdateProjectName = (name: string) => {
@@ -472,7 +473,6 @@ function CCTVPlannerInner() {
             {isMobile ? (
                 <Sheet open={isPropertiesPanelOpen} onOpenChange={setIsPropertiesPanelOpen}>
                     <SheetContent side="right" className="p-0 w-[85vw]">
-                        {/* Adding a visually hidden header to satisfy accessibility requirements */}
                         <SheetHeader className="sr-only">
                             <SheetTitle>Properties Panel</SheetTitle>
                             <SheetDescription>
