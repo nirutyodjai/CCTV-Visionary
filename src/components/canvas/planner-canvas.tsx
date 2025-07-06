@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import type { Floor, AnyDevice, ArchitecturalElement } from '@/lib/types';
+import type { Floor, AnyDevice, ArchitecturalElement, Point } from '@/lib/types';
 import { DeviceRenderer } from './device-renderer';
 import { ArchitecturalElementRenderer } from './architectural-element-renderer';
 
@@ -19,6 +19,7 @@ interface PlannerCanvasProps {
   onArchElementClick: (element: ArchitecturalElement) => void;
   onCanvasClick: () => void;
   onDeviceMove: (deviceId: string, pos: { x: number; y: number }) => void;
+  onConnectionPointMove: (deviceId: string, pos: { x: number; y: number }) => void;
 }
 
 export function PlannerCanvas({
@@ -28,6 +29,7 @@ export function PlannerCanvas({
   onArchElementClick,
   onCanvasClick,
   onDeviceMove,
+  onConnectionPointMove,
 }: PlannerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,6 +41,7 @@ export function PlannerCanvas({
   const [imageTransform, setImageTransform] = useState<ImageTransform>({ scale: 1, offsetX: 0, offsetY: 0 });
 
   const [draggingDevice, setDraggingDevice] = useState<AnyDevice | null>(null);
+  const [draggingHandle, setDraggingHandle] = useState<AnyDevice | null>(null);
   const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -75,10 +78,8 @@ export function PlannerCanvas({
     }
   }, [bgImage, containerRect]);
 
-  // **THE FIX: Re-introducing the missing helper function**
   const getRelativeCoords = useCallback((e: React.PointerEvent | PointerEvent) => {
     if (!containerRect) return null;
-    // This gives the pointer position as a percentage of the container div (0 to 1)
     return {
       x: (e.clientX - containerRect.left) / containerRect.width,
       y: (e.clientY - containerRect.top) / containerRect.height,
@@ -105,7 +106,6 @@ export function PlannerCanvas({
     return { x: canvasX, y: canvasY };
   }, [containerRect, imageTransform, bgImage]);
 
-
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
@@ -113,6 +113,7 @@ export function PlannerCanvas({
 
     const computedStyle = getComputedStyle(canvasRef.current!);
     const accentHsl = computedStyle.getPropertyValue('--accent').trim() || '221 83% 53%';
+    const ringHsl = computedStyle.getPropertyValue('--ring').trim() || '215 89% 52%';
 
     const draw = (time: number) => {
         ctx.clearRect(0, 0, containerRect.width, containerRect.height);
@@ -127,8 +128,12 @@ export function PlannerCanvas({
                 const fromDevice = floor.devices.find(d => d.id === conn.fromDeviceId);
                 const toDevice = floor.devices.find(d => d.id === conn.toDeviceId);
                 if (!fromDevice || !toDevice) return;
+                
+                const startPoint: Point = fromDevice.connectionPoint || {x: fromDevice.x, y: fromDevice.y};
+                const endPoint: Point = toDevice.connectionPoint || {x: toDevice.x, y: toDevice.y};
 
-                const start = imageToCanvasCoords({ x: fromDevice.x, y: fromDevice.y });
+                const start = imageToCanvasCoords(startPoint);
+                const end = imageToCanvasCoords(endPoint);
                 
                 const path = new Path2D();
                 path.moveTo(start.x, start.y);
@@ -139,10 +144,8 @@ export function PlannerCanvas({
                         const absP = imageToCanvasCoords(p);
                         if(absP) path.lineTo(absP.x, absP.y)
                     });
-                } else {
-                    const end = imageToCanvasCoords({ x: toDevice.x, y: toDevice.y });
-                    if(end) path.lineTo(end.x, end.y);
-                }
+                } 
+                path.lineTo(end.x, end.y);
 
                 ctx.lineCap = 'round';
                 ctx.strokeStyle = `hsla(${accentHsl}, ${pulsingOpacity})`;
@@ -157,6 +160,30 @@ export function PlannerCanvas({
                 ctx.stroke(path);
             });
         }
+        
+        // Draw connection point handles
+        floor.devices.forEach(device => {
+            const deviceCenter = imageToCanvasCoords({ x: device.x, y: device.y });
+            const handlePos = imageToCanvasCoords(device.connectionPoint || { x: device.x, y: device.y });
+            
+            ctx.setLineDash([2, 3]);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = `hsla(${ringHsl}, 0.7)`;
+            ctx.beginPath();
+            ctx.moveTo(deviceCenter.x, deviceCenter.y);
+            ctx.lineTo(handlePos.x, handlePos.y);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(handlePos.x, handlePos.y, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = `hsla(${ringHsl}, 0.3)`;
+            ctx.fill();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = `hsl(${ringHsl})`;
+            ctx.stroke();
+        });
+
         ctx.setLineDash([]);
     }
 
@@ -183,27 +210,43 @@ export function PlannerCanvas({
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     }
   };
+  
+  const handleHandlePointerDown = (e: React.PointerEvent, device: AnyDevice) => {
+    e.stopPropagation(); // Prevent canvas click
+    setDraggingHandle(device);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    const canvasPos = getRelativeCoords(e);
+    if (!canvasPos) return;
+
     if (draggingDevice) {
-      const canvasPos = getRelativeCoords(e);
-      if (canvasPos) {
-        const imagePos = canvasToImageCoords(canvasPos);
-        const finalPos = {
-            x: Math.max(0, Math.min(1, imagePos.x + dragOffset.current.x)),
-            y: Math.max(0, Math.min(1, imagePos.y + dragOffset.current.y)),
-        }
-        onDeviceMove(draggingDevice.id, finalPos);
+      const imagePos = canvasToImageCoords(canvasPos);
+      const finalPos = {
+          x: Math.max(0, Math.min(1, imagePos.x + dragOffset.current.x)),
+          y: Math.max(0, Math.min(1, imagePos.y + dragOffset.current.y)),
       }
+      onDeviceMove(draggingDevice.id, finalPos);
+    } else if (draggingHandle) {
+       const imagePos = canvasToImageCoords(canvasPos);
+       const finalPos = {
+            x: Math.max(0, Math.min(1, imagePos.x)),
+            y: Math.max(0, Math.min(1, imagePos.y)),
+       }
+       onConnectionPointMove(draggingHandle.id, finalPos)
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (draggingDevice) {
       setDraggingDevice(null);
-      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-          e.currentTarget.releasePointerCapture(e.pointerId);
-      }
+    }
+    if (draggingHandle) {
+      setDraggingHandle(null);
+    }
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
     }
   };
   
@@ -219,13 +262,15 @@ export function PlannerCanvas({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onPointerDown={handleCanvasPointerDown}
-      style={{ cursor: draggingDevice ? 'grabbing' : (cablingMode.enabled ? 'crosshair' : 'default') }}
+      style={{ 
+        cursor: draggingDevice || draggingHandle ? 'grabbing' : (cablingMode.enabled ? 'crosshair' : 'default') 
+      }}
     >
       <canvas
         ref={canvasRef}
         width={containerRect?.width || 0}
         height={containerRect?.height || 0}
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0"
       />
       
       <div className="absolute inset-0 pointer-events-none">
@@ -250,6 +295,29 @@ export function PlannerCanvas({
               />
             ))}
         </div>
+      </div>
+       <div style={{
+                position: 'absolute',
+                left: `${imageTransform.offsetX}px`,
+                top: `${imageTransform.offsetY}px`,
+                width: `${(bgImage?.width ?? containerRect?.width ?? 0) * imageTransform.scale}px`,
+                height: `${(bgImage?.height ?? containerRect?.height ?? 0) * imageTransform.scale}px`,
+            }}>
+         {floor.devices.map(device => {
+           const pos = device.connectionPoint || {x: device.x, y: device.y};
+           return (
+              <div
+                 key={`${device.id}-handle`}
+                 className="absolute w-4 h-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-ring bg-background/50 cursor-grab hover:scale-125 transition-transform"
+                 style={{ 
+                   left: `${pos.x * 100}%`, 
+                   top: `${pos.y * 100}%`,
+                   touchAction: 'none'
+                  }}
+                 onPointerDown={(e) => handleHandlePointerDown(e, device)}
+               />
+           )
+         })}
       </div>
     </div>
   );

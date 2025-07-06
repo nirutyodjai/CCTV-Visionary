@@ -159,6 +159,15 @@ function CCTVPlannerInner() {
         updateFloorData(activeFloor.id, { devices: updatedDevices });
     };
 
+    const handleConnectionPointMove = (deviceId: string, pos: { x: number; y: number }) => {
+        const activeFloor = getActiveFloor();
+        if (!activeFloor) return;
+        const updatedDevices = activeFloor.devices.map(d => 
+            d.id === deviceId ? { ...d, connectionPoint: pos } : d
+        );
+        updateFloorData(activeFloor.id, { devices: updatedDevices });
+    };
+
     // Project Management Handlers
     const handleSaveProject = async () => {
         setIsSaving(true);
@@ -244,8 +253,8 @@ function CCTVPlannerInner() {
             if (!fromDevice || !toDevice) continue;
     
             const result = await findCablePathAction({
-                startPoint: { x: fromDevice.x, y: fromDevice.y },
-                endPoint: { x: toDevice.x, y: toDevice.y },
+                startPoint: fromDevice.connectionPoint || { x: fromDevice.x, y: fromDevice.y },
+                endPoint: toDevice.connectionPoint || { x: toDevice.x, y: toDevice.y },
                 obstacles: activeFloor.architecturalElements.filter(el => el.type === 'wall'),
                 gridSize: { width: 1, height: 1 } // Using relative coordinates
             });
@@ -383,6 +392,7 @@ function CCTVPlannerInner() {
                                 onArchElementClick={(el) => setSelectedItem(el)}
                                 onCanvasClick={() => setSelectedItem(null)}
                                 onDeviceMove={handleDeviceMove}
+                                onConnectionPointMove={handleConnectionPointMove}
                              />
                         </div>
                         {isPropertiesPanelOpen && (
@@ -457,6 +467,8 @@ export function CCTVPlanner() {
         </SelectionProvider>
     )
 }
+
+    
 
     
 

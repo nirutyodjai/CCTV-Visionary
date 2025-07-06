@@ -15,7 +15,7 @@ import {
     ClipboardCheck,
     DraftingCompass
 } from 'lucide-react';
-import { InteractiveFeaturePreview } from '@/components/interactive-feature-preview';
+// import { InteractiveFeaturePreview } from '@/components/interactive-feature-preview';
 
 const featureList = [
     {
@@ -110,7 +110,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <InteractiveFeaturePreview />
+        {/* <InteractiveFeaturePreview /> */}
 
         <section id="features" className="bg-white dark:bg-gray-800 py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
