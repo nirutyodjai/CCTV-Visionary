@@ -212,6 +212,7 @@ export function PlannerCanvas({
   }, [floor, containerRect, bgImage, imageTransform, imageToCanvasCoords]);
 
   const handleDevicePointerDown = (e: React.PointerEvent, device: AnyDevice) => {
+    e.stopPropagation();
     onDeviceClick(device);
     if (!cablingMode.enabled) {
       setDraggingDevice(device);
@@ -286,7 +287,7 @@ export function PlannerCanvas({
         className="absolute inset-0"
       />
       
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0">
            <div style={{
                 position: 'absolute',
                 left: `${imageTransform.offsetX}px`,

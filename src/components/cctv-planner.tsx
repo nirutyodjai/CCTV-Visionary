@@ -155,15 +155,25 @@ function CCTVPlannerInner() {
     const handleDeviceMove = (deviceId: string, pos: { x: number; y: number }) => {
         const activeFloor = getActiveFloor();
         if (!activeFloor) return;
+
+        const deviceToMove = activeFloor.devices.find(d => d.id === deviceId);
+        if (!deviceToMove) return;
+
+        // Calculate the offset of the connection point from the device's center
+        const offsetX = (deviceToMove.connectionPoint?.x ?? deviceToMove.x) - deviceToMove.x;
+        const offsetY = (deviceToMove.connectionPoint?.y ?? deviceToMove.y) - deviceToMove.y;
+
         const updatedDevices = activeFloor.devices.map(d => {
             if (d.id === deviceId) {
-                const connectionPointIsAtCenter = !d.connectionPoint || (d.connectionPoint.x === d.x && d.connectionPoint.y === d.y);
-                
-                return { 
-                    ...d, 
-                    x: pos.x, 
+                return {
+                    ...d,
+                    x: pos.x,
                     y: pos.y,
-                    connectionPoint: connectionPointIsAtCenter ? { x: pos.x, y: pos.y } : d.connectionPoint 
+                    // Apply the same offset to the new position to move the handle along with the device
+                    connectionPoint: {
+                        x: pos.x + offsetX,
+                        y: pos.y + offsetY
+                    }
                 };
             }
             return d;
@@ -479,9 +489,3 @@ export function CCTVPlanner() {
         </SelectionProvider>
     )
 }
-
-    
-
-    
-
-    
