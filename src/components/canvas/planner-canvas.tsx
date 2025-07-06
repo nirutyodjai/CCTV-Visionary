@@ -316,6 +316,7 @@ export function PlannerCanvas({
                 top: `${imageTransform.offsetY}px`,
                 width: `${(bgImage?.width ?? containerRect?.width ?? 0) * imageTransform.scale}px`,
                 height: `${(bgImage?.height ?? containerRect?.height ?? 0) * imageTransform.scale}px`,
+                pointerEvents: 'none',
             }}>
          {floor.devices.map(device => {
            const pos = device.connectionPoint || {x: device.x, y: device.y};
@@ -326,6 +327,7 @@ export function PlannerCanvas({
                  style={{ 
                    left: `${pos.x * 100}%`, 
                    top: `${pos.y * 100}%`,
+                   pointerEvents: 'auto',
                    touchAction: 'none'
                   }}
                  onPointerDown={(e) => handleHandlePointerDown(e, device)}

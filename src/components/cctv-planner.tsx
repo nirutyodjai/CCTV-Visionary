@@ -155,9 +155,6 @@ function CCTVPlannerInner() {
     };
     
     const handleDeviceMove = (deviceId: string, pos: { x: number; y: number }) => {
-        const activeFloor = getActiveFloor();
-        if (!activeFloor) return;
-
         setProjectState(
             produce(draft => {
                 const floor = draft.buildings
@@ -165,20 +162,14 @@ function CCTVPlannerInner() {
                     .find(f => f.id === activeFloorId);
                 
                 if (floor) {
-                    const deviceToMove = floor.devices.find(d => d.id === deviceId);
-                    if (deviceToMove) {
-                        const offsetX = (deviceToMove.connectionPoint?.x ?? deviceToMove.x) - deviceToMove.x;
-                        const offsetY = (deviceToMove.connectionPoint?.y ?? deviceToMove.y) - deviceToMove.y;
-                        
-                        deviceToMove.x = pos.x;
-                        deviceToMove.y = pos.y;
-                        
-                        if (deviceToMove.connectionPoint) {
-                            deviceToMove.connectionPoint.x = pos.x + offsetX;
-                            deviceToMove.connectionPoint.y = pos.y + offsetY;
-                        } else {
-                             deviceToMove.connectionPoint = { x: pos.x, y: pos.y };
-                        }
+                    const device = floor.devices.find(d => d.id === deviceId);
+                    if (device) {
+                        // When moving the main device icon, we reset the connection point
+                        // to be at the center of the device for simplicity and predictability.
+                        // The user can then drag the handle to create a custom offset if needed.
+                        device.x = pos.x;
+                        device.y = pos.y;
+                        device.connectionPoint = { x: pos.x, y: pos.y };
                     }
                 }
             })
