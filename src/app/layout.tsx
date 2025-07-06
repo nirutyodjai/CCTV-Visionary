@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google'; // Using a default font
+import { Sarabun } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/AuthContext';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const sarabun = Sarabun({
+  subsets: ['latin', 'thai'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-sans',
+});
 
 export const metadata: Metadata = {
   title: 'CCTV Visionary',
@@ -18,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="th" suppressHydrationWarning>
+      <body className={`${sarabun.variable} font-sans antialiased`}>
         <AuthProvider>
             <ThemeProvider
             attribute="class"

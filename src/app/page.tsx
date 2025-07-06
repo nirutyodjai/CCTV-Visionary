@@ -23,56 +23,56 @@ import { useAuth } from '@/contexts/AuthContext';
 const featureList = [
     {
         icon: Map,
-        title: "Visual Floor Plan Designer",
-        description: "Drag-and-drop cameras, network devices, and architectural elements onto a floor plan. Adjust device properties like FoV, range, and rotation."
+        title: "เครื่องมือออกแบบบนแปลนอาคาร",
+        description: "ลากและวางกล้อง, อุปกรณ์เครือข่าย, และส่วนประกอบสถาปัตยกรรมลงบนแปลนอาคาร ปรับแต่งคุณสมบัติอุปกรณ์ เช่น มุมมอง, ระยะ, และการหมุน"
     },
     {
         icon: Bot,
-        title: "AI-Powered Assistance",
-        description: "Leverage Genkit AI flows for camera placement suggestions, cable path finding, and plan diagnostics to identify potential issues."
+        title: "ผู้ช่วย AI อัจฉริยะ",
+        description: "ใช้ประโยชน์จาก Genkit AI flows สำหรับการแนะนำตำแหน่งติดตั้ง, ค้นหาเส้นทางเดินสาย, และการวิเคราะห์แผนเพื่อระบุปัญหาที่อาจเกิดขึ้น"
     },
     {
         icon: Server,
-        title: "Rack Elevation View",
-        description: "Design and visualize equipment layout within server racks. Manage rack units and device placement for optimal organization."
+        title: "มุมมองตู้แร็ค",
+        description: "ออกแบบและจำลองการจัดวางอุปกรณ์ภายในตู้แร็คเซิร์ฟเวอร์ จัดการยูนิตในตู้แร็คและการวางอุปกรณ์เพื่อความเป็นระเบียบสูงสุด"
     },
     {
         icon: Network,
-        title: "Logical Topology View",
-        description: "Automatically generate and visualize the logical network topology based on device connections, helping you understand data flow."
+        title: "มุมมองผังเครือข่าย",
+        description: "สร้างและแสดงภาพผังเครือข่ายเชิงตรรกะโดยอัตโนมัติตามการเชื่อมต่ออุปกรณ์ ช่วยให้คุณเข้าใจการไหลของข้อมูล"
     },
     {
         icon: ListChecks,
-        title: "Bill of Materials (BOM) Generation",
-        description: "Automatically compile a comprehensive list of all required equipment, complete with quantities and potential costs."
+        title: "สร้างรายการวัสดุ (BOM)",
+        description: "รวบรวมรายการอุปกรณ์ที่จำเป็นทั้งหมดโดยอัตโนมัติ พร้อมจำนวนและราคาประเมิน"
     },
     {
         icon: FileText,
-        title: "PDF Report Generation",
-        description: "Generate professional PDF reports of your complete project plan, including floor plans, topology, and BOM for easy sharing."
+        title: "สร้างรายงาน PDF",
+        description: "สร้างรายงาน PDF ระดับมืออาชีพของแผนโครงการทั้งหมดของคุณ รวมถึงแปลนอาคาร, ผังเครือข่าย, และ BOM เพื่อการแบ่งปันที่ง่ายดาย"
     }
 ];
 
 const workflowSteps = [
     {
         icon: DraftingCompass,
-        title: "1. Design Your Space",
-        description: "Upload an existing floor plan image or use the built-in architectural tools to draw walls and define the layout of your space."
+        title: "1. ออกแบบพื้นที่ของคุณ",
+        description: "อัปโหลดภาพแปลนอาคารที่มีอยู่ หรือใช้เครื่องมือสถาปัตยกรรมเพื่อวาดกำแพงและกำหนดแผนผังของพื้นที่ของคุณ"
     },
     {
         icon: MousePointerClick,
-        title: "2. Place & Connect",
-        description: "Drag and drop devices onto the canvas. Use AI suggestions for optimal placement and let the system automatically find the best cable paths."
+        title: "2. วางและเชื่อมต่อ",
+        description: "ลากและวางอุปกรณ์ลงบนผืนผ้าใบ ใช้คำแนะนำจาก AI เพื่อการวางตำแหน่งที่ดีที่สุด และให้ระบบค้นหาเส้นทางเดินสายที่ดีที่สุดโดยอัตโนมัติ"
     },
     {
         icon: Settings,
-        title: "3. Manage & Configure",
-        description: "Fine-tune every device's properties, organize equipment in the Rack View, and see the network topology update in real-time."
+        title: "3. จัดการและกำหนดค่า",
+        description: "ปรับแต่งคุณสมบัติของทุกอุปกรณ์, จัดระเบียบอุปกรณ์ในมุมมองตู้แร็ค, และดูการอัปเดตผังเครือข่ายแบบเรียลไทม์"
     },
     {
         icon: ClipboardCheck,
-        title: "4. Analyze & Report",
-        description: "Run diagnostics to validate your design, generate a complete Bill of Materials, and export a professional PDF report for stakeholders."
+        title: "4. วิเคราะห์และรายงาน",
+        description: "รันการวินิจฉัยเพื่อตรวจสอบการออกแบบของคุณ, สร้างรายการวัสดุที่สมบูรณ์, และส่งออกรายงาน PDF ระดับมืออาชีพสำหรับผู้มีส่วนได้ส่วนเสีย"
     }
 ]
 
@@ -84,7 +84,7 @@ export default function LandingPage() {
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center sticky top-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm z-50">
         <div className="flex items-center gap-2">
           <Map className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">CCTV & Network Planner</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">โปรแกรมวางแผน CCTV</h1>
         </div>
         <nav className="flex items-center gap-4">
            {loading ? (
@@ -94,10 +94,10 @@ export default function LandingPage() {
            ) : (
              <>
                <Link href="/login" passHref>
-                 <Button variant="ghost">Launch Planner</Button>
+                 <Button variant="ghost">เปิดโปรแกรมวางแผน</Button>
                </Link>
                <Link href="/login" passHref>
-                 <Button>Get Started</Button>
+                 <Button>เริ่มต้นใช้งาน</Button>
                </Link>
              </>
            )}
@@ -107,30 +107,28 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="container mx-auto px-4 sm:px-6 lg:px-8 text-center py-20 sm:py-32">
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white">
-            Design, Plan, and Deploy Your Systems Intelligently
+            ออกแบบ วางแผน และติดตั้งระบบของคุณอย่างชาญฉลาด
           </h2>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-300">
-            Our Genkit AI-powered tool helps you create efficient, cost-effective CCTV and network infrastructure plans. From device placement to cable routing, we've got you covered.
+            เครื่องมือที่ขับเคลื่อนด้วย Genkit AI ของเรา ช่วยให้คุณสร้างแผนโครงสร้างพื้นฐานของ CCTV และเครือข่ายที่มีประสิทธิภาพและคุ้มค่า ตั้งแต่การวางอุปกรณ์ไปจนถึงการเดินสาย เราจัดการให้คุณได้ทั้งหมด
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Link href="/planner" passHref>
               <Button size="lg" className="gap-2">
-                Get Started <ArrowRight className="w-5 h-5" />
+                เริ่มต้นใช้งาน <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
             <Button size="lg" variant="outline">
-              Learn More
+              เรียนรู้เพิ่มเติม
             </Button>
           </div>
         </section>
 
-        {/* <InteractiveFeaturePreview /> */}
-
         <section id="features" className="bg-white dark:bg-gray-800 py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white">A Comprehensive Toolkit for Modern System Design</h3>
-                <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">Everything you need to take a project from concept to completion.</p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">ชุดเครื่องมือที่ครอบคลุมสำหรับการออกแบบระบบที่ทันสมัย</h3>
+                <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">ทุกสิ่งที่คุณต้องการเพื่อนำโปรเจกต์จากแนวคิดไปสู่การปฏิบัติจริง</p>
             </div>
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {featureList.map((feature, index) => (
@@ -155,11 +153,10 @@ export default function LandingPage() {
         <section id="how-it-works" className="py-20 bg-gray-50 dark:bg-gray-900">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">From Concept to Completion in 4 Simple Steps</h3>
-                    <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">A streamlined workflow to accelerate your design process.</p>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">จากแนวคิดสู่การปฏิบัติใน 4 ขั้นตอนง่ายๆ</h3>
+                    <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">ขั้นตอนการทำงานที่คล่องตัวเพื่อเร่งกระบวนการออกแบบของคุณ</p>
                 </div>
                 <div className="relative">
-                    {/* The connecting line */}
                     <div className="hidden md:block absolute top-8 left-0 w-full h-0.5 bg-gray-300 dark:bg-gray-700" style={{top: '3rem'}}></div>
                     
                     <div className="grid md:grid-cols-4 gap-12 relative">
@@ -183,7 +180,7 @@ export default function LandingPage() {
 
       <footer className="bg-gray-100 dark:bg-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-gray-600 dark:text-gray-400">
-          <p>&copy; 2024 CCTV & Network Planner. All Rights Reserved.</p>
+          <p>&copy; 2024 โปรแกรมวางแผน CCTV และเครือข่าย สงวนลิขสิทธิ์</p>
         </div>
       </footer>
     </div>
