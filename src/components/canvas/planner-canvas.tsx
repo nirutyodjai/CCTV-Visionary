@@ -1,8 +1,8 @@
 
 'use client';
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
-import type { Floor, AnyDevice, ArchitecturalElement, Point } from '@/lib/types';
+import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
+import type { Floor, AnyDevice, ArchitecturalElement } from '@/lib/types';
 import { DeviceRenderer } from './device-renderer';
 import { ArchitecturalElementRenderer } from './architectural-element-renderer';
 
@@ -63,30 +63,40 @@ export function PlannerCanvas({
     if (containerRef.current) resizeObserver.observe(containerRef.current);
     return () => resizeObserver.disconnect();
   }, []);
+
+  // Use integer dimensions for all calculations to prevent sub-pixel layout mismatches
+  const { intWidth, intHeight } = useMemo(() => {
+    if (!containerRect) return { intWidth: 0, intHeight: 0 };
+    return {
+      intWidth: Math.floor(containerRect.width),
+      intHeight: Math.floor(containerRect.height),
+    };
+  }, [containerRect]);
   
   // Calculate image transform to fit container
   useEffect(() => {
-    if (containerRect && bgImage) {
-      const hRatio = containerRect.width / bgImage.width;
-      const vRatio = containerRect.height / bgImage.height;
+    if (intWidth > 0 && intHeight > 0 && bgImage) {
+      const hRatio = intWidth / bgImage.width;
+      const vRatio = intHeight / bgImage.height;
       const scale = Math.min(hRatio, vRatio);
-      const offsetX = (containerRect.width - bgImage.width * scale) / 2;
-      const offsetY = (containerRect.height - bgImage.height * scale) / 2;
+      const offsetX = (intWidth - bgImage.width * scale) / 2;
+      const offsetY = (intHeight - bgImage.height * scale) / 2;
       setImageTransform({ scale, offsetX, offsetY });
-    } else if (containerRect) {
+    } else if (intWidth > 0) {
       // No image, fill container
       setImageTransform({ scale: 1, offsetX: 0, offsetY: 0 });
     }
-  }, [bgImage, containerRect]);
+  }, [bgImage, intWidth, intHeight]); // Depend on integer dimensions
   
-  const virtualWidth = bgImage?.width ?? containerRect?.width ?? 0;
-  const virtualHeight = bgImage?.height ?? containerRect?.height ?? 0;
+  // The virtual space is the original image dimensions, or the container's integer dimensions
+  const virtualWidth = bgImage?.width ?? intWidth ?? 0;
+  const virtualHeight = bgImage?.height ?? intHeight ?? 0;
 
   // Main drawing logic on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx || !containerRect || !virtualWidth || !virtualHeight) return;
+    if (!ctx || !virtualWidth || !virtualHeight) return;
 
     if (canvas.width !== virtualWidth) canvas.width = virtualWidth;
     if (canvas.height !== virtualHeight) canvas.height = virtualHeight;
@@ -125,8 +135,8 @@ export function PlannerCanvas({
                 }
 
                 ctx.strokeStyle = `hsl(${accentHsl})`;
-                ctx.lineWidth = 1 / imageTransform.scale; // Keep line width consistent across zoom levels
-                ctx.setLineDash([4 / imageTransform.scale, 4 / imageTransform.scale]);
+                ctx.lineWidth = 1; // Make line width thin and consistent
+                ctx.setLineDash([4, 4]);
                 ctx.lineDashOffset = -lineDashOffset.current;
                 ctx.stroke(path);
             });
@@ -143,7 +153,7 @@ export function PlannerCanvas({
     return () => {
         if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [floor, containerRect, bgImage, imageTransform, virtualWidth, virtualHeight]);
+  }, [floor, bgImage, virtualWidth, virtualHeight]); // Now only depends on what's needed for drawing
 
   const getCoordsInVirtualSpace = useCallback((e: React.PointerEvent | PointerEvent) => {
     if (!containerRect) return null;
@@ -196,8 +206,7 @@ export function PlannerCanvas({
     if(e.target === e.currentTarget) onCanvasClick();
   }
 
-  // This is the key change: a single container that gets transformed.
-  // Both the canvas and the device/element layer live inside it and share its coordinate system.
+  // The transform layer uses the calculated transform and dimensions
   const transformLayerStyle: React.CSSProperties = {
       position: 'absolute',
       left: `${imageTransform.offsetX}px`,
@@ -220,7 +229,7 @@ export function PlannerCanvas({
         cursor: draggingDevice ? 'grabbing' : (cablingMode.enabled ? 'crosshair' : 'default') 
       }}
     >
-        {containerRect && (
+        {intWidth > 0 && intHeight > 0 && (
             <div style={transformLayerStyle}>
                 <canvas
                     ref={canvasRef}
@@ -229,7 +238,6 @@ export function PlannerCanvas({
                     className="absolute inset-0"
                 />
                 
-                {/* Device/Element Layer now lives inside the transformed container */}
                 <div className="absolute inset-0 pointer-events-none">
                     {floor.architecturalElements.map(element => (
                     <ArchitecturalElementRenderer
