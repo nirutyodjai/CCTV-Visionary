@@ -4,6 +4,7 @@ import type { AnyDevice } from '@/lib/types';
 import { DEVICE_CONFIG } from '@/lib/device-config';
 import { useSelection } from '@/contexts/SelectionContext';
 import { motion } from 'framer-motion';
+import { CameraFovRenderer } from './camera-fov-renderer';
 
 interface DeviceRendererProps {
   device: AnyDevice;
@@ -11,6 +12,11 @@ interface DeviceRendererProps {
   virtualWidth: number;
   virtualHeight: number;
 }
+
+// A scale factor for converting meters to pixels on the canvas.
+// This is an assumption and might need adjustment if a real-world scale is introduced.
+const PIXELS_PER_METER = 8;
+
 
 export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevicePointerDown, virtualWidth, virtualHeight }) => {
   const { selectedItem } = useSelection();
@@ -34,6 +40,8 @@ export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevice
   const iconLeft = Math.round(device.x * virtualWidth) - iconOffset;
   const iconTop = Math.round(device.y * virtualHeight) - iconOffset;
 
+  const isCamera = device.type.startsWith('cctv-');
+
   return (
     // This container is for event handling and grouping.
     // It is sized and positioned exactly where the icon should be.
@@ -55,9 +63,18 @@ export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevice
         transition={{ duration: 0.2 }}
         className="relative w-full h-full"
       >
+        {isCamera && (device.fov && device.range) && (
+          <CameraFovRenderer
+            deviceId={device.id}
+            rotation={device.rotation || 0}
+            fov={device.fov}
+            rangeInPixels={(device.range || 0) * PIXELS_PER_METER}
+            isSelected={isSelected}
+          />
+        )}
         <div 
           className={`
-            w-12 h-12 rounded-full flex items-center justify-center 
+            relative z-10 w-12 h-12 rounded-full flex items-center justify-center 
             border-2 transition-all duration-200
             ${colorClass}
             ${isSelected ? 'ring-4 ring-offset-2 ring-primary' : 'shadow-md hover:shadow-lg'}
@@ -70,7 +87,7 @@ export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevice
         <p 
           className={`
             absolute top-full left-1/2 -translate-x-1/2
-            mt-2 text-xs font-semibold px-2 py-1 rounded-md transition-all
+            mt-2 text-xs font-semibold px-2 py-1 rounded-md transition-all z-20
             ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground shadow'}
           `}
           // Stop pointer events on the label so they pass through to the main div
