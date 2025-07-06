@@ -41,7 +41,6 @@ export interface BaseDevice {
   label: string;
   x: number; // Relative coordinate on floor plan (0-1)
   y: number; // Relative coordinate on floor plan (0-1)
-  connectionPoint?: Point;
   price?: number;
   powerConsumption?: number; // in Watts
   ipAddress?: string;

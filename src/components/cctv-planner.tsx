@@ -164,37 +164,12 @@ function CCTVPlannerInner() {
                 if (floor) {
                     const device = floor.devices.find(d => d.id === deviceId);
                     if (device) {
-                        // Calculate the change in position (delta) from the device's last known position.
-                        const deltaX = newPos.x - device.x;
-                        const deltaY = newPos.y - device.y;
-
-                        // Apply the delta to the device's main position.
                         device.x = newPos.x;
                         device.y = newPos.y;
-
-                        // Also apply the same delta to the connection point's position.
-                        // This ensures the connection point moves relative to the device.
-                        // Use the ?? operator to handle cases where connectionPoint might be undefined initially.
-                        const currentConnectionPointX = device.connectionPoint?.x ?? device.x;
-                        const currentConnectionPointY = device.connectionPoint?.y ?? device.y;
-                        
-                        device.connectionPoint = {
-                            x: currentConnectionPointX + deltaX,
-                            y: currentConnectionPointY + deltaY,
-                        };
                     }
                 }
             })
         );
-    };
-
-    const handleConnectionPointMove = (deviceId: string, pos: { x: number; y: number }) => {
-        const activeFloor = getActiveFloor();
-        if (!activeFloor) return;
-        const updatedDevices = activeFloor.devices.map(d => 
-            d.id === deviceId ? { ...d, connectionPoint: pos } : d
-        );
-        updateFloorData(activeFloor.id, { devices: updatedDevices });
     };
 
     // Project Management Handlers
@@ -282,8 +257,8 @@ function CCTVPlannerInner() {
             if (!fromDevice || !toDevice) continue;
     
             const result = await findCablePathAction({
-                startPoint: fromDevice.connectionPoint || { x: fromDevice.x, y: fromDevice.y },
-                endPoint: toDevice.connectionPoint || { x: toDevice.x, y: toDevice.y },
+                startPoint: { x: fromDevice.x, y: fromDevice.y },
+                endPoint: { x: toDevice.x, y: toDevice.y },
                 obstacles: activeFloor.architecturalElements.filter(el => el.type === 'wall'),
                 gridSize: { width: 1, height: 1 } // Using relative coordinates
             });
@@ -428,7 +403,6 @@ function CCTVPlannerInner() {
                                 onArchElementClick={(el) => setSelectedItem(el)}
                                 onCanvasClick={() => setSelectedItem(null)}
                                 onDeviceMove={handleDeviceMove}
-                                onConnectionPointMove={handleConnectionPointMove}
                              />
                         </div>
                         {isPropertiesPanelOpen && (
@@ -503,5 +477,3 @@ export function CCTVPlanner() {
         </SelectionProvider>
     )
 }
-
-    

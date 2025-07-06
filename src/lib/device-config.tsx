@@ -114,7 +114,6 @@ export function createDevice(type: DeviceType, x: number, y: number, existingDev
         label: `${config.name} ${count}`,
         x,
         y,
-        connectionPoint: { x, y },
         ...config.defaults
     };
 }
