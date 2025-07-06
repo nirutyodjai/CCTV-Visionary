@@ -1,19 +1,26 @@
+
 'use client';
 
-import type { AnyDevice, RackContainer, ArchitecturalElement } from '@/lib/types';
+import React, { useState } from 'react';
+import type { AnyDevice, RackContainer, ArchitecturalElement, CableType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Trash2, Cable, Warehouse } from 'lucide-react';
+import { Trash2, Cable, Warehouse, Sparkles } from 'lucide-react';
 import { ArchitecturalElementProperties } from './properties/architectural-element-properties';
 import { CameraProperties } from './properties/camera-properties';
 import { NetworkDeviceProperties } from './properties/network-device-properties';
 import { RackProperties } from './properties/rack-properties';
 import { useSelection } from '@/contexts/SelectionContext';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UtpCat6Icon } from '../icons/utp-cat6-icon';
+import { FiberOpticIcon } from '../icons/fiber-optic-icon';
 
-// Props are now simplified as it gets data from context
+
 interface PropertiesPanelProps {
   onUpdateDevice: (device: AnyDevice) => void;
   onRemoveDevice: (deviceId: string) => void;
-  onStartCabling: (deviceId: string) => void;
+  onStartCabling: (deviceId: string, cableType: CableType) => void;
   onViewRack: (rack: RackContainer) => void;
   onRemoveArchElement: (elementId: string) => void;
   onUpdateArchElement: (element: ArchitecturalElement) => void;
@@ -33,7 +40,8 @@ export function PropertiesPanel({
     onRemoveArchElement,
     onUpdateArchElement
 }: PropertiesPanelProps) {
-  const { selectedItem } = useSelection(); // <-- Get selectedItem from context
+  const { selectedItem } = useSelection();
+  const [selectedCableType, setSelectedCableType] = useState<CableType>('utp-cat6');
 
   const renderContent = () => {
     if (!selectedItem) {
@@ -46,7 +54,7 @@ export function PropertiesPanel({
     
     const isDevice = 'label' in selectedItem;
     
-    if (!isDevice) { // It's an Architectural Element
+    if (!isDevice) {
         return (
             <ArchitecturalElementProperties 
                 element={selectedItem as ArchitecturalElement}
@@ -56,7 +64,6 @@ export function PropertiesPanel({
         );
     }
 
-    // It's a Device
     const selectedDevice = selectedItem as AnyDevice;
     const DeviceActions = () => (
          <div className="p-4 border-t border-border space-y-2">
@@ -65,9 +72,32 @@ export function PropertiesPanel({
                     <Warehouse className="mr-2 h-4 w-4" /> View Rack Elevation
                 </Button>
             )}
-            <Button variant="outline" className="w-full" onClick={() => onStartCabling(selectedDevice.id)}>
-                <Cable className="mr-2 h-4 w-4"/> Start Cabling
-            </Button>
+            <Card>
+                <CardHeader className="p-3">
+                    <CardTitle className="text-sm flex items-center"><Cable className="mr-2 h-4 w-4"/> Start Cabling</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 space-y-3">
+                     <RadioGroup value={selectedCableType} onValueChange={(value: CableType) => setSelectedCableType(value)}>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="utp-cat6" id="utp-cat6" />
+                            <Label htmlFor="utp-cat6" className="flex items-center gap-2 cursor-pointer">
+                                <UtpCat6Icon className="w-5 h-5" /> UTP CAT6
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="fiber-optic" id="fiber-optic" />
+                            <Label htmlFor="fiber-optic" className="flex items-center gap-2 cursor-pointer">
+                                <FiberOpticIcon className="w-5 h-5" /> Fiber Optic
+                            </Label>
+                        </div>
+                    </RadioGroup>
+                    <Button 
+                        className="w-full" 
+                        onClick={() => onStartCabling(selectedDevice.id, selectedCableType)}>
+                       <Sparkles className="mr-2 h-4 w-4" /> Begin Connection
+                    </Button>
+                </CardContent>
+            </Card>
             <Button variant="destructive" className="w-full" onClick={() => onRemoveDevice(selectedDevice.id)}>
                 <Trash2 className="mr-2 h-4 w-4"/> Delete Device
             </Button>

@@ -25,7 +25,7 @@ export default function RootLayout({
       <body className={`${sarabun.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >

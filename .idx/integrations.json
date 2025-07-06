@@ -1,5 +1,7 @@
 {
-  "firebase_hosting": {},
+  "firebase_hosting": {
+    "deploymentHostingUrl": "https://project-comdee.web.app"
+  },
   "cloud_run_deploy": {},
   "gemini_api": {},
   "secrets_manager": {}

@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "project-comdee-service"
+location: "asia-southeast1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "project-comdee-database"
+      cloudSql:
+        instanceId: "studio-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]

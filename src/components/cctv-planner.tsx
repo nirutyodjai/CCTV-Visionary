@@ -29,7 +29,7 @@ import { LogicalTopologyView } from './topology/logical-topology-view';
 import { SelectionProvider, useSelection } from '@/contexts/SelectionContext';
 import { createDevice } from '@/lib/device-config';
 import { createInitialState } from '@/lib/demo-data';
-import type { ProjectState, AnyDevice, Floor, Building, ArchitecturalElement, ArchitecturalElementType, CablingMode, DeviceType, Connection, RackContainer } from '@/lib/types';
+import type { ProjectState, AnyDevice, Floor, Building, ArchitecturalElement, ArchitecturalElementType, CablingMode, DeviceType, Connection, RackContainer, CableType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   saveProjectAction,
@@ -40,17 +40,16 @@ import {
   suggestDevicePlacementsAction,
   findCablePathAction,
 } from '@/app/actions';
-import { Map, Settings, Bot, Presentation, Network, BarChart2, Loader2, Eye } from 'lucide-react';
+import { Map, Settings, Bot, Presentation, Network, BarChart2, Loader2, Eye, PanelRightOpen } from 'lucide-react';
 
 function CCTVPlannerInner() {
     const [projectState, setProjectState] = useState<ProjectState>(createInitialState());
     const [activeBuildingId, setActiveBuildingId] = useState<string | null>(projectState.buildings[0]?.id || null);
     const [activeFloorId, setActiveFloorId] = useState<string | null>(projectState.buildings[0]?.floors[0]?.id || null);
     
-    const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null });
+    const [cablingMode, setCablingMode] = useState<CablingMode>({ enabled: false, fromDeviceId: null, cableType: 'utp-cat6' });
     const [drawingTool, setDrawingTool] = useState<ArchitecturalElementType | null>(null);
-    const [isPropertiesPanelOpen, setPropertiesPanelOpen] = useState(true);
-    const [isMobilePropertiesSheetOpen, setMobilePropertiesSheetOpen] = useState(false);
+    const [isPropertiesSheetOpen, setPropertiesSheetOpen] = useState(false);
     
     // UI states
     const [isProjectManagerOpen, setProjectManagerOpen] = useState(false);
@@ -85,20 +84,25 @@ function CCTVPlannerInner() {
         }));
     };
 
+    const handleStartCabling = (deviceId: string, cableType: CableType) => {
+        setCablingMode({ enabled: true, fromDeviceId: deviceId, cableType: cableType });
+        setPropertiesSheetOpen(false); // Close sheet to start cabling on canvas
+        toast({ title: 'Cabling Mode Started', description: `Select another device to connect with ${cableType}.`});
+    };
+
     const handleAddDevice = (type: DeviceType) => {
         const activeFloor = getActiveFloor();
         if (!activeFloor) return;
-        // For simplicity, add to center for now
         const newDevice = createDevice(type, 0.5, 0.5, activeFloor.devices);
         const updatedDevices = [...activeFloor.devices, newDevice];
         updateFloorData(activeFloor.id, { devices: updatedDevices });
         setSelectedItem(newDevice);
+        setPropertiesSheetOpen(true);
     };
 
     const handleUpdateDevice = (updatedDevice: AnyDevice) => {
         const activeFloor = getActiveFloor();
         if (!activeFloor) return;
-        
         const updatedDevices = activeFloor.devices.map(d => d.id === updatedDevice.id ? updatedDevice : d);
         updateFloorData(activeFloor.id, { devices: updatedDevices });
         setSelectedItem(updatedDevice);
@@ -112,6 +116,7 @@ function CCTVPlannerInner() {
         const updatedConnections = activeFloor.connections.filter(c => c.fromDeviceId !== deviceId && c.toDeviceId !== deviceId);
         updateFloorData(activeFloor.id, { devices: updatedDevices, connections: updatedConnections });
         setSelectedItem(null);
+        setPropertiesSheetOpen(false);
     };
 
     const handleFloorSelect = (buildingId: string, floorId: string) => {
@@ -123,16 +128,14 @@ function CCTVPlannerInner() {
     const handleDeviceClick = (device: AnyDevice) => {
         if (cablingMode.enabled && cablingMode.fromDeviceId) {
             if (cablingMode.fromDeviceId === device.id) {
-                setCablingMode({ enabled: false, fromDeviceId: null });
+                setCablingMode({ enabled: false, fromDeviceId: null, cableType: 'utp-cat6' });
                 setSelectedItem(device);
             } else {
                 handleCreateConnection(cablingMode.fromDeviceId, device.id);
             }
         } else {
             setSelectedItem(device);
-            if (window.innerWidth < 768) { // Open sheet on mobile
-                setMobilePropertiesSheetOpen(true);
-            }
+            setPropertiesSheetOpen(true);
         }
     };
     
@@ -144,13 +147,13 @@ function CCTVPlannerInner() {
             id: `conn_${Date.now()}`,
             fromDeviceId,
             toDeviceId,
-            cableType: 'utp-cat6', // Default
+            cableType: cablingMode.cableType, // Use cable type from cablingMode
         };
 
         const updatedConnections = [...activeFloor.connections, newConnection];
         updateFloorData(activeFloor.id, { connections: updatedConnections });
         
-        setCablingMode({ enabled: false, fromDeviceId: null });
+        setCablingMode({ enabled: false, fromDeviceId: null, cableType: 'utp-cat6' });
         setSelectedItem(null);
     };
     
@@ -160,7 +163,6 @@ function CCTVPlannerInner() {
                 const floor = draft.buildings
                     .flatMap(b => b.floors)
                     .find(f => f.id === activeFloorId);
-                
                 if (floor) {
                     const device = floor.devices.find(d => d.id === deviceId);
                     if (device) {
@@ -172,7 +174,6 @@ function CCTVPlannerInner() {
         );
     };
 
-    // Project Management Handlers
     const handleSaveProject = async () => {
         setIsSaving(true);
         const result = await saveProjectAction(projectState);
@@ -206,23 +207,11 @@ function CCTVPlannerInner() {
      const handleRunDiagnostics = async () => {
         const activeFloor = getActiveFloor();
         if (!activeFloor) return;
-
         setDiagnosticsLoading(true);
-
         const planData = {
-            devices: activeFloor.devices.map(d => ({
-                id: d.id,
-                label: d.label,
-                type: d.type,
-                channels: d.channels,
-                ports: d.ports,
-            })),
-            connections: activeFloor.connections.map(c => ({
-                fromDeviceId: c.fromDeviceId,
-                toDeviceId: c.toDeviceId
-            })),
+            devices: activeFloor.devices.map(d => ({ id: d.id, label: d.label, type: d.type, channels: d.channels, ports: d.ports })),
+            connections: activeFloor.connections.map(c => ({ fromDeviceId: c.fromDeviceId, toDeviceId: c.toDeviceId })),
         };
-        
         const result = await runPlanDiagnosticsAction(planData);
         if (result.success) {
             updateFloorData(activeFloor.id, { diagnostics: result.data.diagnostics });
@@ -233,22 +222,16 @@ function CCTVPlannerInner() {
     };
 
     const handleUpdateRack = (rack: RackContainer) => {
-        setInternalRack(rack);
-        // Find the floor that this rack belongs to and update it.
-        // This is a bit complex as we only have the rack object.
-        // A better data structure might associate racks with floors.
-        // For now, let's find it by iterating.
         setProjectState(produce(draft => {
             for (const building of draft.buildings) {
                 for (const floor of building.floors) {
                     const rackIndex = floor.devices.findIndex(d => d.id === rack.id);
                     if (rackIndex !== -1) {
                         floor.devices[rackIndex] = rack;
-                        // Also update the selected item if it's the same rack
                         if (selectedItem?.id === rack.id) {
                             setSelectedItem(rack);
                         }
-                        return; // Exit after finding and updating
+                        return;
                     }
                 }
             }
@@ -261,27 +244,21 @@ function CCTVPlannerInner() {
             toast({ title: 'ไม่มีการเชื่อมต่อ', description: 'กรุณาเพิ่มการเชื่อมต่อก่อนค้นหาเส้นทาง' });
             return;
         }
-    
         setIsFindingPaths(true);
         toast({ title: 'AI กำลังค้นหาเส้นทางเดินสาย...', description: 'กรุณารอสักครู่' });
-    
         const updatedConnections: Connection[] = [...activeFloor.connections];
         let successCount = 0;
-    
         for (let i = 0; i < updatedConnections.length; i++) {
             const conn = updatedConnections[i];
             const fromDevice = activeFloor.devices.find(d => d.id === conn.fromDeviceId);
             const toDevice = activeFloor.devices.find(d => d.id === conn.toDeviceId);
-    
             if (!fromDevice || !toDevice) continue;
-    
             const result = await findCablePathAction({
                 startPoint: { x: fromDevice.x, y: fromDevice.y },
                 endPoint: { x: toDevice.x, y: toDevice.y },
                 obstacles: activeFloor.architecturalElements.filter(el => el.type === 'wall'),
-                gridSize: { width: 1, height: 1 } // Using relative coordinates
+                gridSize: { width: 1, height: 1 }
             });
-    
             if (result.success && result.data.path.length > 0) {
                 updatedConnections[i] = { ...conn, path: result.data.path };
                 successCount++;
@@ -292,9 +269,7 @@ function CCTVPlannerInner() {
                 }
             }
         }
-        
         updateFloorData(activeFloor.id, { connections: updatedConnections });
-    
         setIsFindingPaths(false);
         toast({ title: 'ค้นหาเส้นทางสำเร็จ', description: `AI พบเส้นทางสำหรับ ${successCount}/${updatedConnections.length} การเชื่อมต่อ` });
     };
@@ -313,7 +288,6 @@ function CCTVPlannerInner() {
             setIsGeneratingReport(false);
         }
     };
-
 
     const activeFloorData = getActiveFloor();
     if (!activeFloorData) {
@@ -346,8 +320,8 @@ function CCTVPlannerInner() {
                         activeBuildingId={activeBuildingId}
                         activeFloorId={activeFloorId}
                         onFloorSelect={handleFloorSelect}
-                        onAddFloor={() => { /* Implement */}}
-                        onUpdateBuildingName={() => { /* Implement */}}
+                        onAddFloor={() => {}}
+                        onUpdateBuildingName={() => {}}
                     />
                     <DevicesToolbar onSelectDevice={handleAddDevice} />
                     <ArchitectureToolbar selectedTool={drawingTool} onSelectTool={setDrawingTool} />
@@ -409,8 +383,8 @@ function CCTVPlannerInner() {
                             <h1 className="font-semibold text-lg truncate">{projectState.projectName}</h1>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button className="md:hidden" variant="outline" size="icon" onClick={() => setMobilePropertiesSheetOpen(true)}>
-                                <Settings />
+                             <Button variant="outline" size="icon" onClick={() => setPropertiesSheetOpen(true)}>
+                                <PanelRightOpen />
                                 <span className="sr-only">Open Properties</span>
                             </Button>
                         </div>
@@ -421,28 +395,22 @@ function CCTVPlannerInner() {
                                 floor={activeFloorData} 
                                 cablingMode={cablingMode}
                                 onDeviceClick={handleDeviceClick}
-                                onArchElementClick={(el) => setSelectedItem(el)}
-                                onCanvasClick={() => setSelectedItem(null)}
+                                onArchElementClick={(el) => {
+                                  setSelectedItem(el)
+                                  setPropertiesSheetOpen(true)
+                                }}
+                                onCanvasClick={() => {
+                                    setSelectedItem(null);
+                                    setCablingMode({ enabled: false, fromDeviceId: null, cableType: 'utp-cat6' });
+                                }}
                                 onDeviceMove={handleDeviceMove}
                              />
                         </div>
-                        {isPropertiesPanelOpen && (
-                            <div className="w-[350px] border-l bg-card hidden md:flex flex-col">
-                                <PropertiesPanel 
-                                    onUpdateDevice={handleUpdateDevice}
-                                    onRemoveDevice={handleRemoveDevice}
-                                    onStartCabling={(id) => setCablingMode({ enabled: true, fromDeviceId: id })}
-                                    onViewRack={(rack) => setActiveRack(rack as RackContainer)}
-                                    onUpdateArchElement={() => {}}
-                                    onRemoveArchElement={() => {}}
-                                />
-                            </div>
-                        )}
                     </main>
                 </SidebarInset>
             </SidebarProvider>
 
-            <Sheet open={isMobilePropertiesSheetOpen} onOpenChange={setMobilePropertiesSheetOpen}>
+            <Sheet open={isPropertiesSheetOpen} onOpenChange={setPropertiesSheetOpen}>
                 <SheetContent>
                     <SheetHeader>
                         <SheetTitle>Properties</SheetTitle>
@@ -454,10 +422,7 @@ function CCTVPlannerInner() {
                         <PropertiesPanel
                             onUpdateDevice={handleUpdateDevice}
                             onRemoveDevice={handleRemoveDevice}
-                            onStartCabling={(id) => {
-                                setCablingMode({ enabled: true, fromDeviceId: id });
-                                setMobilePropertiesSheetOpen(false);
-                            }}
+                            onStartCabling={handleStartCabling}
                             onViewRack={(rack) => setActiveRack(rack as RackContainer)}
                             onUpdateArchElement={() => {}}
                             onRemoveArchElement={() => {}}
