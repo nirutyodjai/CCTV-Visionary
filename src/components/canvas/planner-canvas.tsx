@@ -122,37 +122,50 @@ export function PlannerCanvas({
             ctx.drawImage(bgImage, imageTransform.offsetX, imageTransform.offsetY, bgImage.width * imageTransform.scale, bgImage.height * imageTransform.scale);
         }
         
-        if(floor.connections) {
-            const pulsingOpacity = 0.3 + (Math.sin(time / 500) + 1) / 4; 
+        if (floor.connections) {
+            const pulsingOpacity = 0.3 + (Math.sin(time / 500) + 1) / 4;
             floor.connections.forEach(conn => {
                 const fromDevice = floor.devices.find(d => d.id === conn.fromDeviceId);
                 const toDevice = floor.devices.find(d => d.id === conn.toDeviceId);
                 if (!fromDevice || !toDevice) return;
-                
-                const startPoint: Point = fromDevice.connectionPoint || {x: fromDevice.x, y: fromDevice.y};
-                const endPoint: Point = toDevice.connectionPoint || {x: toDevice.x, y: toDevice.y};
 
-                const start = imageToCanvasCoords(startPoint);
-                const end = imageToCanvasCoords(endPoint);
-                
                 const path = new Path2D();
-                path.moveTo(start.x, start.y);
+                let pointsToDraw: Point[];
 
+                // Decide which set of points to use for the connection path
+                if (conn.path && conn.path.length >= 2) {
+                    // Use the complete AI-generated path if available
+                    pointsToDraw = conn.path;
+                } else {
+                    // Otherwise, draw a direct line between the device connection points
+                    const startPoint: Point = fromDevice.connectionPoint || { x: fromDevice.x, y: fromDevice.y };
+                    const endPoint: Point = toDevice.connectionPoint || { x: toDevice.x, y: toDevice.y };
+                    pointsToDraw = [startPoint, endPoint];
+                }
+
+                // Ensure we have at least a start and end point
+                if (pointsToDraw.length < 2) return;
+
+                // Convert all relative image points to absolute canvas coordinates
+                const canvasPoints = pointsToDraw.map(p => imageToCanvasCoords(p));
+                
+                // Build the path object
+                path.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+                for (let i = 1; i < canvasPoints.length; i++) {
+                    path.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+                }
+
+                // Render the path on the canvas
                 const isAiPath = conn.path && conn.path.length >= 2;
-                if (isAiPath) {
-                    conn.path!.slice(1).forEach(p => {
-                        const absP = imageToCanvasCoords(p);
-                        if(absP) path.lineTo(absP.x, absP.y)
-                    });
-                } 
-                path.lineTo(end.x, end.y);
-
+                
+                // Draw wider, semi-transparent background line
                 ctx.lineCap = 'round';
                 ctx.strokeStyle = `hsla(${accentHsl}, ${pulsingOpacity})`;
                 ctx.lineWidth = isAiPath ? 7 : 5;
                 ctx.setLineDash([]);
                 ctx.stroke(path);
 
+                // Draw the main animated dashed line on top
                 ctx.strokeStyle = `hsl(${accentHsl})`;
                 ctx.lineWidth = isAiPath ? 2.5 : 1.5;
                 ctx.setLineDash(isAiPath ? [8, 8] : [4, 6]);
