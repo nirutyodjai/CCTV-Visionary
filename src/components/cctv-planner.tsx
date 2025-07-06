@@ -154,7 +154,7 @@ function CCTVPlannerInner() {
         setSelectedItem(null);
     };
     
-    const handleDeviceMove = (deviceId: string, pos: { x: number; y: number }) => {
+    const handleDeviceMove = (deviceId: string, newPos: { x: number; y: number }) => {
         setProjectState(
             produce(draft => {
                 const floor = draft.buildings
@@ -164,18 +164,23 @@ function CCTVPlannerInner() {
                 if (floor) {
                     const device = floor.devices.find(d => d.id === deviceId);
                     if (device) {
-                        // Calculate the offset between the connection point and the device center *before* moving.
-                        const offsetX = (device.connectionPoint?.x ?? device.x) - device.x;
-                        const offsetY = (device.connectionPoint?.y ?? device.y) - device.y;
+                        // Calculate the change in position (delta) from the device's last known position.
+                        const deltaX = newPos.x - device.x;
+                        const deltaY = newPos.y - device.y;
 
-                        // Update the device's center to the new position.
-                        device.x = pos.x;
-                        device.y = pos.y;
+                        // Apply the delta to the device's main position.
+                        device.x = newPos.x;
+                        device.y = newPos.y;
 
-                        // Update the connection point by applying the saved offset to the new center.
+                        // Also apply the same delta to the connection point's position.
+                        // This ensures the connection point moves relative to the device.
+                        // Use the ?? operator to handle cases where connectionPoint might be undefined initially.
+                        const currentConnectionPointX = device.connectionPoint?.x ?? device.x;
+                        const currentConnectionPointY = device.connectionPoint?.y ?? device.y;
+                        
                         device.connectionPoint = {
-                            x: pos.x + offsetX,
-                            y: pos.y + offsetY
+                            x: currentConnectionPointX + deltaX,
+                            y: currentConnectionPointY + deltaY,
                         };
                     }
                 }
@@ -498,3 +503,5 @@ export function CCTVPlanner() {
         </SelectionProvider>
     )
 }
+
+    
