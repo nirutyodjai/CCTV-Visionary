@@ -234,6 +234,7 @@ function CCTVPlannerInner() {
 
     const handleUpdateRack = (rack: RackContainer) => {
         handleUpdateDevice(rack);
+        setActiveRack(rack);
     };
 
     const handleFindAllCablePaths = async () => {
@@ -477,3 +478,5 @@ export function CCTVPlanner() {
         </SelectionProvider>
     )
 }
+
+    
