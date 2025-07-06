@@ -41,6 +41,7 @@ export function PlannerCanvas({
   const [draggingDevice, setDraggingDevice] = useState<AnyDevice | null>(null);
   const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
+  // Load background image
   useEffect(() => {
     if (floor.floorPlanUrl) {
       const img = new Image();
@@ -52,6 +53,7 @@ export function PlannerCanvas({
     }
   }, [floor.floorPlanUrl]);
 
+  // Update container size on resize
   useEffect(() => {
     const updateRect = () => {
       if (containerRef.current) setContainerRect(containerRef.current.getBoundingClientRect());
@@ -62,6 +64,7 @@ export function PlannerCanvas({
     return () => resizeObserver.disconnect();
   }, []);
   
+  // Calculate image transform to fit container
   useEffect(() => {
     if (containerRect && bgImage) {
       const hRatio = containerRect.width / bgImage.width;
@@ -71,51 +74,49 @@ export function PlannerCanvas({
       const offsetY = (containerRect.height - bgImage.height * scale) / 2;
       setImageTransform({ scale, offsetX, offsetY });
     } else if (containerRect) {
+      // No image, fill container
       setImageTransform({ scale: 1, offsetX: 0, offsetY: 0 });
     }
   }, [bgImage, containerRect]);
 
-  const getRelativeCoords = useCallback((e: React.PointerEvent | PointerEvent) => {
-    if (!containerRect) return null;
-    return {
-      x: (e.clientX - containerRect.left) / containerRect.width,
-      y: (e.clientY - containerRect.top) / containerRect.height,
-    };
-  }, [containerRect]);
-
+  // Coordinate conversion: from canvas space to image space (for drag calculations)
   const canvasToImageCoords = useCallback((canvasPos: { x: number, y: number }) => {
     const { scale, offsetX, offsetY } = imageTransform;
     if (!containerRect) return { x: 0, y: 0 };
+    
     const imageWidth = (bgImage?.width ?? containerRect.width) * scale;
     const imageHeight = (bgImage?.height ?? containerRect.height) * scale;
-    const imgX = (canvasPos.x * containerRect.width - offsetX) / imageWidth;
-    const imgY = (canvasPos.y * containerRect.height - offsetY) / imageHeight;
+
+    const canvasPixelX = canvasPos.x * containerRect.width;
+    const canvasPixelY = canvasPos.y * containerRect.height;
+    
+    const imgX = (canvasPixelX - offsetX) / imageWidth;
+    const imgY = (canvasPixelY - offsetY) / imageHeight;
+    
     return { x: imgX, y: imgY };
   }, [containerRect, imageTransform, bgImage]);
 
-  const imageToCanvasCoords = useCallback((imagePos: { x: number, y: number }) => {
-    const { scale, offsetX, offsetY } = imageTransform;
-    if (!containerRect) return { x: 0, y: 0 };
-    const imageWidth = (bgImage?.width ?? containerRect.width) * scale;
-    const imageHeight = (bgImage?.height ?? containerRect.height) * scale;
-    const canvasX = (imagePos.x * imageWidth) + offsetX;
-    const canvasY = (imagePos.y * imageHeight) + offsetY;
-    return { x: canvasX, y: canvasY };
-  }, [containerRect, imageTransform, bgImage]);
-
+  // Main drawing logic on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!ctx || !containerRect) return;
 
-    const computedStyle = getComputedStyle(canvasRef.current!);
-    const accentHsl = computedStyle.getPropertyValue('--accent').trim() || '221 83% 53%';
+    const accentHsl = getComputedStyle(canvasRef.current!).getPropertyValue('--accent').trim() || '221 83% 53%';
     
     const draw = () => {
         ctx.clearRect(0, 0, containerRect.width, containerRect.height);
 
+        // Apply the same transform to the canvas as the device layer
+        ctx.save();
+        ctx.translate(imageTransform.offsetX, imageTransform.offsetY);
+        ctx.scale(imageTransform.scale, imageTransform.scale);
+
+        const virtualWidth = bgImage?.width ?? containerRect.width;
+        const virtualHeight = bgImage?.height ?? containerRect.height;
+
         if (bgImage) {
-            ctx.drawImage(bgImage, imageTransform.offsetX, imageTransform.offsetY, bgImage.width * imageTransform.scale, bgImage.height * imageTransform.scale);
+            ctx.drawImage(bgImage, 0, 0, bgImage.width, bgImage.height);
         }
         
         if (floor.connections) {
@@ -125,37 +126,32 @@ export function PlannerCanvas({
                 if (!fromDevice || !toDevice) return;
 
                 const path = new Path2D();
-                let pointsToDraw: Point[];
-
-                // If an AI path exists, use it. Otherwise, create a direct line.
-                if (conn.path && conn.path.length >= 2) {
-                    pointsToDraw = conn.path;
-                } else {
-                    const startPoint: Point = { x: fromDevice.x, y: fromDevice.y };
-                    const endPoint: Point = { x: toDevice.x, y: toDevice.y };
-                    pointsToDraw = [startPoint, endPoint];
-                }
+                
+                const pointsToDraw = conn.path && conn.path.length >= 2
+                    ? conn.path
+                    : [{ x: fromDevice.x, y: fromDevice.y }, { x: toDevice.x, y: toDevice.y }];
 
                 if (pointsToDraw.length < 2) return;
 
-                const canvasPoints = pointsToDraw.map(p => imageToCanvasCoords(p));
+                const virtualPoints = pointsToDraw.map(p => ({
+                    x: p.x * virtualWidth,
+                    y: p.y * virtualHeight,
+                }));
                 
-                path.moveTo(canvasPoints[0].x, canvasPoints[0].y);
-                for (let i = 1; i < canvasPoints.length; i++) {
-                    path.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+                path.moveTo(virtualPoints[0].x, virtualPoints[0].y);
+                for (let i = 1; i < virtualPoints.length; i++) {
+                    path.lineTo(virtualPoints[i].x, virtualPoints[i].y);
                 }
 
-                // Render the path on the canvas with a single, thin, animated line
-                ctx.lineCap = 'round';
                 ctx.strokeStyle = `hsl(${accentHsl})`;
-                ctx.lineWidth = 1; 
-                ctx.setLineDash([4, 4]); 
+                ctx.lineWidth = 1 / imageTransform.scale; 
+                ctx.setLineDash([4 / imageTransform.scale, 4 / imageTransform.scale]);
                 ctx.lineDashOffset = -lineDashOffset.current;
                 ctx.stroke(path);
             });
         }
         
-        ctx.setLineDash([]);
+        ctx.restore();
     }
 
     const animate = () => {
@@ -164,17 +160,26 @@ export function PlannerCanvas({
         animationFrameId.current = requestAnimationFrame(animate);
     };
     animationFrameId.current = requestAnimationFrame(animate);
+    
     return () => {
         if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [floor, containerRect, bgImage, imageTransform, imageToCanvasCoords]);
+  }, [floor, containerRect, bgImage, imageTransform]);
+
+  const getRelativeCanvasCoords = useCallback((e: React.PointerEvent | PointerEvent) => {
+    if (!containerRect) return null;
+    return {
+      x: (e.clientX - containerRect.left) / containerRect.width,
+      y: (e.clientY - containerRect.top) / containerRect.height,
+    };
+  }, [containerRect]);
 
   const handleDevicePointerDown = (e: React.PointerEvent, device: AnyDevice) => {
     e.stopPropagation();
     onDeviceClick(device);
     if (!cablingMode.enabled) {
       setDraggingDevice(device);
-      const canvasPos = getRelativeCoords(e);
+      const canvasPos = getRelativeCanvasCoords(e);
       if (canvasPos) {
         const imagePos = canvasToImageCoords(canvasPos);
         dragOffset.current = { x: device.x - imagePos.x, y: device.y - imagePos.y };
@@ -184,16 +189,15 @@ export function PlannerCanvas({
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    const canvasPos = getRelativeCoords(e);
-    if (!canvasPos) return;
-
     if (draggingDevice) {
-      const imagePos = canvasToImageCoords(canvasPos);
-      const finalPos = {
-          x: Math.max(0, Math.min(1, imagePos.x + dragOffset.current.x)),
-          y: Math.max(0, Math.min(1, imagePos.y + dragOffset.current.y)),
-      }
-      onDeviceMove(draggingDevice.id, finalPos);
+        const canvasPos = getRelativeCanvasCoords(e);
+        if (!canvasPos) return;
+        const imagePos = canvasToImageCoords(canvasPos);
+        const finalPos = {
+            x: Math.max(0, Math.min(1, imagePos.x + dragOffset.current.x)),
+            y: Math.max(0, Math.min(1, imagePos.y + dragOffset.current.y)),
+        }
+        onDeviceMove(draggingDevice.id, finalPos);
     }
   };
 
@@ -209,6 +213,17 @@ export function PlannerCanvas({
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
     if(e.target === e.currentTarget) onCanvasClick();
   }
+
+  // The style for the device/element layer, which is transformed to match the canvas drawing
+  const elementLayerStyle: React.CSSProperties = {
+      position: 'absolute',
+      left: `${imageTransform.offsetX}px`,
+      top: `${imageTransform.offsetY}px`,
+      width: `${(bgImage?.width ?? containerRect?.width ?? 0) * imageTransform.scale}px`,
+      height: `${(bgImage?.height ?? containerRect?.height ?? 0) * imageTransform.scale}px`,
+      // This layer itself shouldn't capture pointer events, but its children (the devices) should.
+      pointerEvents: 'none', 
+  };
 
   return (
     <div
@@ -229,14 +244,8 @@ export function PlannerCanvas({
         className="absolute inset-0"
       />
       
-      <div className="absolute inset-0">
-           <div style={{
-                position: 'absolute',
-                left: `${imageTransform.offsetX}px`,
-                top: `${imageTransform.offsetY}px`,
-                width: `${(bgImage?.width ?? containerRect?.width ?? 0) * imageTransform.scale}px`,
-                height: `${(bgImage?.height ?? containerRect?.height ?? 0) * imageTransform.scale}px`,
-            }}>
+      {/* This div contains all visual elements and is transformed to match the canvas's transformed drawing context. */}
+      <div style={elementLayerStyle}>
             {floor.architecturalElements.map(element => (
               <ArchitecturalElementRenderer
                 key={element.id}
@@ -250,7 +259,6 @@ export function PlannerCanvas({
                 onDevicePointerDown={handleDevicePointerDown}
               />
             ))}
-        </div>
       </div>
     </div>
   );
