@@ -41,7 +41,6 @@ import {
   findCablePathAction,
 } from '@/app/actions';
 import { Map, Settings, Bot, Presentation, Network, BarChart2, Loader2, Eye } from 'lucide-react';
-import { UserNav } from './ui/user-nav';
 
 function CCTVPlannerInner() {
     const [projectState, setProjectState] = useState<ProjectState>(createInitialState());
@@ -234,8 +233,26 @@ function CCTVPlannerInner() {
     };
 
     const handleUpdateRack = (rack: RackContainer) => {
-        handleUpdateDevice(rack);
         setInternalRack(rack);
+        // Find the floor that this rack belongs to and update it.
+        // This is a bit complex as we only have the rack object.
+        // A better data structure might associate racks with floors.
+        // For now, let's find it by iterating.
+        setProjectState(produce(draft => {
+            for (const building of draft.buildings) {
+                for (const floor of building.floors) {
+                    const rackIndex = floor.devices.findIndex(d => d.id === rack.id);
+                    if (rackIndex !== -1) {
+                        floor.devices[rackIndex] = rack;
+                        // Also update the selected item if it's the same rack
+                        if (selectedItem?.id === rack.id) {
+                            setSelectedItem(rack);
+                        }
+                        return; // Exit after finding and updating
+                    }
+                }
+            }
+        }));
     };
 
     const handleFindAllCablePaths = async () => {
@@ -392,7 +409,6 @@ function CCTVPlannerInner() {
                             <h1 className="font-semibold text-lg truncate">{projectState.projectName}</h1>
                         </div>
                         <div className="flex items-center gap-2">
-                            <UserNav />
                             <Button className="md:hidden" variant="outline" size="icon" onClick={() => setMobilePropertiesSheetOpen(true)}>
                                 <Settings />
                                 <span className="sr-only">Open Properties</span>
@@ -416,7 +432,7 @@ function CCTVPlannerInner() {
                                     onUpdateDevice={handleUpdateDevice}
                                     onRemoveDevice={handleRemoveDevice}
                                     onStartCabling={(id) => setCablingMode({ enabled: true, fromDeviceId: id })}
-                                    onViewRack={(rack) => setActiveRack(rack)}
+                                    onViewRack={(rack) => setActiveRack(rack as RackContainer)}
                                     onUpdateArchElement={() => {}}
                                     onRemoveArchElement={() => {}}
                                 />
@@ -442,7 +458,7 @@ function CCTVPlannerInner() {
                                 setCablingMode({ enabled: true, fromDeviceId: id });
                                 setMobilePropertiesSheetOpen(false);
                             }}
-                            onViewRack={(rack) => setActiveRack(rack)}
+                            onViewRack={(rack) => setActiveRack(rack as RackContainer)}
                             onUpdateArchElement={() => {}}
                             onRemoveArchElement={() => {}}
                         />
