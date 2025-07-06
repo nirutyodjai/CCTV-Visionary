@@ -98,7 +98,6 @@ export const DEVICE_CONFIG: { [key in DeviceType]: DeviceConfig } = {
     'fiber-optic': { name: 'Fiber Optic', icon: FiberOpticIcon, defaults: { price: 40, uHeight: 0 }},
 };
 
-
 export function createDevice(type: DeviceType, x: number, y: number, existingDevices: any[]): AnyDevice {
     const config = DEVICE_CONFIG[type];
     if (!config) {

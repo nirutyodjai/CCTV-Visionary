@@ -2,10 +2,6 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  onunhandledrejection: (err) => { console.error(err); return false; },
-  devIndicators: {
-    buildActivity: false
-  },
   typescript: {
     ignoreBuildErrors: true,
   },

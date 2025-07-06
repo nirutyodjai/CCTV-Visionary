@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -74,7 +73,7 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove, onR
         <div 
             ref={preview} 
             style={itemStyle} 
-            className="relative px-1 py-0.5" // Reduced vertical padding to make item taller
+            className="relative p-1"
             onClick={onSelect}
         >
             <div 
