@@ -56,16 +56,22 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove }) =
 
     drag(drop(ref));
     
+    // Correctly calculate the starting grid row from the top (1-based)
+    const gridRowStart = rackSize - (device.uPosition + device.uHeight - 1) + 1;
+
     const itemStyle: React.CSSProperties = {
-        gridRow: `${(rackSize - device.uPosition) + 1} / span ${device.uHeight}`,
+        gridRow: `${gridRowStart} / span ${device.uHeight}`,
         gridColumn: '1 / -1',
         zIndex: 10,
         opacity: isDragging ? 0.5 : 1,
     };
 
     return (
-        <div ref={preview} style={itemStyle} className="relative p-0.5 min-h-0">
-            <div ref={ref} className={`w-full h-full border shadow-sm rounded-sm flex items-center justify-between cursor-pointer transition-all duration-200 ${colorClass} ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+        <div ref={preview} style={itemStyle} className="relative">
+            <div 
+                ref={ref} 
+                className={`absolute inset-1 border shadow-sm rounded-md flex items-center justify-between cursor-pointer transition-all duration-200 ${colorClass} ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+            >
                 <div ref={drag} className="cursor-move p-2">
                      <GripVertical className="w-5 h-5 text-muted-foreground" />
                 </div>
