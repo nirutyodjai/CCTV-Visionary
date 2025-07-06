@@ -164,18 +164,19 @@ function CCTVPlannerInner() {
                 if (floor) {
                     const device = floor.devices.find(d => d.id === deviceId);
                     if (device) {
-                        const dx = pos.x - device.x;
-                        const dy = pos.y - device.y;
+                        // Calculate the offset between the connection point and the device center *before* moving.
+                        const offsetX = (device.connectionPoint?.x ?? device.x) - device.x;
+                        const offsetY = (device.connectionPoint?.y ?? device.y) - device.y;
 
+                        // Update the device's center to the new position.
                         device.x = pos.x;
                         device.y = pos.y;
-                        
-                        if (device.connectionPoint) {
-                            device.connectionPoint.x += dx;
-                            device.connectionPoint.y += dy;
-                        } else {
-                            device.connectionPoint = { x: pos.x, y: pos.y };
-                        }
+
+                        // Update the connection point by applying the saved offset to the new center.
+                        device.connectionPoint = {
+                            x: pos.x + offsetX,
+                            y: pos.y + offsetY
+                        };
                     }
                 }
             })
