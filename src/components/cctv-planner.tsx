@@ -164,12 +164,18 @@ function CCTVPlannerInner() {
                 if (floor) {
                     const device = floor.devices.find(d => d.id === deviceId);
                     if (device) {
-                        // When moving the main device icon, we reset the connection point
-                        // to be at the center of the device for simplicity and predictability.
-                        // The user can then drag the handle to create a custom offset if needed.
+                        const dx = pos.x - device.x;
+                        const dy = pos.y - device.y;
+
                         device.x = pos.x;
                         device.y = pos.y;
-                        device.connectionPoint = { x: pos.x, y: pos.y };
+                        
+                        if (device.connectionPoint) {
+                            device.connectionPoint.x += dx;
+                            device.connectionPoint.y += dy;
+                        } else {
+                            device.connectionPoint = { x: pos.x, y: pos.y };
+                        }
                     }
                 }
             })

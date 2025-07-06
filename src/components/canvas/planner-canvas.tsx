@@ -115,7 +115,7 @@ export function PlannerCanvas({
     const accentHsl = computedStyle.getPropertyValue('--accent').trim() || '221 83% 53%';
     const ringHsl = computedStyle.getPropertyValue('--ring').trim() || '215 89% 52%';
 
-    const draw = (time: number) => {
+    const draw = () => {
         ctx.clearRect(0, 0, containerRect.width, containerRect.height);
 
         if (bgImage) {
@@ -123,7 +123,6 @@ export function PlannerCanvas({
         }
         
         if (floor.connections) {
-            const pulsingOpacity = 0.3 + (Math.sin(time / 500) + 1) / 4;
             floor.connections.forEach(conn => {
                 const fromDevice = floor.devices.find(d => d.id === conn.fromDeviceId);
                 const toDevice = floor.devices.find(d => d.id === conn.toDeviceId);
@@ -134,41 +133,27 @@ export function PlannerCanvas({
 
                 // Decide which set of points to use for the connection path
                 if (conn.path && conn.path.length >= 2) {
-                    // Use the complete AI-generated path if available
                     pointsToDraw = conn.path;
                 } else {
-                    // Otherwise, draw a direct line between the device connection points
                     const startPoint: Point = fromDevice.connectionPoint || { x: fromDevice.x, y: fromDevice.y };
                     const endPoint: Point = toDevice.connectionPoint || { x: toDevice.x, y: toDevice.y };
                     pointsToDraw = [startPoint, endPoint];
                 }
 
-                // Ensure we have at least a start and end point
                 if (pointsToDraw.length < 2) return;
 
-                // Convert all relative image points to absolute canvas coordinates
                 const canvasPoints = pointsToDraw.map(p => imageToCanvasCoords(p));
                 
-                // Build the path object
                 path.moveTo(canvasPoints[0].x, canvasPoints[0].y);
                 for (let i = 1; i < canvasPoints.length; i++) {
                     path.lineTo(canvasPoints[i].x, canvasPoints[i].y);
                 }
 
-                // Render the path on the canvas
-                const isAiPath = conn.path && conn.path.length >= 2;
-                
-                // Draw wider, semi-transparent background line
+                // Render the path on the canvas with a single, thin, animated line
                 ctx.lineCap = 'round';
-                ctx.strokeStyle = `hsla(${accentHsl}, ${pulsingOpacity})`;
-                ctx.lineWidth = isAiPath ? 7 : 5;
-                ctx.setLineDash([]);
-                ctx.stroke(path);
-
-                // Draw the main animated dashed line on top
                 ctx.strokeStyle = `hsl(${accentHsl})`;
-                ctx.lineWidth = isAiPath ? 2.5 : 1.5;
-                ctx.setLineDash(isAiPath ? [8, 8] : [4, 6]);
+                ctx.lineWidth = 1; // Thinnest possible line
+                ctx.setLineDash([4, 4]); // Subtle dash pattern
                 ctx.lineDashOffset = -lineDashOffset.current;
                 ctx.stroke(path);
             });
@@ -200,9 +185,9 @@ export function PlannerCanvas({
         ctx.setLineDash([]);
     }
 
-    const animate = (time: number) => {
-        lineDashOffset.current += 0.25;
-        draw(time);
+    const animate = () => {
+        lineDashOffset.current += 0.1;
+        draw();
         animationFrameId.current = requestAnimationFrame(animate);
     };
     animationFrameId.current = requestAnimationFrame(animate);
