@@ -101,8 +101,6 @@ export function PlannerCanvas({
     if (canvas.width !== virtualWidth) canvas.width = virtualWidth;
     if (canvas.height !== virtualHeight) canvas.height = virtualHeight;
 
-    const accentHsl = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '215 89% 52%';
-    
     const draw = () => {
         ctx.clearRect(0, 0, virtualWidth, virtualHeight);
 
@@ -134,7 +132,7 @@ export function PlannerCanvas({
                     path.lineTo(virtualPoints[i].x, virtualPoints[i].y);
                 }
 
-                ctx.strokeStyle = `hsl(${accentHsl})`;
+                ctx.strokeStyle = '#22c55e';
                 ctx.lineWidth = 1; // Make line width thin and consistent
                 ctx.setLineDash([4, 4]);
                 ctx.lineDashOffset = -lineDashOffset.current;
