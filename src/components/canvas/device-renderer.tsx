@@ -35,8 +35,8 @@ export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevice
       transition={{ duration: 0.2 }}
       className="absolute flex flex-col items-center"
       style={{
-        left: `${device.x * virtualWidth}px`,
-        top: `${device.y * virtualHeight}px`,
+        left: `${Math.round(device.x * virtualWidth)}px`,
+        top: `${Math.round(device.y * virtualHeight)}px`,
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'auto',
       }}

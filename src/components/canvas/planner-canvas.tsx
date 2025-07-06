@@ -125,8 +125,8 @@ export function PlannerCanvas({
                 if (pointsToDraw.length < 2) return;
 
                 const virtualPoints = pointsToDraw.map(p => ({
-                    x: p.x * virtualWidth,
-                    y: p.y * virtualHeight,
+                    x: Math.round(p.x * virtualWidth),
+                    y: Math.round(p.y * virtualHeight),
                 }));
                 
                 path.moveTo(virtualPoints[0].x, virtualPoints[0].y);
