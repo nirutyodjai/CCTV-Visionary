@@ -8,9 +8,11 @@ import { motion } from 'framer-motion';
 interface DeviceRendererProps {
   device: AnyDevice;
   onDevicePointerDown: (e: React.PointerEvent, device: AnyDevice) => void;
+  virtualWidth: number;
+  virtualHeight: number;
 }
 
-export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevicePointerDown }) => {
+export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevicePointerDown, virtualWidth, virtualHeight }) => {
   const { selectedItem } = useSelection();
   const isSelected = selectedItem?.id === device.id;
   
@@ -33,8 +35,8 @@ export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevice
       transition={{ duration: 0.2 }}
       className="absolute flex flex-col items-center"
       style={{
-        left: `${device.x * 100}%`,
-        top: `${device.y * 100}%`,
+        left: `${device.x * virtualWidth}px`,
+        top: `${device.y * virtualHeight}px`,
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'auto',
       }}

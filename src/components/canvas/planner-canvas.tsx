@@ -250,6 +250,8 @@ export function PlannerCanvas({
                         key={device.id}
                         device={device}
                         onDevicePointerDown={handleDevicePointerDown}
+                        virtualWidth={virtualWidth}
+                        virtualHeight={virtualHeight}
                     />
                     ))}
                 </div>
