@@ -57,7 +57,7 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove }) =
     drag(drop(ref));
     
     // Correctly calculate the starting grid row from the top (1-based)
-    const gridRowStart = rackSize - (device.uPosition + device.uHeight - 1) + 1;
+    const gridRowStart = rackSize - (device.uPosition + device.uHeight - 1);
 
     const itemStyle: React.CSSProperties = {
         gridRow: `${gridRowStart} / span ${device.uHeight}`,
@@ -257,6 +257,10 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
   const rackDevices = rack.devices || [];
   const rackSize = parseInt(rack.rack_size || '9');
 
+  const { updatedRack, setActiveRack } = useMemo(() => {
+    return { updatedRack: rack, setActiveRack: onUpdateRack };
+  }, [rack, onUpdateRack]);
+
   useEffect(() => {
     setSelectedDeviceId(null);
   }, [rack, isOpen]);
@@ -288,30 +292,29 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
         ...(type === 'ups' && { powerCapacity: config.defaults.powerCapacity }),
     };
     
-    const newRackState = produce(rack, draft => {
+    const newRackState = produce(updatedRack, draft => {
         if (!draft.devices) {
             draft.devices = [];
         }
         draft.devices.push(newDevice);
     });
-    onUpdateRack(newRackState);
+    setActiveRack(newRackState);
   };
   
   const handleRemoveDevice = (deviceId: string) => {
-      const newRackState = produce(rack, draft => {
+      const newRackState = produce(updatedRack, draft => {
           draft.devices = draft.devices.filter(d => d.id !== deviceId);
       });
-      onUpdateRack(newRackState);
+      setActiveRack(newRackState);
       setSelectedDeviceId(null);
   };
   
   const handleMoveDevice = (deviceId: string, newUPosition: number) => {
-      onUpdateRack(produce(rack, draft => {
+      const newRackState = produce(updatedRack, draft => {
           const deviceToMove = draft.devices.find(d => d.id === deviceId);
           if (deviceToMove) {
             const uHeight = deviceToMove.uHeight;
-            const oldUPosition = deviceToMove.uPosition;
-
+            
             // Check for collisions
             const isOccupied = draft.devices.some(d => {
                 if (d.id === deviceId) return false; // Don't check against itself
@@ -324,12 +327,10 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
 
             if (!isOccupied) {
                 deviceToMove.uPosition = newUPosition;
-            } else {
-                console.warn("Cannot move device to an occupied slot.");
-                // Optionally, provide user feedback here
             }
           }
-      }));
+      });
+      setActiveRack(newRackState);
   };
 
   const powerUsagePercentage = (totalPowerConsumption / totalPowerCapacity) * 100;
@@ -376,9 +377,9 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                   </div>
                 </div>
             </div>
-            <div className="col-span-9 bg-muted/50 rounded-lg border-4 border-muted flex">
+            <div className="col-span-9 bg-muted/50 rounded-lg flex">
                 {/* U-Numbers Left */}
-                <div className="w-8 bg-background border-r-2 border-border h-full flex flex-col-reverse justify-end">
+                <div className="w-8 bg-background/50 border-r-2 border-border h-full flex flex-col-reverse justify-end">
                     {[...Array(rackSize)].map((_, i) => (
                         <div key={i} className="flex-1 border-t border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
                             <span>{i + 1}</span>
@@ -391,7 +392,7 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                   className="relative flex-1 h-full grid"
                   style={{ gridTemplateRows: `repeat(${rackSize}, 1fr)` }}
                 >
-                  {/* Draggable items are direct children of the grid */}
+                  {/* Draggable items are placed on top of the grid slots */}
                   {rackDevices.map(device => (
                     <DraggableRackItem
                         key={device.id}
@@ -403,11 +404,11 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                     />
                   ))}
                   
-                  {/* Drop targets & grid lines */}
+                  {/* Grid lines and drop targets */}
                   {[...Array(rackSize)].map((_, i) => (
                     <div 
                       key={i} 
-                      className="border-b border-dashed border-border/50 relative" 
+                      className="relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:border-b after:border-dashed after:border-border/50"
                       style={{ gridRow: `${rackSize - i} / span 1` }}
                     >
                         <RackSlot u={i + 1} onDropDevice={() => {}} />
@@ -416,7 +417,7 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                 </div>
 
                  {/* U-Numbers Right */}
-                <div className="w-8 bg-background border-l-2 border-border h-full flex flex-col-reverse justify-end">
+                <div className="w-8 bg-background/50 border-l-2 border-border h-full flex flex-col-reverse justify-end">
                      {[...Array(rackSize)].map((_, i) => (
                         <div key={i} className="flex-1 border-t border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
                              <span>{i + 1}</span>
