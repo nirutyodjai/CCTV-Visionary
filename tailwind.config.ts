@@ -1,3 +1,4 @@
+
 import type { Config } from 'tailwindcss';
 
 const config = {
@@ -7,6 +8,23 @@ const config = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+  ],
+  safelist: [
+    {
+      pattern: /bg-(red|blue|green|amber|slate|sky|violet|fuchsia|gray)-(100|200|300)/,
+    },
+    {
+      pattern: /dark:bg-(red|blue|green|amber|slate|sky|violet|fuchsia|gray)-(900\/50|800\/50|800|700)/,
+    },
+    {
+       pattern: /border-(red|blue|green|amber|slate|sky|violet|fuchsia|gray)-(300|400|600|700)/,
+    },
+    {
+       pattern: /dark:border-(red|blue|green|amber|slate|sky|violet|fuchsia|gray)-(500|600|700)/,
+    },
+     {
+      pattern: /ring-(primary|offset-2)/,
+    },
   ],
   prefix: '',
   theme: {
