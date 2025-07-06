@@ -27,7 +27,7 @@ const ItemTypes = {
 };
 
 // --- DRAGGABLE RACK ITEM ---
-const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove }) => {
+const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove, onRemove }) => {
     const ref = React.useRef<HTMLDivElement>(null);
     const colorClass = DEVICE_CONFIG[device.type]?.colorClass || 'bg-card';
 
@@ -56,7 +56,6 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove }) =
 
     drag(drop(ref));
     
-    // Correctly calculate the starting grid row from the top (1-based)
     const gridRowStart = rackSize - (device.uPosition + device.uHeight - 1);
 
     const itemStyle: React.CSSProperties = {
@@ -66,21 +65,37 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove }) =
         opacity: isDragging ? 0.5 : 1,
     };
 
+    const handleRemoveClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent the main div's onSelect from firing
+        onRemove(device.id);
+    }
+
     return (
-        <div ref={preview} style={itemStyle} className="relative">
+        <div 
+            ref={preview} 
+            style={itemStyle} 
+            className="relative p-1" // Use padding on the grid item for spacing
+            onClick={onSelect}
+        >
             <div 
                 ref={ref} 
-                className={`absolute inset-1 border shadow-sm rounded-md flex items-center justify-between cursor-pointer transition-all duration-200 ${colorClass} ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                className={`w-full h-full border shadow-sm rounded-md flex items-center justify-between cursor-pointer transition-all duration-200 ${colorClass} ${isSelected ? 'ring-2 ring-primary' : ''}`}
             >
-                <div ref={drag} className="cursor-move p-2">
+                <div ref={drag} className="cursor-move p-2 self-stretch flex items-center rounded-l-md hover:bg-black/10">
                      <GripVertical className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <div className="flex-1 text-center truncate px-1" onClick={onSelect}>
+                <div className="flex-1 text-center truncate px-1">
                     <span className="text-sm font-semibold text-card-foreground truncate">{device.label} ({device.uHeight}U)</span>
                 </div>
-                <div className="p-2" onClick={() => onSelect()}>
-                    <Trash2 className="w-5 h-5 text-destructive/50 hover:text-destructive"/>
-                </div>
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-8 h-8 mr-1 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleRemoveClick}
+                >
+                    <Trash2 className="w-4 h-4"/>
+                    <span className="sr-only">Remove {device.label}</span>
+                </Button>
             </div>
         </div>
     );
@@ -254,12 +269,11 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   
-  const rackDevices = rack.devices || [];
-  const rackSize = parseInt(rack.rack_size || '9');
+  const [internalRack, setInternalRack] = useState(rack);
 
-  const { updatedRack, setActiveRack } = useMemo(() => {
-    return { updatedRack: rack, setActiveRack: onUpdateRack };
-  }, [rack, onUpdateRack]);
+  useEffect(() => {
+    setInternalRack(rack);
+  }, [rack, isOpen]);
 
   useEffect(() => {
     setSelectedDeviceId(null);
@@ -268,14 +282,19 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
   const { totalPowerConsumption, totalPowerCapacity } = useMemo(() => {
     let consumption = 0;
     let capacity = 0;
-    rackDevices.forEach(d => {
+    internalRack.devices?.forEach(d => {
         consumption += d.powerConsumption || 0;
         if (d.type === 'ups' || d.type === 'pdu') {
             capacity += (d as any).powerCapacity || 0;
         }
     });
     return { totalPowerConsumption: consumption, totalPowerCapacity: capacity > 0 ? capacity : 2200 };
-  }, [rackDevices]);
+  }, [internalRack.devices]);
+  
+  const updateParentState = (newRackState: RackContainer) => {
+    setInternalRack(newRackState);
+    onUpdateRack(newRackState);
+  }
 
   const handleAddDevice = (type: DeviceType, uPosition: number) => {
     const config = DEVICE_CONFIG[type];
@@ -284,7 +303,7 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
     const newDevice: RackDevice = {
         id: `rack_dev_${Date.now()}`,
         type: type,
-        label: `${config.name} ${rackDevices.filter(d => d.type === type).length + 1}`,
+        label: `${config.name} ${internalRack.devices?.filter(d => d.type === type).length + 1}`,
         uPosition: uPosition,
         uHeight: uHeight,
         price: config.defaults.price,
@@ -292,32 +311,33 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
         ...(type === 'ups' && { powerCapacity: config.defaults.powerCapacity }),
     };
     
-    const newRackState = produce(updatedRack, draft => {
+    const newRackState = produce(internalRack, draft => {
         if (!draft.devices) {
             draft.devices = [];
         }
         draft.devices.push(newDevice);
     });
-    setActiveRack(newRackState);
+    updateParentState(newRackState);
   };
   
   const handleRemoveDevice = (deviceId: string) => {
-      const newRackState = produce(updatedRack, draft => {
+      const newRackState = produce(internalRack, draft => {
           draft.devices = draft.devices.filter(d => d.id !== deviceId);
       });
-      setActiveRack(newRackState);
-      setSelectedDeviceId(null);
+      updateParentState(newRackState);
+      if(selectedDeviceId === deviceId) {
+        setSelectedDeviceId(null);
+      }
   };
   
   const handleMoveDevice = (deviceId: string, newUPosition: number) => {
-      const newRackState = produce(updatedRack, draft => {
+      const newRackState = produce(internalRack, draft => {
           const deviceToMove = draft.devices.find(d => d.id === deviceId);
           if (deviceToMove) {
             const uHeight = deviceToMove.uHeight;
             
-            // Check for collisions
             const isOccupied = draft.devices.some(d => {
-                if (d.id === deviceId) return false; // Don't check against itself
+                if (d.id === deviceId) return false;
                 const startA = d.uPosition;
                 const endA = d.uPosition + d.uHeight - 1;
                 const startB = newUPosition;
@@ -330,9 +350,11 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
             }
           }
       });
-      setActiveRack(newRackState);
+      updateParentState(newRackState);
   };
 
+  const rackDevices = internalRack.devices || [];
+  const rackSize = parseInt(internalRack.rack_size || '9');
   const powerUsagePercentage = (totalPowerConsumption / totalPowerCapacity) * 100;
 
   return (
@@ -340,7 +362,7 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
         <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl">
             <DialogHeader>
-            <DialogTitle>Rack Elevation: {rack.label}</DialogTitle>
+            <DialogTitle>Rack Elevation: {internalRack.label}</DialogTitle>
             <DialogDescription>Drag and drop to arrange devices, or add new ones.</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-12 gap-6 h-[600px] p-4">
@@ -348,18 +370,6 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                 <div>
                     <h3 className="font-semibold mb-4">Controls</h3>
                     <Button className="w-full" onClick={() => setAddDialogOpen(true)}>Add New Device</Button>
-                    {selectedDeviceId && (
-                        <Card className="mt-4">
-                            <CardHeader><CardTitle>Edit Device</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
-                               <p className="text-sm">Editing: {rackDevices.find(d=>d.id === selectedDeviceId)?.label}</p>
-                               <Button variant="destructive" className="w-full" onClick={() => handleRemoveDevice(selectedDeviceId)}>
-                                   <Trash2 className="w-4 h-4 mr-2"/>
-                                   Delete Selected
-                               </Button>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2">Power Management</h3>
@@ -373,12 +383,11 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                           <span className="font-bold">{totalPowerCapacity}W</span>
                       </div>
                       <Progress value={powerUsagePercentage} className="h-4" />
-                      {powerUsagePercentage > 100 && <p className="text-xs text-destructive mt-1"><Zap className="w-4 h-4 mr-1"/>Overloaded!</p>}
+                      {powerUsagePercentage > 100 && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><Zap className="w-4 h-4"/>Overloaded!</p>}
                   </div>
                 </div>
             </div>
             <div className="col-span-9 bg-muted/50 rounded-lg flex">
-                {/* U-Numbers Left */}
                 <div className="w-8 bg-background/50 border-r-2 border-border h-full flex flex-col-reverse justify-end">
                     {[...Array(rackSize)].map((_, i) => (
                         <div key={i} className="flex-1 border-t border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
@@ -387,12 +396,10 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                     ))}
                 </div>
 
-                {/* Main Rack Area with CSS Grid */}
                 <div 
                   className="relative flex-1 h-full grid"
                   style={{ gridTemplateRows: `repeat(${rackSize}, 1fr)` }}
                 >
-                  {/* Draggable items are placed on top of the grid slots */}
                   {rackDevices.map(device => (
                     <DraggableRackItem
                         key={device.id}
@@ -401,10 +408,10 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                         isSelected={selectedDeviceId === device.id}
                         onSelect={() => setSelectedDeviceId(device.id === selectedDeviceId ? null : device.id)}
                         onMove={handleMoveDevice}
+                        onRemove={handleRemoveDevice}
                     />
                   ))}
                   
-                  {/* Grid lines and drop targets */}
                   {[...Array(rackSize)].map((_, i) => (
                     <div 
                       key={i} 
@@ -416,7 +423,6 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                   ))}
                 </div>
 
-                 {/* U-Numbers Right */}
                 <div className="w-8 bg-background/50 border-l-2 border-border h-full flex flex-col-reverse justify-end">
                      {[...Array(rackSize)].map((_, i) => (
                         <div key={i} className="flex-1 border-t border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
