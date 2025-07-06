@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -7,7 +8,7 @@ import {
 } from '@/components/icons';
 import { Server, Zap, HardDrive, PanelTop, Power, Router } from 'lucide-react';
 
-import type { DeviceConfig, DeviceType, RackDeviceType } from './types';
+import type { DeviceConfig, DeviceType, RackDeviceType, AnyDevice } from './types';
 
 export const RACK_DEVICE_TYPES: RackDeviceType[] = ['nvr', 'switch', 'patch-panel', 'pdu', 'ups'];
 
@@ -99,7 +100,7 @@ export const DEVICE_CONFIG: { [key in DeviceType]: DeviceConfig } = {
 };
 
 
-export function createDevice(type: DeviceType, x: number, y: number, existingDevices: any[]) {
+export function createDevice(type: DeviceType, x: number, y: number, existingDevices: any[]): AnyDevice {
     const config = DEVICE_CONFIG[type];
     if (!config) {
         throw new Error(`Unknown device type: ${type}`);
@@ -113,6 +114,7 @@ export function createDevice(type: DeviceType, x: number, y: number, existingDev
         label: `${config.name} ${count}`,
         x,
         y,
+        connectionPoint: { x, y },
         ...config.defaults
     };
 }

@@ -41,7 +41,7 @@ import {
   suggestDevicePlacementsAction,
   findCablePathAction,
 } from '@/app/actions';
-import { PanelLeft, Map, Settings, Bot, Presentation, Network, BarChart2, Loader2, Eye } from 'lucide-react';
+import { Map, Settings, Bot, Presentation, Network, BarChart2, Loader2, Eye } from 'lucide-react';
 
 function CCTVPlannerInner() {
     const [projectState, setProjectState] = useState<ProjectState>(createInitialState());
@@ -155,7 +155,19 @@ function CCTVPlannerInner() {
     const handleDeviceMove = (deviceId: string, pos: { x: number; y: number }) => {
         const activeFloor = getActiveFloor();
         if (!activeFloor) return;
-        const updatedDevices = activeFloor.devices.map(d => d.id === deviceId ? { ...d, x: pos.x, y: pos.y } : d);
+        const updatedDevices = activeFloor.devices.map(d => {
+            if (d.id === deviceId) {
+                const connectionPointIsAtCenter = !d.connectionPoint || (d.connectionPoint.x === d.x && d.connectionPoint.y === d.y);
+                
+                return { 
+                    ...d, 
+                    x: pos.x, 
+                    y: pos.y,
+                    connectionPoint: connectionPointIsAtCenter ? { x: pos.x, y: pos.y } : d.connectionPoint 
+                };
+            }
+            return d;
+        });
         updateFloorData(activeFloor.id, { devices: updatedDevices });
     };
 
@@ -344,7 +356,7 @@ function CCTVPlannerInner() {
                         isLoading={isDiagnosticsLoading}
                     />
                      <Card>
-                        <CardHeader className="p-3">
+                        <CardHeader className="p-3 border-b">
                             <CardTitle className="text-sm font-semibold flex items-center gap-2"><Network className="w-4 h-4" />Topology</CardTitle>
                         </CardHeader>
                         <CardContent className="p-3">
@@ -354,7 +366,7 @@ function CCTVPlannerInner() {
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader className="p-3">
+                        <CardHeader className="p-3 border-b">
                             <CardTitle className="text-sm font-semibold flex items-center gap-2"><Presentation className="w-4 h-4" />Generate Report</CardTitle>
                         </CardHeader>
                         <CardContent className="p-3">
