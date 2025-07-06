@@ -1,3 +1,4 @@
+'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,10 @@ import {
     ClipboardCheck,
     DraftingCompass
 } from 'lucide-react';
-// import { InteractiveFeaturePreview } from '@/components/interactive-feature-preview';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserNav } from '@/components/ui/user-nav';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 const featureList = [
     {
@@ -75,6 +79,7 @@ const workflowSteps = [
 
 
 export default function LandingPage() {
+  const { user, loading } = useAuth();
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center sticky top-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm z-50">
@@ -83,10 +88,23 @@ export default function LandingPage() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">CCTV & Network Planner</h1>
         </div>
         <nav className="flex items-center gap-4">
-          <Link href="/planner" passHref>
-            <Button variant="ghost">Launch Planner</Button>
-          </Link>
-          <Button>Sign Up</Button>
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+          ) : user ? (
+            <UserNav />
+          ) : (
+            <>
+              <Link href="/login" passHref>
+                <Button variant="ghost">Launch Planner</Button>
+              </Link>
+              <Link href="/login" passHref>
+                <Button>Sign Up</Button>
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 

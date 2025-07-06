@@ -41,6 +41,7 @@ import {
   findCablePathAction,
 } from '@/app/actions';
 import { Map, Settings, Bot, Presentation, Network, BarChart2, Loader2, Eye } from 'lucide-react';
+import { UserNav } from './ui/user-nav';
 
 function CCTVPlannerInner() {
     const [projectState, setProjectState] = useState<ProjectState>(createInitialState());
@@ -234,7 +235,7 @@ function CCTVPlannerInner() {
 
     const handleUpdateRack = (rack: RackContainer) => {
         handleUpdateDevice(rack);
-        setActiveRack(rack);
+        setInternalRack(rack);
     };
 
     const handleFindAllCablePaths = async () => {
@@ -390,10 +391,13 @@ function CCTVPlannerInner() {
                             <SidebarTrigger />
                             <h1 className="font-semibold text-lg truncate">{projectState.projectName}</h1>
                         </div>
-                        <Button className="md:hidden" variant="outline" size="icon" onClick={() => setMobilePropertiesSheetOpen(true)}>
-                            <Settings />
-                            <span className="sr-only">Open Properties</span>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <UserNav />
+                            <Button className="md:hidden" variant="outline" size="icon" onClick={() => setMobilePropertiesSheetOpen(true)}>
+                                <Settings />
+                                <span className="sr-only">Open Properties</span>
+                            </Button>
+                        </div>
                     </header>
                     <main className="flex-1 flex min-h-0">
                          <div className="flex-1 relative">
@@ -478,5 +482,3 @@ export function CCTVPlanner() {
         </SelectionProvider>
     )
 }
-
-    
