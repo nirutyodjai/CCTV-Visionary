@@ -78,42 +78,23 @@ export function PlannerCanvas({
       setImageTransform({ scale: 1, offsetX: 0, offsetY: 0 });
     }
   }, [bgImage, containerRect]);
-
-  // Coordinate conversion: from canvas space to image space (for drag calculations)
-  const canvasToImageCoords = useCallback((canvasPos: { x: number, y: number }) => {
-    const { scale, offsetX, offsetY } = imageTransform;
-    if (!containerRect) return { x: 0, y: 0 };
-    
-    const imageWidth = (bgImage?.width ?? containerRect.width) * scale;
-    const imageHeight = (bgImage?.height ?? containerRect.height) * scale;
-
-    const canvasPixelX = canvasPos.x * containerRect.width;
-    const canvasPixelY = canvasPos.y * containerRect.height;
-    
-    const imgX = (canvasPixelX - offsetX) / imageWidth;
-    const imgY = (canvasPixelY - offsetY) / imageHeight;
-    
-    return { x: imgX, y: imgY };
-  }, [containerRect, imageTransform, bgImage]);
+  
+  const virtualWidth = bgImage?.width ?? containerRect?.width ?? 0;
+  const virtualHeight = bgImage?.height ?? containerRect?.height ?? 0;
 
   // Main drawing logic on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx || !containerRect) return;
+    if (!ctx || !containerRect || !virtualWidth || !virtualHeight) return;
 
-    const accentHsl = getComputedStyle(canvasRef.current!).getPropertyValue('--accent').trim() || '221 83% 53%';
+    if (canvas.width !== virtualWidth) canvas.width = virtualWidth;
+    if (canvas.height !== virtualHeight) canvas.height = virtualHeight;
+
+    const accentHsl = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '215 89% 52%';
     
     const draw = () => {
-        ctx.clearRect(0, 0, containerRect.width, containerRect.height);
-
-        // Apply the same transform to the canvas as the device layer
-        ctx.save();
-        ctx.translate(imageTransform.offsetX, imageTransform.offsetY);
-        ctx.scale(imageTransform.scale, imageTransform.scale);
-
-        const virtualWidth = bgImage?.width ?? containerRect.width;
-        const virtualHeight = bgImage?.height ?? containerRect.height;
+        ctx.clearRect(0, 0, virtualWidth, virtualHeight);
 
         if (bgImage) {
             ctx.drawImage(bgImage, 0, 0, bgImage.width, bgImage.height);
@@ -144,14 +125,12 @@ export function PlannerCanvas({
                 }
 
                 ctx.strokeStyle = `hsl(${accentHsl})`;
-                ctx.lineWidth = 1 / imageTransform.scale; 
+                ctx.lineWidth = 1 / imageTransform.scale; // Keep line width consistent across zoom levels
                 ctx.setLineDash([4 / imageTransform.scale, 4 / imageTransform.scale]);
                 ctx.lineDashOffset = -lineDashOffset.current;
                 ctx.stroke(path);
             });
         }
-        
-        ctx.restore();
     }
 
     const animate = () => {
@@ -164,25 +143,29 @@ export function PlannerCanvas({
     return () => {
         if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [floor, containerRect, bgImage, imageTransform]);
+  }, [floor, containerRect, bgImage, imageTransform, virtualWidth, virtualHeight]);
 
-  const getRelativeCanvasCoords = useCallback((e: React.PointerEvent | PointerEvent) => {
+  const getCoordsInVirtualSpace = useCallback((e: React.PointerEvent | PointerEvent) => {
     if (!containerRect) return null;
-    return {
-      x: (e.clientX - containerRect.left) / containerRect.width,
-      y: (e.clientY - containerRect.top) / containerRect.height,
-    };
-  }, [containerRect]);
+    const { scale, offsetX, offsetY } = imageTransform;
+
+    const viewX = e.clientX - containerRect.left;
+    const viewY = e.clientY - containerRect.top;
+
+    const virtualX = (viewX - offsetX) / scale;
+    const virtualY = (viewY - offsetY) / scale;
+
+    return { x: virtualX / virtualWidth, y: virtualY / virtualHeight };
+  }, [containerRect, imageTransform, virtualWidth, virtualHeight]);
 
   const handleDevicePointerDown = (e: React.PointerEvent, device: AnyDevice) => {
     e.stopPropagation();
     onDeviceClick(device);
     if (!cablingMode.enabled) {
       setDraggingDevice(device);
-      const canvasPos = getRelativeCanvasCoords(e);
-      if (canvasPos) {
-        const imagePos = canvasToImageCoords(canvasPos);
-        dragOffset.current = { x: device.x - imagePos.x, y: device.y - imagePos.y };
+      const virtualPos = getCoordsInVirtualSpace(e);
+      if (virtualPos) {
+        dragOffset.current = { x: device.x - virtualPos.x, y: device.y - virtualPos.y };
       }
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     }
@@ -190,12 +173,11 @@ export function PlannerCanvas({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (draggingDevice) {
-        const canvasPos = getRelativeCanvasCoords(e);
-        if (!canvasPos) return;
-        const imagePos = canvasToImageCoords(canvasPos);
+        const virtualPos = getCoordsInVirtualSpace(e);
+        if (!virtualPos) return;
         const finalPos = {
-            x: Math.max(0, Math.min(1, imagePos.x + dragOffset.current.x)),
-            y: Math.max(0, Math.min(1, imagePos.y + dragOffset.current.y)),
+            x: Math.max(0, Math.min(1, virtualPos.x + dragOffset.current.x)),
+            y: Math.max(0, Math.min(1, virtualPos.y + dragOffset.current.y)),
         }
         onDeviceMove(draggingDevice.id, finalPos);
     }
@@ -214,15 +196,16 @@ export function PlannerCanvas({
     if(e.target === e.currentTarget) onCanvasClick();
   }
 
-  // The style for the device/element layer, which is transformed to match the canvas drawing
-  const elementLayerStyle: React.CSSProperties = {
+  // This is the key change: a single container that gets transformed.
+  // Both the canvas and the device/element layer live inside it and share its coordinate system.
+  const transformLayerStyle: React.CSSProperties = {
       position: 'absolute',
       left: `${imageTransform.offsetX}px`,
       top: `${imageTransform.offsetY}px`,
-      width: `${(bgImage?.width ?? containerRect?.width ?? 0) * imageTransform.scale}px`,
-      height: `${(bgImage?.height ?? containerRect?.height ?? 0) * imageTransform.scale}px`,
-      // This layer itself shouldn't capture pointer events, but its children (the devices) should.
-      pointerEvents: 'none', 
+      width: `${virtualWidth}px`,
+      height: `${virtualHeight}px`,
+      transform: `scale(${imageTransform.scale})`,
+      transformOrigin: 'top left',
   };
 
   return (
@@ -237,29 +220,33 @@ export function PlannerCanvas({
         cursor: draggingDevice ? 'grabbing' : (cablingMode.enabled ? 'crosshair' : 'default') 
       }}
     >
-      <canvas
-        ref={canvasRef}
-        width={containerRect?.width || 0}
-        height={containerRect?.height || 0}
-        className="absolute inset-0"
-      />
-      
-      {/* This div contains all visual elements and is transformed to match the canvas's transformed drawing context. */}
-      <div style={elementLayerStyle}>
-            {floor.architecturalElements.map(element => (
-              <ArchitecturalElementRenderer
-                key={element.id}
-                element={element}
-              />
-            ))}
-            {floor.devices.map(device => (
-              <DeviceRenderer
-                key={device.id}
-                device={device}
-                onDevicePointerDown={handleDevicePointerDown}
-              />
-            ))}
-      </div>
+        {containerRect && (
+            <div style={transformLayerStyle}>
+                <canvas
+                    ref={canvasRef}
+                    width={virtualWidth}
+                    height={virtualHeight}
+                    className="absolute inset-0"
+                />
+                
+                {/* Device/Element Layer now lives inside the transformed container */}
+                <div className="absolute inset-0 pointer-events-none">
+                    {floor.architecturalElements.map(element => (
+                    <ArchitecturalElementRenderer
+                        key={element.id}
+                        element={element}
+                    />
+                    ))}
+                    {floor.devices.map(device => (
+                    <DeviceRenderer
+                        key={device.id}
+                        device={device}
+                        onDevicePointerDown={handleDevicePointerDown}
+                    />
+                    ))}
+                </div>
+            </div>
+        )}
     </div>
   );
 }
