@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { RackContainer, RackDevice, DeviceType } from '@/lib/types';
 import { DEVICE_CONFIG, RACK_DEVICE_TYPES } from '@/lib/device-config';
 import { Zap, Trash2, GripVertical } from 'lucide-react';
@@ -123,7 +125,7 @@ const AddDeviceDialog = ({ isOpen, onOpenChange, onAddDevice, rackDevices, rackS
             }
             if (hasSpace) slots.push(u);
         }
-        return slots;
+        return slots.reverse(); // Show top U-slots first
     }, [deviceType, rackDevices, rackSize]);
     
     useEffect(() => {
@@ -171,23 +173,50 @@ const AddDeviceDialog = ({ isOpen, onOpenChange, onAddDevice, rackDevices, rackS
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="uPosition">Start U Position</Label>
-                        <Select onValueChange={(value) => setUPosition(Number(value))} value={String(uPosition)} disabled={!deviceType}>
-                            <SelectTrigger id="uPosition">
-                                <SelectValue placeholder="Select a position..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableSlots.length > 0 ? (
-                                    availableSlots.map(slot => (
-                                        <SelectItem key={slot} value={String(slot)}>
-                                            Position {slot}
-                                        </SelectItem>
-                                    ))
-                                ) : (
-                                    <div className="p-4 text-sm text-muted-foreground">No available slots for this device size.</div>
-                                )}
-                            </SelectContent>
-                        </Select>
+                        <Label>Select Starting U Position</Label>
+                        {deviceType ? (
+                            availableSlots.length > 0 ? (
+                                <ScrollArea className="h-48 w-full rounded-md border">
+                                    <RadioGroup
+                                        value={String(uPosition)}
+                                        onValueChange={(value) => setUPosition(Number(value))}
+                                        className="p-2 space-y-2"
+                                    >
+                                        {availableSlots.map(slot => {
+                                            const config = DEVICE_CONFIG[deviceType!];
+                                            const uHeight = config?.defaults.uHeight || 1;
+                                            const slotsToOccupy = Array.from({ length: uHeight }, (_, i) => slot + i);
+                                            
+                                            return (
+                                                <Label
+                                                    key={slot}
+                                                    htmlFor={`u-pos-${slot}`}
+                                                    className="flex cursor-pointer items-center space-x-3 rounded-md border-2 border-muted bg-transparent p-3 transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:bg-accent has-[:checked]:text-accent-foreground has-[:checked]:border-primary"
+                                                >
+                                                    <RadioGroupItem value={String(slot)} id={`u-pos-${slot}`} />
+                                                    <div className="flex-1">
+                                                        <span className="font-semibold">Position U{slot}</span>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Will occupy {uHeight}U (slots U{slotsToOccupy[0]} to U{slotsToOccupy[slotsToOccupy.length - 1]})
+                                                        </p>
+                                                    </div>
+                                                </Label>
+                                            );
+                                        })}
+                                    </RadioGroup>
+                                </ScrollArea>
+                            ) : (
+                                <div className="flex h-32 items-center justify-center rounded-md border border-dashed">
+                                    <p className="text-sm text-muted-foreground text-center">
+                                        No available slots for a {DEVICE_CONFIG[deviceType]?.defaults.uHeight}U device.
+                                    </p>
+                                </div>
+                            )
+                        ) : (
+                            <div className="flex h-32 items-center justify-center rounded-md border border-dashed">
+                                <p className="text-sm text-muted-foreground">Select a device to see available slots.</p>
+                            </div>
+                        )}
                     </div>
                     {error && <p className="text-sm text-destructive">{error}</p>}
                 </div>
@@ -202,6 +231,13 @@ const AddDeviceDialog = ({ isOpen, onOpenChange, onAddDevice, rackDevices, rackS
 
 
 // --- MAIN VIEW ---
+interface RackElevationViewProps {
+  rack: RackContainer;
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdateRack: (rack: RackContainer) => void;
+}
+
 export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackElevationViewProps) {
   if (!rack) return null;
   
@@ -246,6 +282,9 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
     };
     
     onUpdateRack(produce(rack, draft => {
+        if (!draft.devices) {
+            draft.devices = [];
+        }
         draft.devices.push(newDevice);
     }));
   };
