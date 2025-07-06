@@ -74,7 +74,7 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove, onR
         <div 
             ref={preview} 
             style={itemStyle} 
-            className="relative p-1" // Use padding on the grid item for spacing
+            className="relative px-1 py-0.5" // Reduced vertical padding to make item taller
             onClick={onSelect}
         >
             <div 
