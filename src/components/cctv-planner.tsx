@@ -6,7 +6,6 @@ import { produce } from 'immer';
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
@@ -131,6 +130,9 @@ function CCTVPlannerInner() {
             }
         } else {
             setSelectedItem(device);
+            if (window.innerWidth < 768) { // Open sheet on mobile
+                setMobilePropertiesSheetOpen(true);
+            }
         }
     };
     
@@ -156,29 +158,31 @@ function CCTVPlannerInner() {
         const activeFloor = getActiveFloor();
         if (!activeFloor) return;
 
-        const deviceToMove = activeFloor.devices.find(d => d.id === deviceId);
-        if (!deviceToMove) return;
-
-        // Calculate the offset of the connection point from the device's center
-        const offsetX = (deviceToMove.connectionPoint?.x ?? deviceToMove.x) - deviceToMove.x;
-        const offsetY = (deviceToMove.connectionPoint?.y ?? deviceToMove.y) - deviceToMove.y;
-
-        const updatedDevices = activeFloor.devices.map(d => {
-            if (d.id === deviceId) {
-                return {
-                    ...d,
-                    x: pos.x,
-                    y: pos.y,
-                    // Apply the same offset to the new position to move the handle along with the device
-                    connectionPoint: {
-                        x: pos.x + offsetX,
-                        y: pos.y + offsetY
+        setProjectState(
+            produce(draft => {
+                const floor = draft.buildings
+                    .flatMap(b => b.floors)
+                    .find(f => f.id === activeFloorId);
+                
+                if (floor) {
+                    const deviceToMove = floor.devices.find(d => d.id === deviceId);
+                    if (deviceToMove) {
+                        const offsetX = (deviceToMove.connectionPoint?.x ?? deviceToMove.x) - deviceToMove.x;
+                        const offsetY = (deviceToMove.connectionPoint?.y ?? deviceToMove.y) - deviceToMove.y;
+                        
+                        deviceToMove.x = pos.x;
+                        deviceToMove.y = pos.y;
+                        
+                        if (deviceToMove.connectionPoint) {
+                            deviceToMove.connectionPoint.x = pos.x + offsetX;
+                            deviceToMove.connectionPoint.y = pos.y + offsetY;
+                        } else {
+                             deviceToMove.connectionPoint = { x: pos.x, y: pos.y };
+                        }
                     }
-                };
-            }
-            return d;
-        });
-        updateFloorData(activeFloor.id, { devices: updatedDevices });
+                }
+            })
+        );
     };
 
     const handleConnectionPointMove = (deviceId: string, pos: { x: number; y: number }) => {
@@ -397,15 +401,22 @@ function CCTVPlannerInner() {
         <div className="w-full h-screen bg-background text-foreground flex">
             <SidebarProvider>
                 <Sidebar>
-                    <SidebarHeader>
-                        <SidebarTrigger />
-                    </SidebarHeader>
                     <SidebarContent>
                        <SidePanelContent />
                     </SidebarContent>
                 </Sidebar>
-                <SidebarInset className="flex flex-col">
-                    <main className="flex-1 flex h-full min-h-0">
+                <SidebarInset className="flex flex-1 flex-col min-w-0">
+                    <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6 sticky top-0 z-40">
+                        <div className="flex items-center gap-2">
+                            <SidebarTrigger />
+                            <h1 className="font-semibold text-lg truncate">{projectState.projectName}</h1>
+                        </div>
+                        <Button className="md:hidden" variant="outline" size="icon" onClick={() => setMobilePropertiesSheetOpen(true)}>
+                            <Settings />
+                            <span className="sr-only">Open Properties</span>
+                        </Button>
+                    </header>
+                    <main className="flex-1 flex min-h-0">
                          <div className="flex-1 relative">
                              <PlannerCanvas 
                                 floor={activeFloorData} 
