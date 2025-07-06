@@ -12,10 +12,29 @@ interface CameraPropertiesProps {
 }
 
 export function CameraProperties({ device, onUpdate }: CameraPropertiesProps) {
+  const isPtz = device.type === 'cctv-ptz';
+
   const handleChange = (key: keyof AnyDevice, value: any) => {
-    const numericFields = ['price', 'powerConsumption', 'rotation', 'fov', 'range'];
+    const numericFields = ['price', 'powerConsumption', 'rotation', 'fov', 'range', 'zoomLevel'];
     const finalValue = numericFields.includes(key) ? parseFloat(value) || 0 : value;
     const updatedDevice = { ...device, [key]: finalValue };
+    onUpdate(updatedDevice);
+  };
+
+  const handlePtzZoomChange = (zoomLevel: number) => {
+    // PTZ defaults from config as base values
+    const baseFov = 120;
+    const baseRange = 50;
+
+    const newFov = baseFov / zoomLevel;
+    const newRange = baseRange * zoomLevel;
+
+    const updatedDevice = { 
+        ...device, 
+        zoomLevel,
+        fov: newFov,
+        range: newRange
+    };
     onUpdate(updatedDevice);
   };
 
@@ -49,16 +68,37 @@ export function CameraProperties({ device, onUpdate }: CameraPropertiesProps) {
               </SelectContent>
             </Select>
           </div>
+          
+          {isPtz ? (
+            <div className="space-y-3 p-3 rounded-lg border bg-muted/50">
+                <Label>Zoom ({Number(device.zoomLevel || 1).toFixed(1)}x)</Label>
+                <Slider 
+                    value={[Number(device.zoomLevel) || 1]} 
+                    onValueChange={([val]) => handlePtzZoomChange(val)} 
+                    min={1} 
+                    max={10} 
+                    step={0.1} 
+                />
+                <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
+                    <span>FOV: <strong>{Number(device.fov).toFixed(1)}°</strong></span>
+                    <span>Range: <strong>{Number(device.range).toFixed(1)}m</strong></span>
+                </div>
+            </div>
+          ) : (
+            <>
+                <div className="space-y-2">
+                    <Label>Field of View ({(Number(device.fov) || 0).toFixed(0)}°)</Label>
+                    <Slider value={[Number(device.fov) || 0]} onValueChange={([val]) => handleChange('fov', val)} min={10} max={180} step={1} />
+                </div>
+                <div className="space-y-2">
+                    <Label>Range ({(Number(device.range) || 0).toFixed(0)} m.)</Label>
+                    <Slider value={[Number(device.range) || 0]} onValueChange={([val]) => handleChange('range', val)} min={1} max={100} step={1} />
+                </div>
+            </>
+          )}
+
           <div className="space-y-2">
-            <Label>Field of View ({(Number(device.fov) || 0).toFixed(0)}°)</Label>
-            <Slider value={[Number(device.fov) || 0]} onValueChange={([val]) => handleChange('fov', val)} min={10} max={180} step={1} />
-          </div>
-          <div className="space-y-2">
-            <Label>Range ({(Number(device.range) || 0).toFixed(0)} m.)</Label>
-            <Slider value={[Number(device.range) || 0]} onValueChange={([val]) => handleChange('range', val)} min={1} max={100} step={1} />
-          </div>
-          <div className="space-y-2">
-            <Label>Rotation ({(Number(device.rotation) || 0).toFixed(0)}°)</Label>
+            <Label>Rotation {isPtz && '(Pan)'} ({(Number(device.rotation) || 0).toFixed(0)}°)</Label>
             <Slider value={[Number(device.rotation) || 0]} onValueChange={([val]) => handleChange('rotation', val)} min={0} max={360} step={1} />
           </div>
         </AccordionContent>

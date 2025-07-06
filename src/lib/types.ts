@@ -54,6 +54,7 @@ export interface CameraDevice extends BaseDevice {
   fov: number;
   range: number;
   rotation: number;
+  zoomLevel?: number;
 }
 
 export interface WifiAPDevice extends BaseDevice {

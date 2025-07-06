@@ -29,7 +29,7 @@ export const DEVICE_CONFIG: { [key in DeviceType]: DeviceConfig } = {
         name: 'PTZ Camera',
         icon: CctvPtzIcon,
         colorClass: 'bg-sky-100 dark:bg-sky-900/50 border-sky-300 dark:border-sky-700',
-        defaults: { price: 4500, powerConsumption: 20, resolution: '2K', fov: 120, range: 50, uHeight: 0 }
+        defaults: { price: 4500, powerConsumption: 20, resolution: '2K', fov: 120, range: 50, uHeight: 0, zoomLevel: 1 }
     },
     // Network Devices
     'nvr': {
