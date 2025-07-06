@@ -108,7 +108,7 @@ export function createDevice(type: DeviceType, x: number, y: number, existingDev
     const count = existingDevices.filter(d => d.type === type).length + 1;
 
     return {
-        id: `${type}_${Date.now()}`,
+        id: `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         type: type,
         label: `${config.name} ${count}`,
         x,
