@@ -55,20 +55,21 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove }) =
     });
 
     drag(drop(ref));
-
+    
     const itemStyle: React.CSSProperties = {
-        height: `${(device.uHeight / rackSize) * 100}%`,
-        top: `${((rackSize - device.uPosition - device.uHeight + 1) / rackSize) * 100}%`,
+        gridRow: `${(rackSize - device.uPosition) + 1} / span ${device.uHeight}`,
+        gridColumn: '1 / -1',
+        zIndex: 10,
         opacity: isDragging ? 0.5 : 1,
     };
-    
+
     return (
-        <div ref={preview} style={itemStyle} className="absolute w-[calc(100%-2rem)] left-10">
-            <div ref={ref} className={`w-full h-full border shadow-sm rounded-sm flex items-center justify-between p-1 cursor-pointer transition-all duration-200 ${colorClass} ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+        <div ref={preview} style={itemStyle} className="relative p-0.5 min-h-0">
+            <div ref={ref} className={`w-full h-full border shadow-sm rounded-sm flex items-center justify-between cursor-pointer transition-all duration-200 ${colorClass} ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
                 <div ref={drag} className="cursor-move p-2">
                      <GripVertical className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <div className="flex-1 text-center" onClick={onSelect}>
+                <div className="flex-1 text-center truncate px-1" onClick={onSelect}>
                     <span className="text-sm font-semibold text-card-foreground truncate">{device.label} ({device.uHeight}U)</span>
                 </div>
                 <div className="p-2" onClick={() => onSelect()}>
@@ -281,18 +282,20 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
         ...(type === 'ups' && { powerCapacity: config.defaults.powerCapacity }),
     };
     
-    onUpdateRack(produce(rack, draft => {
+    const newRackState = produce(rack, draft => {
         if (!draft.devices) {
             draft.devices = [];
         }
         draft.devices.push(newDevice);
-    }));
+    });
+    onUpdateRack(newRackState);
   };
   
   const handleRemoveDevice = (deviceId: string) => {
-      onUpdateRack(produce(rack, draft => {
+      const newRackState = produce(rack, draft => {
           draft.devices = draft.devices.filter(d => d.id !== deviceId);
-      }));
+      });
+      onUpdateRack(newRackState);
       setSelectedDeviceId(null);
   };
   
@@ -367,38 +370,50 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                   </div>
                 </div>
             </div>
-            <div className="col-span-9 bg-muted/50 rounded-lg relative border-4 border-muted flex">
+            <div className="col-span-9 bg-muted/50 rounded-lg border-4 border-muted flex">
                 {/* U-Numbers Left */}
-                <div className="w-6 bg-background border-r-2 border-border h-full flex flex-col">
-                    {[...Array(rackSize)].map((_, u) => (
-                        <div key={u} className="flex-1 border-b border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
-                            <span>{rackSize - u}</span>
+                <div className="w-8 bg-background border-r-2 border-border h-full flex flex-col-reverse justify-end">
+                    {[...Array(rackSize)].map((_, i) => (
+                        <div key={i} className="flex-1 border-t border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
+                            <span>{i + 1}</span>
                         </div>
                     ))}
                 </div>
-                {/* Drop Zone */}
-                <div className="relative flex-1 h-full">
-                     {rackDevices.map(device => (
-                        <DraggableRackItem
-                            key={device.id}
-                            device={device}
-                            rackSize={rackSize}
-                            isSelected={selectedDeviceId === device.id}
-                            onSelect={() => setSelectedDeviceId(device.id === selectedDeviceId ? null : device.id)}
-                            onMove={handleMoveDevice}
-                        />
-                    ))}
-                    {[...Array(rackSize)].map((_, u) => (
-                        <div key={u} className="h-[calc(100%/var(--rack-size))] w-full border-b border-dashed border-border/50" style={{'--rack-size': rackSize} as React.CSSProperties}>
-                           <RackSlot u={rackSize - u} onDropDevice={() => {}} />
-                        </div>
-                    ))}
+
+                {/* Main Rack Area with CSS Grid */}
+                <div 
+                  className="relative flex-1 h-full grid"
+                  style={{ gridTemplateRows: `repeat(${rackSize}, 1fr)` }}
+                >
+                  {/* Draggable items are direct children of the grid */}
+                  {rackDevices.map(device => (
+                    <DraggableRackItem
+                        key={device.id}
+                        device={device}
+                        rackSize={rackSize}
+                        isSelected={selectedDeviceId === device.id}
+                        onSelect={() => setSelectedDeviceId(device.id === selectedDeviceId ? null : device.id)}
+                        onMove={handleMoveDevice}
+                    />
+                  ))}
+                  
+                  {/* Drop targets & grid lines */}
+                  {[...Array(rackSize)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className="border-b border-dashed border-border/50 relative" 
+                      style={{ gridRow: `${rackSize - i} / span 1` }}
+                    >
+                        <RackSlot u={i + 1} onDropDevice={() => {}} />
+                    </div>
+                  ))}
                 </div>
+
                  {/* U-Numbers Right */}
-                <div className="w-6 bg-background border-l-2 border-border h-full flex flex-col">
-                     {[...Array(rackSize)].map((_, u) => (
-                        <div key={u} className="flex-1 border-b border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
-                             <span>{rackSize - u}</span>
+                <div className="w-8 bg-background border-l-2 border-border h-full flex flex-col-reverse justify-end">
+                     {[...Array(rackSize)].map((_, i) => (
+                        <div key={i} className="flex-1 border-t border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
+                             <span>{i + 1}</span>
                         </div>
                     ))}
                 </div>
