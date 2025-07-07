@@ -16,7 +16,7 @@ export function CameraProperties({ device, onUpdate }: CameraPropertiesProps) {
 
   const handleChange = (key: keyof AnyDevice, value: any) => {
     const numericFields = ['price', 'powerConsumption', 'rotation', 'fov', 'range', 'zoomLevel'];
-    const finalValue = numericFields.includes(key) ? parseFloat(value) || 0 : value;
+    const finalValue = numericFields.includes(key as string) ? parseFloat(String(value)) || 0 : value;
     const updatedDevice = { ...device, [key]: finalValue };
     onUpdate(updatedDevice);
   };

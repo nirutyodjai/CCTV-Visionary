@@ -12,7 +12,7 @@ interface RackPropertiesProps {
 export function RackProperties({ device, onUpdate }: RackPropertiesProps) {
   const handleChange = (key: keyof AnyDevice, value: any) => {
     const numericFields = ['price', 'powerConsumption'];
-    const finalValue = numericFields.includes(key) ? parseFloat(value) || 0 : value;
+    const finalValue = numericFields.includes(key as string) ? parseFloat(String(value)) || 0 : value;
     const updatedDevice = { ...device, [key]: finalValue };
     onUpdate(updatedDevice);
   };

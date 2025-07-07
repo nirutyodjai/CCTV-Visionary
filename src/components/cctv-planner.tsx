@@ -263,7 +263,7 @@ function CCTVPlannerInner() {
                 updatedConnections[i] = { ...conn, path: result.data.path };
                 successCount++;
             } else {
-                console.warn(`Failed to find path for connection ${conn.id}:`, result.error);
+                console.warn(`Failed to find path for connection ${conn.id}:`, 'error' in result ? result.error : 'Unknown error');
                 if (!updatedConnections[i].path) {
                      updatedConnections[i] = { ...conn, path: [{x: fromDevice.x, y: fromDevice.y}, {x: toDevice.x, y: toDevice.y}] };
                 }

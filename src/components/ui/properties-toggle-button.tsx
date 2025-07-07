@@ -2,9 +2,10 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface PropertiesToggleButtonProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
+interface PropertiesToggleButtonProps {
     isOpen: boolean;
     onChange: (isOpen: boolean) => void;
+    className?: string;
 }
 
 const PropertiesToggleButton = React.forwardRef<HTMLLabelElement, PropertiesToggleButtonProps>(

@@ -26,9 +26,18 @@ const ItemTypes = {
 };
 
 // --- DRAGGABLE RACK ITEM ---
-const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove, onRemove }) => {
+interface DraggableRackItemProps {
+  device: RackDevice;
+  rackSize: number;
+  onSelect: (device: RackDevice) => void;
+  isSelected: boolean;
+  onMove: (device: RackDevice, newPosition: number) => void;
+  onRemove: (deviceId: string) => void;
+}
+
+const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove, onRemove }: DraggableRackItemProps) => {
     const ref = React.useRef<HTMLDivElement>(null);
-    const colorClass = DEVICE_CONFIG[device.type]?.colorClass || 'bg-card';
+    const colorClass = (DEVICE_CONFIG as any)[device.type]?.colorClass || 'bg-card';
 
 
     const [, drop] = useDrop({
@@ -45,7 +54,7 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove, onR
         end: (item, monitor) => {
             const dropResult = monitor.getDropResult<{ uPosition: number }>();
             if (item && dropResult) {
-                onMove(item.id, dropResult.uPosition);
+                onMove(item, dropResult.uPosition);
             }
         },
         collect: (monitor) => ({
@@ -71,16 +80,16 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove, onR
 
     return (
         <div 
-            ref={preview} 
+            ref={preview as any} 
             style={itemStyle} 
             className="relative p-1"
-            onClick={onSelect}
+            onClick={() => onSelect(device)}
         >
             <div 
                 ref={ref} 
                 className={`w-full h-full border shadow-sm rounded-md flex items-center justify-between cursor-pointer transition-all duration-200 ${colorClass} ${isSelected ? 'ring-2 ring-primary' : ''}`}
             >
-                <div ref={drag} className="cursor-move p-2 self-stretch flex items-center rounded-l-md hover:bg-black/10">
+                <div ref={drag as any} className="cursor-move p-2 self-stretch flex items-center rounded-l-md hover:bg-black/10">
                      <GripVertical className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div className="flex-1 text-center truncate px-1">
@@ -101,14 +110,20 @@ const DraggableRackItem = ({ device, rackSize, onSelect, isSelected, onMove, onR
 };
 
 // --- RACK DROP ZONE (U-SLOT) ---
-const RackSlot = ({ u, onDropDevice, children }) => {
+interface RackSlotProps {
+  u: number;
+  onDropDevice: (u: number) => void;
+  children?: React.ReactNode;
+}
+
+const RackSlot = ({ u, onDropDevice, children }: RackSlotProps) => {
     const [, drop] = useDrop(() => ({
         accept: ItemTypes.RACK_DEVICE,
         drop: () => ({ uPosition: u }),
     }));
 
     return (
-        <div ref={drop} className="h-full w-full relative">
+        <div ref={drop as any} className="h-full w-full relative">
             {children}
         </div>
     );
@@ -116,7 +131,15 @@ const RackSlot = ({ u, onDropDevice, children }) => {
 
 
 // --- ADD DEVICE DIALOG ---
-const AddDeviceDialog = ({ isOpen, onOpenChange, onAddDevice, rackDevices, rackSize }) => {
+interface AddDeviceDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAddDevice: (deviceType: DeviceType, uPosition: number) => void;
+  rackDevices: RackDevice[];
+  rackSize: number;
+}
+
+const AddDeviceDialog = ({ isOpen, onOpenChange, onAddDevice, rackDevices, rackSize }: AddDeviceDialogProps) => {
     const [deviceType, setDeviceType] = useState<DeviceType | ''>('');
     const [uPosition, setUPosition] = useState<number>(1);
     const [error, setError] = useState('');
@@ -126,7 +149,7 @@ const AddDeviceDialog = ({ isOpen, onOpenChange, onAddDevice, rackDevices, rackS
 
         const config = DEVICE_CONFIG[deviceType];
         const uHeight = config?.defaults.uHeight || 1;
-        const occupied = new Array(rackSize + 1).fill(false);
+        const occupied = new Array(rackSize + 1).fill(false) as boolean[];
         rackDevices.forEach(d => {
             for (let i = 0; i < d.uHeight; i++) {
                 if (d.uPosition + i <= rackSize) {
@@ -187,7 +210,7 @@ const AddDeviceDialog = ({ isOpen, onOpenChange, onAddDevice, rackDevices, rackS
                             <SelectContent>
                                 {RACK_DEVICE_TYPES.map(type => (
                                     <SelectItem key={type} value={type}>
-                                        {DEVICE_CONFIG[type].name} ({DEVICE_CONFIG[type].defaults.uHeight}U)
+                                        {(DEVICE_CONFIG as any)[type].name} ({(DEVICE_CONFIG as any)[type].defaults.uHeight}U)
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -329,14 +352,14 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
       }
   };
   
-  const handleMoveDevice = (deviceId: string, newUPosition: number) => {
+  const handleMoveDevice = (device: RackDevice, newUPosition: number) => {
       const newRackState = produce(internalRack, draft => {
-          const deviceToMove = draft.devices.find(d => d.id === deviceId);
+          const deviceToMove = draft.devices.find(d => d.id === device.id);
           if (deviceToMove) {
             const uHeight = deviceToMove.uHeight;
             
             const isOccupied = draft.devices.some(d => {
-                if (d.id === deviceId) return false;
+                if (d.id === device.id) return false;
                 const startA = d.uPosition;
                 const endA = d.uPosition + d.uHeight - 1;
                 const startB = newUPosition;
@@ -417,7 +440,8 @@ export function RackElevationView({ rack, isOpen, onClose, onUpdateRack }: RackE
                       className="relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:border-b after:border-dashed after:border-border/50"
                       style={{ gridRow: `${rackSize - i} / span 1` }}
                     >
-                        <RackSlot u={i + 1} onDropDevice={() => {}} />
+                        <RackSlot u={i + 1} onDropDevice={() => {}}>
+                        </RackSlot>
                     </div>
                   ))}
                 </div>

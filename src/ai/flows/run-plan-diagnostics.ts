@@ -85,7 +85,7 @@ const runPlanDiagnosticsFlow = ai.defineFlow(
       console.error("Failed to parse diagnostics response:", e);
       return {
         diagnostics: [{
-          severity: 'error',
+          severity: 'error' as const,
           message: 'Failed to run AI diagnostics. The AI response was not in the expected format.',
           relatedDevices: [],
         }],

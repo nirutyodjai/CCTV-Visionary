@@ -24,7 +24,7 @@ export function NetworkSettings({ vlans, subnets, onAddVlan, onAddSubnet }: Netw
 
   const handleAddVlan = () => {
     if (newVlanName && newVlanId) {
-      onAddVlan({ name: newVlanName, id: parseInt(newVlanId), color: `hsl(${Math.random() * 360}, 90%, 54%)` });
+      onAddVlan({ name: newVlanName, color: `hsl(${Math.random() * 360}, 90%, 54%)` });
       setNewVlanName('');
       setNewVlanId('');
     }

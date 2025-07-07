@@ -1,5 +1,5 @@
-
 import type { DiagnosticResult } from "@/ai/flows/run-plan-diagnostics";
+import type { ComponentType } from 'react';
 
 export type DeviceType =
   | 'cctv-bullet'
@@ -16,7 +16,10 @@ export type DeviceType =
   // Rack-specific devices
   | 'patch-panel'
   | 'pdu'
-  | 'ups';
+  | 'ups'
+  | 'table';
+
+export type RackDeviceType = 'nvr' | 'switch' | 'patch-panel' | 'pdu' | 'ups';
 
 export type ArchitecturalElementType = 'wall' | 'door' | 'window' | 'table' | 'chair' | 'elevator' | 'fire-escape' | 'shaft' | 'tree' | 'motorcycle' | 'car' | 'supercar' | 'area';
 export type CableType = 'utp-cat6' | 'fiber-optic';
@@ -96,7 +99,7 @@ export interface RackContainer extends BaseDevice {
 }
 
 
-export type AnyDevice = BaseDevice & { [key: a: string]: any };
+export type AnyDevice = BaseDevice & { [key: string]: any };
 export type Device = AnyDevice;
 
 
@@ -161,6 +164,14 @@ export interface ProjectState {
 export interface CablingMode {
   enabled: boolean;
   fromDeviceId: string | null;
+  cableType: CableType;
+}
+
+export interface DeviceConfig {
+  name: string;
+  icon: ComponentType<any>;
+  defaults: Partial<AnyDevice>;
+  colorClass?: string;
 }
 
 export type SelectableItem = AnyDevice | ArchitecturalElement;

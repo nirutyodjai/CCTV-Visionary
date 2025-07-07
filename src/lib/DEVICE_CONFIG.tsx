@@ -1,8 +1,9 @@
-import { CctvBulletIcon, CctvDomeIcon, CctvPtzIcon, WifiApIcon, NvrIcon, SwitchIcon, MonitorIcon, UtpCat6Icon, FiberOpticIcon, RackIcon } from "@/components/icons";
-import type { DeviceType, Device } from "./types";
+import { CctvBulletIcon, CctvDomeIcon, CctvPtzIcon, WifiApIcon, NvrIcon, SwitchIcon, MonitorIcon, UtpCat6Icon, FiberOpticIcon, RackIcon, TableIcon } from "@/components/icons";
+import { Server, Zap, HardDrive, PanelTop, Power } from 'lucide-react';
+import type { DeviceType, Device, DeviceConfig } from "./types";
 
 
-export const DEVICE_CONFIG: Record<DeviceType, { name: string; icon: React.ComponentType<any>; defaults: Partial<Device>; }> = {
+export const DEVICE_CONFIG: Record<DeviceType, DeviceConfig> = {
   'cctv-bullet': { name: 'กล้องกระบอก', icon: CctvBulletIcon, defaults: { resolution: '1080p', fov: 90, range: 20, rotation: 0 } },
   'cctv-dome': { name: 'กล้องโดม', icon: CctvDomeIcon, defaults: { resolution: '1080p', fov: 90, range: 20, rotation: 0 } },
   'cctv-ptz': { name: 'กล้อง PTZ', icon: CctvPtzIcon, defaults: { resolution: '1080p', fov: 120, range: 30, rotation: 0 } },
@@ -14,6 +15,10 @@ export const DEVICE_CONFIG: Record<DeviceType, { name: string; icon: React.Compo
   'fiber-optic': { name: 'Fiber Optic', icon: FiberOpticIcon, defaults: { length: 10 } },
   'rack-indoor': { name: 'ตู้ Rack (Indoor)', icon: RackIcon, defaults: { size: '9U' } },
   'rack-outdoor': { name: 'ตู้ Rack (Outdoor)', icon: RackIcon, defaults: { size: '9U', ip_rating: 'IP65' } },
+  'patch-panel': { name: 'Patch Panel', icon: PanelTop, defaults: { ports: 24, uHeight: 1 } },
+  'pdu': { name: 'PDU', icon: Power, defaults: { powerCapacity: 32, uHeight: 1 } },
+  'ups': { name: 'UPS', icon: HardDrive, defaults: { powerCapacity: 1000, uHeight: 2 } },
+  'table': { name: 'โต๊ะ', icon: TableIcon, defaults: {} },
 };
 
 export function createDevice(type: DeviceType, x: number, y: number, existingDevices: Device[]): Device {

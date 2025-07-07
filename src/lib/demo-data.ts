@@ -87,8 +87,8 @@ export function generateDemoProject(): ProjectState {
       { id: 30, name: 'WAREHOUSE-VLAN', color: 'hsl(var(--success))' },
     ],
     subnets: [
-        { id: 'sub_demo_1', cidr: '10.10.10.0/24', buildingId: building1.id, vlanId: 20 },
-        { id: 'sub_demo_2', cidr: '10.10.20.0/24', buildingId: building2.id, vlanId: 30 },
+        { id: 'sub_demo_1', cidr: '10.10.10.0/24', buildingId: building1.id },
+        { id: 'sub_demo_2', cidr: '10.10.20.0/24', buildingId: building2.id },
     ],
   };
 

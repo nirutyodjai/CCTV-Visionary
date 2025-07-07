@@ -96,7 +96,7 @@ export function PlannerCanvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx || !virtualWidth || !virtualHeight) return;
+    if (!ctx || !canvas || !virtualWidth || !virtualHeight) return;
 
     if (canvas.width !== virtualWidth) canvas.width = virtualWidth;
     if (canvas.height !== virtualHeight) canvas.height = virtualHeight;
