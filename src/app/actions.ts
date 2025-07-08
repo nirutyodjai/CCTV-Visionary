@@ -10,7 +10,15 @@ import { runPlanDiagnostics as runPlanDiagnosticsFlow, type Plan, type Diagnosti
 import type { ProjectState } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, deleteDoc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
+import { withAICache } from '@/lib/ai-cache';
 
+
+// Cached AI flows for better performance
+const cachedAnalyzeCctvPlan = withAICache('analyzeCctvPlan', analyzeCctvPlanFlow, { ttl: 10 * 60 * 1000 }); // 10 minutes
+const cachedSuggestDevicePlacements = withAICache('suggestDevicePlacements', suggestDevicePlacementsFlow, { ttl: 15 * 60 * 1000 }); // 15 minutes
+const cachedFindCablePath = withAICache('findCablePath', findCablePathFlow, { ttl: 30 * 60 * 1000 }); // 30 minutes
+const cachedGenerateLogicalTopologyLayout = withAICache('generateLogicalTopologyLayout', generateLogicalTopologyLayoutFlow, { ttl: 20 * 60 * 1000 }); // 20 minutes
+const cachedRunPlanDiagnostics = withAICache('runPlanDiagnostics', runPlanDiagnosticsFlow, { ttl: 5 * 60 * 1000 }); // 5 minutes
 
 // Helper to wrap flow calls for consistent error handling
 async function safeFlowCall<TInput, TOutput>(
@@ -27,21 +35,21 @@ async function safeFlowCall<TInput, TOutput>(
     }
 }
 
-// Exported Server Actions
+// Exported Server Actions with caching
 export async function analyzeCctvPlanAction(input: AnalyzeCctvPlanInput) {
-    return safeFlowCall('analyzeCctvPlan', analyzeCctvPlanFlow, input);
+    return safeFlowCall('analyzeCctvPlan', cachedAnalyzeCctvPlan, input);
 }
 
 export async function suggestDevicePlacementsAction(input: SuggestDevicePlacementsInput) {
-    return safeFlowCall('suggestDevicePlacements', suggestDevicePlacementsFlow, input);
+    return safeFlowCall('suggestDevicePlacements', cachedSuggestDevicePlacements, input);
 }
 
 export async function findCablePathAction(input: CablePathInput) {
-    return safeFlowCall('findCablePath', findCablePathFlow, input);
+    return safeFlowCall('findCablePath', cachedFindCablePath, input);
 }
 
 export async function generateLogicalTopologyLayoutAction(input: LayoutInput) {
-    return safeFlowCall('generateLogicalTopologyLayout', generateLogicalTopologyLayoutFlow, input);
+    return safeFlowCall('generateLogicalTopologyLayout', cachedGenerateLogicalTopologyLayout, input);
 }
 
 export async function generateReportLayoutAction(input: ReportInfo) {
@@ -53,7 +61,7 @@ export async function getDeviceDetailsAction(input: DeviceInfo) {
 }
 
 export async function runPlanDiagnosticsAction(plan: Plan) {
-    return safeFlowCall('runPlanDiagnostics', runPlanDiagnosticsFlow, plan);
+    return safeFlowCall('runPlanDiagnostics', cachedRunPlanDiagnostics, plan);
 }
 
 
