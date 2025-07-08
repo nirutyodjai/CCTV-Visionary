@@ -1,24 +1,29 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import type { AnyDevice } from '@/lib/types';
 import { DEVICE_CONFIG } from '@/lib/device-config';
 import { useSelection } from '@/contexts/SelectionContext';
 import { motion } from 'framer-motion';
 import { CameraFovRenderer } from './camera-fov-renderer';
+import { GripVertical } from 'lucide-react';
 
 interface DeviceRendererProps {
   device: AnyDevice;
   onDevicePointerDown: (e: React.PointerEvent, device: AnyDevice) => void;
+  onRotationPointerDown: (e: React.PointerEvent, device: AnyDevice) => void;
   virtualWidth: number;
   virtualHeight: number;
 }
 
-// A scale factor for converting meters to pixels on the canvas.
-// This is an assumption and might need adjustment if a real-world scale is introduced.
 const PIXELS_PER_METER = 8;
 
-
-export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevicePointerDown, virtualWidth, virtualHeight }) => {
+const DeviceRendererComponent: React.FC<DeviceRendererProps> = ({ 
+  device, 
+  onDevicePointerDown,
+  onRotationPointerDown,
+  virtualWidth, 
+  virtualHeight 
+}) => {
   const { selectedItem } = useSelection();
   const isSelected = selectedItem?.id === device.id;
   
@@ -29,30 +34,28 @@ export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevice
   const colorClass = config.colorClass || 'bg-card';
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    e.stopPropagation();
     onDevicePointerDown(e, device);
   };
-  
-  // The icon is w-12 h-12, which is 48px. Its center offset is 24px.
-  const iconOffset = 24; 
 
-  // Calculate the exact top-left position for the icon itself to be centered on the target point.
+  const handleRotationHandlePointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    onRotationPointerDown(e, device);
+  };
+  
+  const iconOffset = 24; 
   const iconLeft = Math.round(device.x * virtualWidth) - iconOffset;
   const iconTop = Math.round(device.y * virtualHeight) - iconOffset;
-
   const isCamera = device.type.startsWith('cctv-');
 
   return (
-    // This container is for event handling and grouping.
-    // It is sized and positioned exactly where the icon should be.
     <div
       className="absolute cursor-grab"
       style={{
         left: `${iconLeft}px`,
         top: `${iconTop}px`,
-        pointerEvents: 'auto',
         width: '48px',
         height: '48px',
+        transform: `rotate(${device.rotation || 0}deg)`,
       }}
       onPointerDown={handlePointerDown}
     >
@@ -83,15 +86,22 @@ export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevice
           <IconComponent className="w-6 h-6 text-card-foreground" />
         </div>
         
-        {/* The label is positioned absolutely relative to the icon's container. */}
+        {isSelected && (
+          <div
+            className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-4 h-8 cursor-grab bg-primary rounded-full z-20 flex items-center justify-center"
+            onPointerDown={handleRotationHandlePointerDown}
+          >
+            <GripVertical className="w-4 h-4 text-primary-foreground" />
+          </div>
+        )}
+        
         <p 
           className={`
             absolute top-full left-1/2 -translate-x-1/2
             mt-2 text-xs font-semibold px-2 py-1 rounded-md transition-all z-20
             ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground shadow'}
           `}
-          // Stop pointer events on the label so they pass through to the main div
-          style={{ pointerEvents: 'none' }} 
+          style={{ pointerEvents: 'none', transform: `rotate(-${device.rotation || 0}deg)` }} 
         >
           {device.label}
         </p>
@@ -99,3 +109,5 @@ export const DeviceRenderer: React.FC<DeviceRendererProps> = ({ device, onDevice
     </div>
   );
 };
+
+export const DeviceRenderer = memo(DeviceRendererComponent);

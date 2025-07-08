@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
           chunks: 'all',
           cacheGroups: {
             vendor: {
-              test: /[\\/]node_modules[\\/]/,
+              test: /[\/]node_modules[\/]/,
               chunks: 'all',
               name: 'vendors',
               enforce: true,
@@ -54,8 +54,6 @@ const nextConfig: NextConfig = {
   // Compression and optimization
   compress: true,
   poweredByHeader: false,
-  // Enable static optimization
-  swcMinify: true,
 };
 
 export default nextConfig;
