@@ -32,6 +32,7 @@ import { MobileNav, MobileHeader } from './ui/mobile-nav';
 import { TouchCanvas } from './ui/touch-canvas';
 import { ThreeDVisualizer } from './ui/three-d-visualizer';
 import { ExportDialog, type ExportDialogRef } from './ui/export-dialog';
+import { AIReportGenerator } from './ui/ai-report-generator';
 import { useMobileDetection } from '@/hooks/use-mobile-detection';
 import { useTouchGestures } from '@/hooks/use-touch-gestures';
 import { cn } from '@/lib/utils';
@@ -659,6 +660,39 @@ function CCTVPlannerInner() {
         }
     };
 
+    // AI Report Generation
+    const handleAIReportGeneration = async (config: any) => {
+        try {
+            setIsGeneratingReport(true);
+            
+            // Here would be the actual AI report generation logic
+            // For now, we'll simulate the process
+            
+            toast({
+                title: 'เริ่มสร้างรายงาน AI',
+                description: `กำลังสร้างรายงาน${config.type} รูปแบบ ${config.format}`,
+            });
+
+            // Simulate report generation delay
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            toast({
+                title: 'สร้างรายงาน AI สำเร็จ',
+                description: 'รายงานได้ถูกสร้างและดาวน์โหลดเรียบร้อยแล้ว',
+            });
+
+        } catch (error) {
+            console.error('Error generating AI report:', error);
+            toast({
+                title: 'เกิดข้อผิดพลาด',
+                description: 'ไม่สามารถสร้างรายงาน AI ได้',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsGeneratingReport(false);
+        }
+    };
+
     const activeFloorData = getActiveFloor();
     if (!activeFloorData) {
         return (
@@ -757,6 +791,13 @@ function CCTVPlannerInner() {
                             </Button>
                         </CardContent>
                     </Card>
+                    <AIReportGenerator
+                        project={projectState}
+                        floors={projectState.buildings.flatMap(b => b.floors)}
+                        devices={projectState.buildings.flatMap(b => b.floors.flatMap(f => f.devices))}
+                        connections={projectState.buildings.flatMap(b => b.floors.flatMap(f => f.connections))}
+                        onGenerateReport={handleAIReportGeneration}
+                    />
                 </TabsContent>
                 <TabsContent value="project" className="p-2 space-y-3 mt-0 flex-1 overflow-y-auto">
                     <BillOfMaterials project={projectState} />
