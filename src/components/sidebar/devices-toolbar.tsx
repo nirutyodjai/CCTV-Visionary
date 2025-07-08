@@ -20,6 +20,13 @@ const TOOLBAR_DEVICES: DeviceType[] = [
     'switch',
     'rack-indoor',
     'rack-outdoor',
+    'ups',
+    'pdu',
+    'patch-panel',
+    'monitor',
+    'table',
+    'utp-cat6',
+    'fiber-optic',
 ];
 
 // Assign consistent colors for better UX
@@ -32,6 +39,13 @@ const deviceToolColors: { [key in DeviceType]?: string } = {
     'switch': 'hsl(24, 95%, 53%)',
     'rack-indoor': 'hsl(215, 20%, 65%)',
     'rack-outdoor': 'hsl(215, 20%, 65%)',
+    'ups': 'hsl(142, 71%, 45%)',
+    'pdu': 'hsl(45, 95%, 53%)',
+    'patch-panel': 'hsl(215, 20%, 65%)',
+    'monitor': 'hsl(295, 71%, 45%)',
+    'table': 'hsl(30, 30%, 70%)',
+    'utp-cat6': 'hsl(200, 80%, 50%)',
+    'fiber-optic': 'hsl(280, 80%, 50%)',
 };
 
 
@@ -50,7 +64,7 @@ export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
         </CardTitle>
       </CardHeader>
        <CardContent className="p-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
             {TOOLBAR_DEVICES.map(type => {
                 const config = DEVICE_CONFIG[type];
                 if (!config) return null;

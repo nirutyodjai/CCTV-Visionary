@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, FolderUp } from 'lucide-react';
+import { Loader2, FolderUp, Download } from 'lucide-react';
 
 interface PlanManagementProps {
   planName: string;
@@ -12,9 +12,10 @@ interface PlanManagementProps {
   onPlanNameChange: (name: string) => void;
   onSave: () => void;
   onOpenManager: () => void;
+  onExport?: () => void;
 }
 
-export function PlanManagement({ planName, onPlanNameChange, onSave, isSaving, onOpenManager }: PlanManagementProps) {
+export function PlanManagement({ planName, onPlanNameChange, onSave, isSaving, onOpenManager, onExport }: PlanManagementProps) {
   return (
     <Card>
       <CardHeader className="p-3 border-b">
@@ -25,10 +26,16 @@ export function PlanManagement({ planName, onPlanNameChange, onSave, isSaving, o
                 Name and save your current project
               </CardDescription>
             </div>
-            <Button size="icon" variant="outline" onClick={onOpenManager}>
+            <div className="flex gap-1">
+              <Button size="icon" variant="outline" onClick={onExport}>
+                <Download className="w-4 h-4" />
+                <span className="sr-only">Export Project</span>
+              </Button>
+              <Button size="icon" variant="outline" onClick={onOpenManager}>
                 <FolderUp className="w-4 h-4" />
                 <span className="sr-only">Open Project Manager</span>
-            </Button>
+              </Button>
+            </div>
         </div>
       </CardHeader>
       <CardContent className="p-3">
