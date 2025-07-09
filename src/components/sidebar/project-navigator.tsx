@@ -3,7 +3,8 @@
 import * as React from 'react';
 import type { Building } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Building2, PlusCircle, Edit, Save } from 'lucide-react';
+import { PlusCircle, Edit, Save } from 'lucide-react';
+import { NavigatorIcon } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -56,7 +57,7 @@ export function ProjectNavigator({
     <Card>
         <CardHeader className="p-3 border-b">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Building2 className="w-4 h-4"/>
+                <NavigatorIcon className="w-4 h-4"/>
                 Building Plan
             </CardTitle>
         </CardHeader>

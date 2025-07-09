@@ -26,6 +26,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     onDrop,
     maxFiles,
     maxSize: maxSize ? maxSize * 1024 * 1024 : undefined,
+    accept: undefined, // Accept all file types
+    multiple: true, // Allow multiple files
   });
 
   return (

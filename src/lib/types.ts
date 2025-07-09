@@ -1,8 +1,15 @@
 
 export type DeviceType = 
-  | 'cctv-bullet' | 'cctv-dome' | 'cctv-ptz' 
-  | 'monitor' | 'nvr' | 'rack' | 'switch' | 'wifi-ap'
-  | 'utp-cat6' | 'fiber-optic';
+  // CCTV / Surveillance
+  | 'cctv-bullet' | 'cctv-dome' | 'cctv-ptz' | 'monitor' | 'nvr'
+  // Network / Communication  
+  | 'rack' | 'switch' | 'wifi-ap' | 'utp-cat6' | 'fiber-optic' | 'datacenter' | 'network' | 'communication'
+  // Electrical / MEP
+  | 'electrical-panel' | 'bms' | 'fire-alarm'
+  // Security Systems
+  | 'access-control' | 'pa-system' | 'audio-system' | 'matv' | 'satellite' | 'nursecall'
+  // Architectural
+  | 'table' | 'elevator';
 
 export interface DeviceConfig {
   type: DeviceType;

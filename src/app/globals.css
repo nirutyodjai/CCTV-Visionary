@@ -91,13 +91,28 @@
     text-shadow: 0 0 8px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
   }
 
+  /* Button Styles */
+  .btn-glow {
+    position: relative;
+    background: linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4);
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    transition: all 0.3s ease;
+  }
+  
+  .btn-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
+  }
+
   /* Decorative Elements */
   .cyber-line::after {
     content: '';
     display: block;
     width: 60px;
     height: 3px;
-    background: hsl(var(--primary));
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
     margin: 10px auto 0;
     border-radius: 2px;
     box-shadow: 0 0 8px hsl(var(--primary) / 0.8);
@@ -190,6 +205,12 @@
 
 
 /* Keyframe Animations */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 @keyframes grid-pan {
   0% { background-position: 0 0; }
   100% { background-position: 40px 40px; }

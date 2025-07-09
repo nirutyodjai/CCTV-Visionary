@@ -15,8 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { RackContainer, RackDevice, DeviceType } from '@/lib/types';
-import { DEVICE_CONFIG, RACK_DEVICE_TYPES } from '@/lib/device-config';
+import { DEVICE_CONFIG } from '@/lib/device-config';
 import { Zap, Trash2, GripVertical } from 'lucide-react';
+
+// Rack-mountable device types
+const RACK_DEVICE_TYPES: DeviceType[] = ['nvr', 'switch', 'monitor'];
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
