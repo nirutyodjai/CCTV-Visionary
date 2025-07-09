@@ -52,6 +52,13 @@ const featureList = [
         bgColor: "bg-cyan-500/20"
     },
     {
+        icon: Monitor,
+        title: "ระบบจำลองสถานการณ์",
+        description: "จำลองการทำงานของระบบในสถานการณ์ต่างๆ ทดสอบประสิทธิภาพเครือข่าย ดูภาพจากกล้องในสภาพแวดล้อมจำลอง และวิเคราะห์การแจ้งเตือนอัจฉริยะ",
+        color: "text-indigo-400",
+        bgColor: "bg-indigo-500/20"
+    },
+    {
         icon: ListChecks,
         title: "รายการวัสดุอัจฉริยะ (BOM)",
         description: "คำนวณและสร้างรายการอุปกรณ์ที่จำเป็นโดยอัตโนมัติ พร้อมจำนวน ราคาประเมิน สเปกทางเทคนิค และข้อมูลผู้จำหน่าย",
@@ -304,6 +311,9 @@ export default function LandingPage() {
             <a href="/planner" className="btn-glow px-8 py-3 rounded-md font-medium text-lg shimmer bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all duration-300">
               เริ่มใช้งานเลย - ฟรี!
             </a>
+            <a href="/simulation" className="px-8 py-3 bg-transparent text-indigo-300 border border-indigo-500 rounded-md font-medium text-lg hover:bg-indigo-900/30 transition-colors neon-border">
+              ระบบจำลองสถานการณ์
+            </a>
             <a href="#features" className="px-8 py-3 bg-transparent text-blue-300 border border-blue-500 rounded-md font-medium text-lg hover:bg-blue-900/30 transition-colors neon-border">
               ดูตัวอย่างการใช้งาน
             </a>
@@ -335,6 +345,7 @@ export default function LandingPage() {
                 <li>• AI Planning Assistant</li>
                 <li>• 3D Visualization</li>
                 <li>• Network Topology</li>
+                <li>• Simulation System</li>
                 <li>• Auto BOM Generation</li>
               </ul>
             </div>

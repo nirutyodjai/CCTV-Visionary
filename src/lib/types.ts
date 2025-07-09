@@ -1,9 +1,8 @@
-
 export type DeviceType = 
   // CCTV / Surveillance
-  | 'cctv-bullet' | 'cctv-dome' | 'cctv-ptz' | 'monitor' | 'nvr'
+  | 'cctv-bullet' | 'cctv-dome' | 'cctv-ptz' | 'monitor' | 'nvr' | 'thermal-camera'
   // Network / Communication  
-  | 'rack' | 'switch' | 'wifi-ap' | 'utp-cat6' | 'fiber-optic' | 'datacenter' | 'network' | 'communication'
+  | 'rack' | 'rack-indoor' | 'rack-outdoor' | 'patch-panel' | 'pdu' | 'ups' | 'switch' | 'wifi-ap' | 'utp-cat6' | 'fiber-optic' | 'datacenter' | 'network' | 'communication'
   // Electrical / MEP
   | 'electrical-panel' | 'bms' | 'fire-alarm'
   // Security Systems
@@ -12,11 +11,9 @@ export type DeviceType =
   | 'table' | 'elevator';
 
 export interface DeviceConfig {
-  type: DeviceType;
-  label: string;
-  icon: React.ComponentType<any>;
-  colorClass: string;
-  properties: Partial<AnyDevice>;
+  name: string;
+  icon: React.ComponentType;
+  defaults: Record<string, any>;
 }
 
 export interface BaseDevice {
@@ -138,4 +135,79 @@ export interface VLAN {
 export interface Subnet {
   id: string;
   cidr: string;
+}
+
+export interface SimulationScenario {
+  id: string;
+  name: string;
+  description: string;
+  triggers?: Array<{
+    time: number; // seconds into simulation
+    type: 'network_failure' | 'power_outage' | 'camera_tampering' | 'storage_full';
+    message?: string;
+    severity?: 'info' | 'warning' | 'critical';
+    effects?: {
+      network?: 'degraded' | 'critical';
+      cameras?: 'degraded' | 'critical';
+      storage?: 'degraded' | 'critical';
+      power?: 'degraded' | 'critical';
+    };
+    activated?: boolean;
+  }>;
+}
+
+export interface ThermalCameraDevice extends BaseDevice {
+  type: 'thermal-camera';
+  subtype?: 'thermal';
+  specs: {
+    resolution: string;
+    thermalSensitivity: string;
+    temperatureRange: string;
+    calibrationMode: 'auto' | 'manual' | 'scheduled';
+    spectralRange: string;
+    frameRate: number;
+    temperatureAlarms?: {
+      high: number;
+      low: number;
+      enabled: boolean;
+    };
+    calibrationSchedule?: {
+      interval: number; // ชั่วโมง
+      lastCalibration: Date;
+      nextCalibration: Date;
+    };
+    referencePoints?: Array<{
+      x: number;
+      y: number;
+      expectedTemp: number;
+      actualTemp: number;
+      description: string;
+    }>;
+  };
+}
+
+export interface ThermalCalibrationData {
+  deviceId: string;
+  referencePoints: Array<{
+    x: number;
+    y: number;
+    expectedTemp: number;
+    actualTemp: number;
+    description: string;
+  }>;
+  calibrationHistory: Array<{
+    timestamp: Date;
+    temperatureOffset: number;
+    gainAdjustment: number;
+    ambientTemp: number;
+    success: boolean;
+    notes?: string;
+  }>;
+  status: {
+    lastCalibration: Date;
+    nextScheduledCalibration: Date;
+    calibrationMode: 'auto' | 'manual' | 'scheduled';
+    currentAccuracy: number;
+    requiresCalibration: boolean;
+  };
 }
