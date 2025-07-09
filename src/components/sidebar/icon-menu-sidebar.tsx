@@ -59,12 +59,12 @@ export function IconMenuSidebar({
   isCollapsed = false,
   onToggleCollapse 
 }: IconMenuSidebarProps) {
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(['main', 'tools']);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(['planning', 'designing']);
 
   const menuGroups: MenuGroup[] = [
     {
-      id: 'main',
-      title: 'หลัก',
+      id: 'planning',
+      title: '🔄 วางแผน',
       items: [
         {
           id: 'dashboard',
@@ -82,7 +82,7 @@ export function IconMenuSidebar({
         },
         {
           id: 'files',
-          title: 'ไฟล์',
+          title: 'ไฟล์และแบบแปลน',
           icon: FilesIcon,
           color: 'text-purple-500',
           onClick: () => onTabChange('files')
@@ -90,9 +90,16 @@ export function IconMenuSidebar({
       ]
     },
     {
-      id: 'tools',
-      title: 'เครื่องมือ',
+      id: 'designing',
+      title: '🏗️ ออกแบบ',
       items: [
+        {
+          id: 'architecture',
+          title: 'สถาปัตยกรรม',
+          icon: ArchitectureIcon,
+          color: 'text-cyan-500',
+          onClick: () => onTabChange('architecture')
+        },
         {
           id: 'devices',
           title: 'อุปกรณ์ CCTV',
@@ -102,15 +109,8 @@ export function IconMenuSidebar({
           onClick: () => onTabChange('devices')
         },
         {
-          id: 'architecture',
-          title: 'สถาปัตยกรรม',
-          icon: ArchitectureIcon,
-          color: 'text-cyan-500',
-          onClick: () => onTabChange('architecture')
-        },
-        {
           id: 'network',
-          title: 'เครือข่าย',
+          title: 'ระบบเครือข่าย',
           icon: NetworkIcon,
           color: 'text-indigo-500',
           onClick: () => onTabChange('network')
@@ -125,8 +125,8 @@ export function IconMenuSidebar({
       ]
     },
     {
-      id: 'analysis',
-      title: 'วิเคราะห์',
+      id: 'analyzing',
+      title: '🤖 วิเคราะห์',
       items: [
         {
           id: 'ai',
@@ -150,20 +150,20 @@ export function IconMenuSidebar({
           icon: AnalyticsIcon,
           color: 'text-amber-500',
           onClick: () => onTabChange('analytics')
-        },
+        }
+      ]
+    },
+    {
+      id: 'verifying',
+      title: '✅ ตรวจสอบ',
+      items: [
         {
           id: 'monitoring',
           title: 'การตรวจสอบ',
           icon: MonitoringIcon,
           color: 'text-emerald-500',
           onClick: () => onTabChange('monitoring')
-        }
-      ]
-    },
-    {
-      id: 'management',
-      title: 'จัดการ',
-      items: [
+        },
         {
           id: 'datacenter',
           title: 'ศูนย์ข้อมูล',
@@ -177,19 +177,12 @@ export function IconMenuSidebar({
           icon: SecurityIcon,
           color: 'text-rose-500',
           onClick: () => onTabChange('security')
-        },
-        {
-          id: 'connect',
-          title: 'การเชื่อมต่อ',
-          icon: ConnectIcon,
-          color: 'text-violet-500',
-          onClick: () => onTabChange('connect')
         }
       ]
     },
     {
-      id: 'export',
-      title: 'ส่งออก',
+      id: 'finalizing',
+      title: '📤 ส่งมอบ',
       items: [
         {
           id: 'report',
@@ -206,18 +199,25 @@ export function IconMenuSidebar({
           onClick: () => onTabChange('export')
         },
         {
-          id: 'history',
-          title: 'ประวัติ',
-          icon: HistoryIcon,
-          color: 'text-gray-500',
-          onClick: () => onTabChange('history')
+          id: 'connect',
+          title: 'แชร์โปรเจ็กต์',
+          icon: ConnectIcon,
+          color: 'text-violet-500',
+          onClick: () => onTabChange('connect')
         }
       ]
     },
     {
-      id: 'system',
-      title: 'ระบบ',
+      id: 'support',
+      title: '❓ ช่วยเหลือ',
       items: [
+        {
+          id: 'history',
+          title: 'ประวัติการทำงาน',
+          icon: HistoryIcon,
+          color: 'text-gray-500',
+          onClick: () => onTabChange('history')
+        },
         {
           id: 'settings',
           title: 'การตั้งค่า',

@@ -28,6 +28,11 @@ export interface BaseDevice {
   rotation: number; // 0-360 degrees
   price?: number;
   powerConsumption?: number;
+  ipAddress?: string;
+  macAddress?: string;
+  vlanId?: number;
+  status?: 'online' | 'offline' | 'error' | 'installed';
+  specifications?: Record<string, any>;
 }
 
 export interface CameraDevice extends BaseDevice {
@@ -42,12 +47,15 @@ export interface NetworkDevice extends BaseDevice {
   type: 'nvr' | 'switch';
   ports: number;
   channels?: number; // for NVR
+  uHeight?: number;
 }
 
 export interface RackContainer extends BaseDevice {
     type: 'rack';
     uHeight: number;
     devices: AnyDevice[];
+    rack_size?: string;
+    ip_rating?: string; // for outdoor racks
 }
 
 export type AnyDevice = BaseDevice | CameraDevice | NetworkDevice | RackContainer;
@@ -56,16 +64,39 @@ export interface Connection {
   id: string;
   fromDeviceId: string;
   toDeviceId: string;
-  cableType: 'utp-cat6' | 'fiber-optic';
+  cableType: 'utp-cat6' | 'fiber-optic' | 'coaxial' | 'power';
   path?: { x: number, y: number }[];
+  length?: number;
+  color?: string;
+  price?: number;
+  specifications?: {
+    bandwidth?: string;
+    maxLength?: number;
+    shielding?: string;
+    conduitRequired?: boolean;
+    conduitType?: string;
+  };
 }
 
-export type ArchitecturalElementType = 'wall' | 'door' | 'window';
+export type ArchitecturalElementType = 'wall' | 'door' | 'window' | 'table' | 'chair' | 'elevator' | 'fire-escape' | 'shaft' | 'tree' | 'motorcycle' | 'car' | 'supercar' | 'area';
 
 export interface ArchitecturalElement {
   id: string;
   type: ArchitecturalElementType;
   points: { x: number, y: number }[];
+  color?: string;
+  opacity?: number;
+  width?: number;
+  height?: number;
+  scale?: number;
+  shadow?: {
+    enabled: boolean;
+    offsetX: number;
+    offsetY: number;
+    blur: number;
+    opacity: number;
+    color: string;
+  };
 }
 
 export interface Floor {
@@ -96,4 +127,15 @@ export interface CablingMode {
     cableType: CableType;
 }
 
-export type CableType = 'utp-cat6' | 'fiber-optic';
+export type CableType = 'utp-cat6' | 'fiber-optic' | 'coaxial' | 'power';
+
+export interface VLAN {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface Subnet {
+  id: string;
+  cidr: string;
+}

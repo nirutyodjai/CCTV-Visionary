@@ -100,30 +100,69 @@ export function IconMenuDemo() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950 border">
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                      📷 อุปกรณ์ CCTV
-                    </h3>
-                    <p className="text-2xl font-bold text-blue-600">24</p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">กล้องทั้งหมด</p>
+                <div className="space-y-4">
+                  {/* สถิติโครงการ */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950 border">
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                        📷 อุปกรณ์ CCTV
+                      </h3>
+                      <p className="text-2xl font-bold text-blue-600">24</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">กล้องทั้งหมด</p>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950 border">
+                      <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">
+                        🌐 เครือข่าย
+                      </h3>
+                      <p className="text-2xl font-bold text-green-600">98%</p>
+                      <p className="text-sm text-green-700 dark:text-green-300">การเชื่อมต่อ</p>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950 border">
+                      <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                        ⚡ ประสิทธิภาพ
+                      </h3>
+                      <p className="text-2xl font-bold text-purple-600">95%</p>
+                      <p className="text-sm text-purple-700 dark:text-purple-300">ระบบทำงาน</p>
+                    </div>
                   </div>
-                  
-                  <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950 border">
-                    <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">
-                      🌐 เครือข่าย
-                    </h3>
-                    <p className="text-2xl font-bold text-green-600">98%</p>
-                    <p className="text-sm text-green-700 dark:text-green-300">การเชื่อมต่อ</p>
-                  </div>
-                  
-                  <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950 border">
-                    <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">
-                      ⚡ ประสิทธิภาพ
-                    </h3>
-                    <p className="text-2xl font-bold text-purple-600">95%</p>
-                    <p className="text-sm text-purple-700 dark:text-purple-300">ระบบทำงาน</p>
-                  </div>
+
+                  {/* ขั้นตอนการทำงาน */}
+                  <Card className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900">
+                    <CardHeader>
+                      <CardTitle className="text-lg">🔄 ขั้นตอนการออกแบบ CCTV</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        <div className="text-center p-3 bg-blue-100 dark:bg-blue-900 rounded-lg cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" onClick={() => setActiveTab('project')}>
+                          <div className="text-2xl mb-2">📋</div>
+                          <div className="font-medium text-sm">1. วางแผน</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">โปรเจ็กต์ • ไฟล์</div>
+                        </div>
+                        <div className="text-center p-3 bg-green-100 dark:bg-green-900 rounded-lg cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 transition-colors" onClick={() => setActiveTab('devices')}>
+                          <div className="text-2xl mb-2">🏗️</div>
+                          <div className="font-medium text-sm">2. ออกแบบ</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">สถาปัตยกรรม • อุปกรณ์</div>
+                        </div>
+                        <div className="text-center p-3 bg-purple-100 dark:bg-purple-900 rounded-lg cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors" onClick={() => setActiveTab('ai')}>
+                          <div className="text-2xl mb-2">🤖</div>
+                          <div className="font-medium text-sm">3. วิเคราะห์</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">AI • การวินิจฉัย</div>
+                        </div>
+                        <div className="text-center p-3 bg-orange-100 dark:bg-orange-900 rounded-lg cursor-pointer hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors" onClick={() => setActiveTab('analytics')}>
+                          <div className="text-2xl mb-2">✅</div>
+                          <div className="font-medium text-sm">4. ตรวจสอบ</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">3D • จำลอง</div>
+                        </div>
+                        <div className="text-center p-3 bg-red-100 dark:bg-red-900 rounded-lg cursor-pointer hover:bg-red-200 dark:hover:bg-red-800 transition-colors" onClick={() => setActiveTab('export')}>
+                          <div className="text-2xl mb-2">📤</div>
+                          <div className="font-medium text-sm">5. ส่งมอบ</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">รายงาน • ส่งออก</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </CardContent>
             </Card>
@@ -347,6 +386,37 @@ export function IconMenuDemo() {
                 </Button>
                 <Button className="w-full" variant="outline">
                   💾 ส่งออกข้อมูลโครงการ JSON
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+        
+      case 'connect':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                🔗 แชร์โปรเจ็กต์
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>แชร์โปรเจ็กต์ให้ทีมงานและลูกค้า</p>
+              <div className="mt-4 space-y-2">
+                <Button className="w-full" variant="outline">
+                  📧 ส่งทางอีเมล
+                </Button>
+                <Button className="w-full" variant="outline">
+                  🔗 สร้างลิงก์แชร์
+                </Button>
+                <Button className="w-full" variant="outline">
+                  👥 เชิญทีมงาน
+                </Button>
+                <Button className="w-full" variant="outline">
+                  💼 ส่งให้ลูกค้า
+                </Button>
+                <Button className="w-full" variant="outline">
+                  🌐 เผยแพร่ออนไลน์
                 </Button>
               </div>
             </CardContent>
