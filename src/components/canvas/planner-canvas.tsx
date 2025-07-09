@@ -55,7 +55,7 @@ export function PlannerCanvas({
   }, [onDeviceMove, onDeviceUpdate, floor]);
 
   useEffect(() => {
-    if (floor.floorPlanUrl) {
+    if (floor?.floorPlanUrl) {
       const img = new Image();
       img.src = floor.floorPlanUrl;
       img.onload = () => setBgImage(img);
@@ -63,7 +63,7 @@ export function PlannerCanvas({
     } else {
       setBgImage(null);
     }
-  }, [floor.floorPlanUrl]);
+  }, [floor?.floorPlanUrl]);
 
   useEffect(() => {
     const updateRect = () => {

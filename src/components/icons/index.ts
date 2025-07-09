@@ -8,6 +8,16 @@ export * from './settings-icon';
 export * from './devices-icon';
 export * from './navigator-icon';
 export * from './architecture-icon';
+export * from './dashboard-icon';
+export * from './analytics-icon';
+export * from './security-icon';
+export * from './monitoring-icon';
+export * from './report-icon';
+export * from './export-icon';
+export * from './help-icon';
+export * from './layers-icon';
+export * from './connect-icon';
+export * from './diagnostics-icon';
 
 // CCTV / Surveillance
 export * from './cctv-bullet-icon';
