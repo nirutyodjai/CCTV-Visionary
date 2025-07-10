@@ -1,15 +1,12 @@
 'use client';
 
 import React from 'react';
-import { CCTVPlanner } from "@/components/cctv-planner";
-import PlannerLayout from './layout';
+import { IconMenuDemo } from '@/components/icon-menu-demo';
 
 export default function PlannerPage() {
   return (
-    <PlannerLayout>
-        <div className="bg-background">
-        <CCTVPlanner />
-        </div>
-    </PlannerLayout>
+    <div className="h-screen overflow-hidden">
+      <IconMenuDemo />
+    </div>
   );
 }

@@ -1,146 +1,133 @@
-import type { DiagnosticResult } from "@/ai/flows/run-plan-diagnostics";
-import type { ComponentType } from 'react';
+export type DeviceType = 
+  // CCTV / Surveillance
+  | 'cctv-bullet' | 'cctv-dome' | 'cctv-ptz' | 'monitor' | 'nvr' | 'thermal-camera'
+  // Network / Communication  
+  | 'rack' | 'rack-indoor' | 'rack-outdoor' | 'patch-panel' | 'pdu' | 'ups' | 'switch' | 'wifi-ap' | 'utp-cat6' | 'fiber-optic' | 'datacenter' | 'network' | 'communication'
+  // Electrical / MEP
+  | 'electrical-panel' | 'bms' | 'fire-alarm'
+  // Security Systems
+  | 'access-control' | 'pa-system' | 'audio-system' | 'matv' | 'satellite' | 'nursecall'
+  // Architectural
+  | 'table' | 'elevator';
 
-export type DeviceType =
-  | 'cctv-bullet'
-  | 'cctv-dome'
-  | 'cctv-ptz'
-  | 'wifi-ap'
-  | 'nvr'
-  | 'switch'
-  | 'monitor'
-  | 'utp-cat6'
-  | 'fiber-optic'
-  | 'rack-indoor'
-  | 'rack-outdoor'
-  // Rack-specific devices
-  | 'patch-panel'
-  | 'pdu'
-  | 'ups'
-  | 'table';
-
-export type RackDeviceType = 'nvr' | 'switch' | 'patch-panel' | 'pdu' | 'ups';
-
-export type ArchitecturalElementType = 'wall' | 'door' | 'window' | 'table' | 'chair' | 'elevator' | 'fire-escape' | 'shaft' | 'tree' | 'motorcycle' | 'car' | 'supercar' | 'area';
-export type CableType = 'utp-cat6' | 'fiber-optic';
-
-export interface Point {
-  x: number;
-  y: number;
-}
-
-export interface Shadow {
-  enabled: boolean;
-  offsetX: number;
-  offsetY: number;
-  blur: number;
-  color: string;
-  opacity: number;
+export interface DeviceConfig {
+  name: string;
+  icon: React.ComponentType;
+  defaults: Record<string, any>;
 }
 
 export interface BaseDevice {
   id: string;
   type: DeviceType;
   label: string;
-  x: number; // Relative coordinate on floor plan (0-1)
-  y: number; // Relative coordinate on floor plan (0-1)
+  x: number; // 0-1 percentage of width
+  y: number; // 0-1 percentage of height
+  rotation: number; // 0-360 degrees
   price?: number;
-  powerConsumption?: number; // in Watts
+  powerConsumption?: number;
   ipAddress?: string;
+  macAddress?: string;
   vlanId?: number;
+  status?: 'online' | 'offline' | 'error' | 'installed';
+  specifications?: Record<string, any>;
 }
 
-// Specific device types
 export interface CameraDevice extends BaseDevice {
   type: 'cctv-bullet' | 'cctv-dome' | 'cctv-ptz';
   resolution: string;
-  fov: number;
-  range: number;
-  rotation: number;
-  zoomLevel?: number;
+  fov: number; // Field of View in degrees
+  range: number; // in meters
+  zoomLevel?: number; // for PTZ
 }
 
-export interface WifiAPDevice extends BaseDevice {
-  type: 'wifi-ap';
-  range: number;
-}
-
-export interface NvrDevice extends BaseDevice {
-  type: 'nvr';
-  channels: number;
-  storage: string;
-  uHeight: number;
-}
-
-export interface SwitchDevice extends BaseDevice {
-  type: 'switch';
+export interface NetworkDevice extends BaseDevice {
+  type: 'nvr' | 'switch';
   ports: number;
-  uHeight: number;
+  channels?: number; // for NVR
+  uHeight?: number;
 }
 
-// Devices that can be placed inside a rack
-export interface RackDevice {
-    id: string;
-    type: DeviceType;
-    label: string;
-    uPosition: number; // Position from the bottom, starts at 1
-    uHeight: number;
-    price?: number;
-    powerConsumption?: number;
-    powerCapacity?: number; // For UPS/PDU
-}
-
-// Container devices
 export interface RackContainer extends BaseDevice {
-  type: 'rack-indoor' | 'rack-outdoor';
-  rack_size: string; // e.g. '9U', '42U'
-  ip_rating?: string;
-  devices: RackDevice[];
+    type: 'rack';
+    uHeight: number;
+    devices: AnyDevice[];
+    rack_size?: string;
+    ip_rating?: string; // for outdoor racks
 }
 
-
-export type AnyDevice = BaseDevice & { [key: string]: any };
-export type Device = AnyDevice;
-
+export type AnyDevice = BaseDevice | CameraDevice | NetworkDevice | RackContainer;
 
 export interface Connection {
   id: string;
   fromDeviceId: string;
   toDeviceId: string;
-  cableType: CableType;
+  cableType: 'utp-cat6' | 'fiber-optic' | 'coaxial' | 'power';
+  path?: { x: number, y: number }[];
   length?: number;
+  color?: string;
   price?: number;
-  path?: Point[];
+  specifications?: {
+    bandwidth?: string;
+    maxLength?: number;
+    shielding?: string;
+    conduitRequired?: boolean;
+    conduitType?: string;
+  };
 }
+
+export type ArchitecturalElementType = 'wall' | 'door' | 'window' | 'table' | 'chair' | 'elevator' | 'fire-escape' | 'shaft' | 'tree' | 'motorcycle' | 'car' | 'supercar' | 'area';
 
 export interface ArchitecturalElement {
   id: string;
   type: ArchitecturalElementType;
-  start: Point;
-  end: Point;
+  points: { x: number, y: number }[];
   color?: string;
-  shadow?: Partial<Shadow>;
+  opacity?: number;
+  width?: number;
+  height?: number;
   scale?: number;
+  shadow?: {
+    enabled: boolean;
+    offsetX: number;
+    offsetY: number;
+    blur: number;
+    opacity: number;
+    color: string;
+  };
 }
 
 export interface Floor {
   id: string;
   name: string;
-  floorPlanUrl: string | null;
+  floorPlanUrl?: string;
   devices: AnyDevice[];
   connections: Connection[];
   architecturalElements: ArchitecturalElement[];
-  diagnostics: DiagnosticResult['diagnostics'];
+  diagnostics?: any[];
 }
 
 export interface Building {
-  id:string;
+  id: string;
   name: string;
   floors: Floor[];
 }
 
+export interface ProjectState {
+  id: string;
+  projectName: string;
+  buildings: Building[];
+}
+
+export interface CablingMode {
+    enabled: boolean;
+    fromDeviceId: string | null;
+    cableType: CableType;
+}
+
+export type CableType = 'utp-cat6' | 'fiber-optic' | 'coaxial' | 'power';
+
 export interface VLAN {
-  id: number;
+  id: string;
   name: string;
   color: string;
 }
@@ -148,30 +135,79 @@ export interface VLAN {
 export interface Subnet {
   id: string;
   cidr: string;
-  gateway?: string;
-  buildingId: string;
-  floorId?: string;
 }
 
-export interface ProjectState {
+export interface SimulationScenario {
   id: string;
-  projectName: string;
-  buildings: Building[];
-  vlans: VLAN[];
-  subnets: Subnet[];
-}
-
-export interface CablingMode {
-  enabled: boolean;
-  fromDeviceId: string | null;
-  cableType: CableType;
-}
-
-export interface DeviceConfig {
   name: string;
-  icon: ComponentType<any>;
-  defaults: Partial<AnyDevice>;
-  colorClass?: string;
+  description: string;
+  triggers?: Array<{
+    time: number; // seconds into simulation
+    type: 'network_failure' | 'power_outage' | 'camera_tampering' | 'storage_full';
+    message?: string;
+    severity?: 'info' | 'warning' | 'critical';
+    effects?: {
+      network?: 'degraded' | 'critical';
+      cameras?: 'degraded' | 'critical';
+      storage?: 'degraded' | 'critical';
+      power?: 'degraded' | 'critical';
+    };
+    activated?: boolean;
+  }>;
 }
 
-export type SelectableItem = AnyDevice | ArchitecturalElement;
+export interface ThermalCameraDevice extends BaseDevice {
+  type: 'thermal-camera';
+  subtype?: 'thermal';
+  specs: {
+    resolution: string;
+    thermalSensitivity: string;
+    temperatureRange: string;
+    calibrationMode: 'auto' | 'manual' | 'scheduled';
+    spectralRange: string;
+    frameRate: number;
+    temperatureAlarms?: {
+      high: number;
+      low: number;
+      enabled: boolean;
+    };
+    calibrationSchedule?: {
+      interval: number; // ชั่วโมง
+      lastCalibration: Date;
+      nextCalibration: Date;
+    };
+    referencePoints?: Array<{
+      x: number;
+      y: number;
+      expectedTemp: number;
+      actualTemp: number;
+      description: string;
+    }>;
+  };
+}
+
+export interface ThermalCalibrationData {
+  deviceId: string;
+  referencePoints: Array<{
+    x: number;
+    y: number;
+    expectedTemp: number;
+    actualTemp: number;
+    description: string;
+  }>;
+  calibrationHistory: Array<{
+    timestamp: Date;
+    temperatureOffset: number;
+    gainAdjustment: number;
+    ambientTemp: number;
+    success: boolean;
+    notes?: string;
+  }>;
+  status: {
+    lastCalibration: Date;
+    nextScheduledCalibration: Date;
+    calibrationMode: 'auto' | 'manual' | 'scheduled';
+    currentAccuracy: number;
+    requiresCalibration: boolean;
+  };
+}

@@ -1,61 +1,38 @@
+
 'use client';
 
-import React from 'react';
-import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Button } from './button';
 
 interface ToolCardProps {
   icon: React.ReactNode;
   title: string;
-  subtitle: string;
-  color?: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
+  onClick: () => void;
 }
 
-export const ToolCard = ({
-  icon,
-  title,
-  subtitle,
-  color = 'hsl(var(--primary))',
-  checked,
-  onChange,
-}: ToolCardProps) => {
-  const id = React.useId();
-
-  const styles = {
-    '--tool-color': color,
-    '--tool-color-shadow': color.replace(')', ', 0.1)'),
-  } as React.CSSProperties;
-
+export function ToolCard({ icon, title, onClick }: ToolCardProps) {
   return (
-    <label htmlFor={id} style={styles}>
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="peer sr-only"
-      />
-      <div
-        className={cn(
-          "flex flex-col items-center justify-center w-full min-h-[7rem] p-2 rounded-lg transition-all duration-200 cursor-pointer relative",
-          "border-[3px] border-border dark:border-gray-700 text-muted-foreground",
-          "before:absolute before:block before:w-5 before:h-5 before:border-[3px] before:rounded-full before:top-1 before:left-1 before:opacity-0 before:transition-transform before:scale-0 before:text-background dark:before:text-foreground before:text-xs before:flex before:items-center before:justify-center",
-          "hover:border-[var(--tool-color)] hover:before:scale-90 hover:before:opacity-50",
-          "peer-checked:border-[var(--tool-color)] peer-checked:shadow-lg peer-checked:shadow-[var(--tool-color-shadow)] peer-checked:text-[var(--tool-color)]",
-          "peer-checked:before:border-[var(--tool-color)] peer-checked:before:bg-[var(--tool-color)] peer-checked:before:opacity-100 peer-checked:before:scale-100 peer-checked:before:content-['✓']"
-        )}
-      >
-        <div className="transition-all duration-100 [&_svg]:w-10 [&_svg]:h-10">
-          {icon}
-        </div>
-        <span className="font-semibold transition-all duration-300 text-center mt-2 text-sm">
-          {title}
-        </span>
-        <span className="text-xs opacity-60 mt-0.5 text-center">
-          {subtitle}
-        </span>
-      </div>
-    </label>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="w-full h-12"
+            onClick={onClick}
+          >
+            {icon}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{title}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
-};
+}

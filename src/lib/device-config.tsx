@@ -1,123 +1,93 @@
-'use client';
 
 import {
-    CctvBulletIcon, CctvDomeIcon, CctvPtzIcon,
-    NvrIcon, SwitchIcon, RackIcon, MonitorIcon, WifiApIcon,
-    UtpCat6Icon, FiberOpticIcon, TableIcon,
+    CctvBulletIcon, CctvDomeIcon, CctvPtzIcon, MonitorIcon, NvrIcon,
+    RackIcon, SwitchIcon, WifiApIcon, UtpCat6Icon, FiberOpticIcon
 } from '@/components/icons';
-import { Server, Zap, HardDrive, PanelTop, Power, Router } from 'lucide-react';
+import type { DeviceConfig, DeviceType } from './types';
 
-import type { DeviceConfig, DeviceType, RackDeviceType, AnyDevice } from './types';
-
-export const RACK_DEVICE_TYPES: RackDeviceType[] = ['nvr', 'switch', 'patch-panel', 'pdu', 'ups'];
-
-export const DEVICE_CONFIG: { [key in DeviceType]: DeviceConfig } = {
-    // CCTV Cameras
+export const DEVICE_CONFIG: Record<DeviceType, DeviceConfig> = {
     'cctv-bullet': {
-        name: 'Bullet Camera',
+        type: 'cctv-bullet',
+        label: 'กล้องวงจรปิดแบบ Bullet',
         icon: CctvBulletIcon,
-        colorClass: 'bg-sky-100 dark:bg-sky-900/50 border-sky-300 dark:border-sky-700',
-        defaults: { price: 1800, powerConsumption: 6, resolution: '1080p', fov: 90, range: 30, uHeight: 0 }
+        colorClass: 'bg-red-500/80 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.6)]',
+        properties: { price: 1500, resolution: '1080p', fov: 90, range: 20, powerConsumption: 5 },
     },
     'cctv-dome': {
-        name: 'Dome Camera',
+        type: 'cctv-dome',
+        label: 'กล้องวงจรปิดแบบ Dome',
         icon: CctvDomeIcon,
-        colorClass: 'bg-sky-100 dark:bg-sky-900/50 border-sky-300 dark:border-sky-700',
-        defaults: { price: 1500, powerConsumption: 5, resolution: '1080p', fov: 90, range: 20, uHeight: 0 }
+        colorClass: 'bg-sky-500/80 border-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.6)]',
+        properties: { price: 1800, resolution: '1080p', fov: 110, range: 15, powerConsumption: 4 },
     },
     'cctv-ptz': {
-        name: 'PTZ Camera',
+        type: 'cctv-ptz',
+        label: 'กล้องวงจรปิด PTZ',
         icon: CctvPtzIcon,
-        colorClass: 'bg-sky-100 dark:bg-sky-900/50 border-sky-300 dark:border-sky-700',
-        defaults: { price: 4500, powerConsumption: 20, resolution: '2K', fov: 120, range: 50, uHeight: 0, zoomLevel: 1 }
+        colorClass: 'bg-violet-500/80 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.6)]',
+        properties: { price: 5500, resolution: '2K', fov: 120, range: 50, powerConsumption: 12, zoomLevel: 1 },
     },
-    // Network Devices
+    'monitor': {
+        type: 'monitor',
+        label: 'จอแสดงผล',
+        icon: MonitorIcon,
+        colorClass: 'bg-amber-500/80 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.6)]',
+        properties: { price: 4000, powerConsumption: 30 },
+    },
     'nvr': {
-        name: 'NVR/DVR',
-        icon: HardDrive,
-        colorClass: 'bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700',
-        defaults: { price: 8500, powerConsumption: 50, uHeight: 2, channels: 16 }
+        type: 'nvr',
+        label: 'เครื่องบันทึก NVR',
+        icon: NvrIcon,
+        colorClass: 'bg-slate-500/80 border-slate-400 shadow-[0_0_15px_rgba(100,115,135,0.6)]',
+        properties: { price: 8000, channels: 16, powerConsumption: 40 },
+    },
+    'rack': {
+        type: 'rack',
+        label: 'ตู้แร็ค',
+        icon: RackIcon,
+        colorClass: 'bg-gray-600/80 border-gray-500 shadow-[0_0_15px_rgba(75,85,99,0.6)]',
+        properties: { price: 9000, powerConsumption: 0, uHeight: 42, devices: [] },
     },
     'switch': {
-        name: 'Switch',
+        type: 'switch',
+        label: 'สวิตช์เครือข่าย',
         icon: SwitchIcon,
-        colorClass: 'bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700',
-        defaults: { price: 2500, powerConsumption: 30, uHeight: 1, ports: 16 }
+        colorClass: 'bg-green-500/80 border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.6)]',
+        properties: { price: 3500, ports: 24, powerConsumption: 20 },
     },
     'wifi-ap': {
-        name: 'Wi-Fi AP',
+        type: 'wifi-ap',
+        label: 'Wi-Fi Access Point',
         icon: WifiApIcon,
-        colorClass: 'bg-violet-100 dark:bg-violet-900/50 border-violet-300 dark:border-violet-700',
-        defaults: { price: 3000, powerConsumption: 12, range: 20, uHeight: 0 }
+        colorClass: 'bg-fuchsia-500/80 border-fuchsia-400 shadow-[0_0_15px_rgba(217,70,239,0.6)]',
+        properties: { price: 2800, powerConsumption: 8 },
     },
-    // Rack & Power
-    'rack-indoor': {
-        name: 'Indoor Rack',
-        icon: RackIcon,
-        colorClass: 'bg-gray-200 dark:bg-gray-800 border-gray-400 dark:border-gray-600',
-        defaults: { price: 3500, rack_size: '9U', uHeight: 0 }
+    'utp-cat6': {
+        type: 'utp-cat6',
+        label: 'สาย UTP CAT6',
+        icon: UtpCat6Icon,
+        colorClass: 'bg-blue-500/80 border-blue-400',
+        properties: { price: 20 },
     },
-    'rack-outdoor': {
-        name: 'Outdoor Rack',
-        icon: Server,
-        colorClass: 'bg-gray-300 dark:bg-gray-700 border-gray-400 dark:border-gray-500',
-        defaults: { price: 7500, rack_size: '12U', uHeight: 0 }
-    },
-    'ups': {
-        name: 'UPS',
-        icon: Zap,
-        colorClass: 'bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700',
-        defaults: { price: 9000, powerConsumption: 10, uHeight: 2, powerCapacity: 900 }
-    },
-    'pdu': {
-        name: 'PDU',
-        icon: Power,
-        colorClass: 'bg-amber-100 dark:bg-amber-900/50 border-amber-300 dark:border-amber-700',
-        defaults: { price: 2000, powerConsumption: 2, uHeight: 1, powerCapacity: 2200 }
-    },
-     'patch-panel': {
-        name: 'Patch Panel',
-        icon: PanelTop,
-        colorClass: 'bg-slate-100 dark:bg-slate-800/50 border-slate-300 dark:border-slate-600',
-        defaults: { price: 1200, powerConsumption: 0, uHeight: 1, ports: 24 }
-    },
-    // Other
-    'monitor': {
-        name: 'Monitor',
-        icon: MonitorIcon,
-        colorClass: 'bg-fuchsia-100 dark:bg-fuchsia-900/50 border-fuchsia-300 dark:border-fuchsia-700',
-        defaults: { price: 4000, powerConsumption: 35, uHeight: 0 }
-    },
-    'table': {
-        name: 'Table',
-        icon: TableIcon,
-        defaults: { uHeight: 0 }
-    },
-    // Cables
-    'utp-cat6': { name: 'UTP CAT6', icon: UtpCat6Icon, defaults: { price: 15, uHeight: 0 }},
-    'fiber-optic': { name: 'Fiber Optic', icon: FiberOpticIcon, defaults: { price: 40, uHeight: 0 }},
+    'fiber-optic': {
+        type: 'fiber-optic',
+        label: 'สาย Fiber Optic',
+        icon: FiberOpticIcon,
+        colorClass: 'bg-yellow-400/80 border-yellow-300',
+        properties: { price: 40 },
+    }
 };
 
-export function createDevice(type: DeviceType, x: number, y: number, existingDevices: any[]): AnyDevice {
+export const createDevice = (type: DeviceType, x: number, y: number, existingDevices: any[]) => {
     const config = DEVICE_CONFIG[type];
-    if (!config) {
-        throw new Error(`Unknown device type: ${type}`);
-    }
-
     const count = existingDevices.filter(d => d.type === type).length + 1;
-
-    const newDevice: AnyDevice = {
-        id: `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    return {
+        id: `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         type: type,
-        label: `${config.name} ${count}`,
+        label: `${config.label} ${count}`,
         x,
         y,
-        ...config.defaults,
+        rotation: 0,
+        ...config.properties,
     };
-
-    if (type === 'rack-indoor' || type === 'rack-outdoor') {
-        newDevice.devices = [];
-    }
-
-    return newDevice;
-}
+};

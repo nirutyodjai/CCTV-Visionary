@@ -1,11 +1,13 @@
+
 'use client';
 
 import { DEVICE_CONFIG } from '@/lib/device-config';
 import type { DeviceType } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wrench } from 'lucide-react';
-import { ToolCard } from '@/components/ui/tool-card';
+import { ToolsIcon } from '@/components/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface DevicesToolbarProps {
   onSelectDevice: (type: DeviceType) => void;
@@ -18,56 +20,48 @@ const TOOLBAR_DEVICES: DeviceType[] = [
     'wifi-ap',
     'nvr',
     'switch',
-    'rack-indoor',
-    'rack-outdoor',
+    'rack',
+    'monitor',
+    'utp-cat6',
+    'fiber-optic',
 ];
 
-// Assign consistent colors for better UX
-const deviceToolColors: { [key in DeviceType]?: string } = {
-    'cctv-dome': 'hsl(221, 83%, 53%)',
-    'cctv-bullet': 'hsl(221, 83%, 53%)',
-    'cctv-ptz': 'hsl(221, 83%, 53%)',
-    'wifi-ap': 'hsl(142, 71%, 45%)',
-    'nvr': 'hsl(24, 95%, 53%)',
-    'switch': 'hsl(24, 95%, 53%)',
-    'rack-indoor': 'hsl(215, 20%, 65%)',
-    'rack-outdoor': 'hsl(215, 20%, 65%)',
-};
-
-
 export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
-    // We use a reducer to force a re-render after clicking a tool.
-    // This is because these tools are actions, not toggles, and shouldn't stay "checked".
-    // The re-render will ensure the `checked={false}` prop is re-applied.
     const [key, forceUpdate] = React.useReducer((x) => x + 1, 0);
 
   return (
-     <Card key={key}>
-      <CardHeader className="p-3 border-b">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Wrench className="w-4 h-4" />
-            เครื่องมืออุปกรณ์
+     <Card key={key} className="border-blue-200 dark:border-blue-800 shadow-md">
+      <CardHeader className="p-3 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 border-b border-blue-200 dark:border-blue-700">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2 text-blue-700 dark:text-blue-300">
+            <ToolsIcon className="w-5 h-5" />
+            เครื่องมือด่วน
         </CardTitle>
       </CardHeader>
-       <CardContent className="p-3">
-            <div className="grid grid-cols-2 gap-3">
+       <CardContent className="p-3 bg-white dark:bg-gray-900/50">
+            <div className="grid grid-cols-5 gap-2">
             {TOOLBAR_DEVICES.map(type => {
                 const config = DEVICE_CONFIG[type];
                 if (!config) return null;
                 const Icon = config.icon;
                 return (
-                    <ToolCard
-                        key={type}
-                        icon={<Icon />}
-                        title={config.name}
-                        subtitle="เพิ่มลงในแผน"
-                        color={deviceToolColors[type] || 'hsl(var(--primary))'}
-                        checked={false}
-                        onChange={() => {
-                            onSelectDevice(type);
-                            forceUpdate();
-                        }}
-                    />
+                    <TooltipProvider key={type}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={() => {
+                                        onSelectDevice(type);
+                                        forceUpdate();
+                                    }}
+                                    className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+                                >
+                                    <Icon className={cn("w-7 h-7 transition-colors", config.colorClass)} />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="bg-gray-800 text-white border-gray-700">
+                                <p>{config.label}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 )
             })}
             </div>

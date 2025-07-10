@@ -8,7 +8,10 @@ interface ArchitecturalElementRendererProps {
 
 export const ArchitecturalElementRenderer: React.FC<ArchitecturalElementRendererProps> = ({ element }) => {
   if (element.type === 'wall') {
-    const { start, end } = element;
+    if (!element.points || element.points.length < 2) {
+      return null;
+    }
+    const [start, end] = element.points;
     
     // Calculate position and dimensions
     const x1 = start.x * 100;
