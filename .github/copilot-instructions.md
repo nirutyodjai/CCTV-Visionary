@@ -13,6 +13,18 @@
 📝 Status: ✅ COMPLETED
 🚫 DO NOT: Recreate or duplicate this file
 
+📅 2025-07-13 21:46 UTC+7
+🤖 Agent: GitHub Copilot (nirutyodjai)
+📁 Action: เพิ่มระบบ AI Coordination Protocol
+📝 Status: ✅ COMPLETED
+🚫 DO NOT: ลบหรือแก้ไขระบบ coordination นี้
+
+📅 2025-07-13 21:52 UTC+7
+🤖 Agent: User (nirutyodjai)
+📁 Action: ปรับปรุงหน้าแรกเรื่องสีแดง - แก้ไข src/app/page.tsx
+📝 Status: 🔄 IN_PROGRESS
+🚫 DO NOT: แก้ไขไฟล์ src/app/page.tsx, globals.css หรือ theme-related files จนกว่าจะเสร็จ
+
 📅 [DATE] [TIME] UTC+7
 🤖 Agent: [AGENT_NAME] ([USER])
 📁 Action: [DESCRIPTION]
@@ -23,13 +35,19 @@
 #### Current Active Work Areas
 ```
 🟡 RESERVED AREAS (Do not modify):
-- None currently
+- src/app/page.tsx (หน้าแรก - กำลังปรับปรุงสีแดง)
+- src/app/globals.css (อาจมีการเปลี่ยน CSS color scheme)
+- tailwind.config.ts (อาจมีการปรับ color palette)
 
 🔴 BLOCKED AREAS (Check before editing):
-- None currently
+- Theme-related components จนกว่าการปรับสีแดงจะเสร็จ
+- Color utility classes ใน components/ui/
 
 🟢 AVAILABLE AREAS:
-- All areas available for modification
+- AI flows (src/ai/flows/)
+- Service layer (src/services/)
+- Component logic (non-styling parts)
+- Backend/API related files
 ```
 
 #### Coordination Rules
