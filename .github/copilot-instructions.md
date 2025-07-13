@@ -25,6 +25,12 @@
 📝 Status: 🔄 IN_PROGRESS
 🚫 DO NOT: แก้ไขไฟล์ src/app/page.tsx, globals.css หรือ theme-related files จนกว่าจะเสร็จ
 
+📅 2025-07-13 21:55 UTC+7
+🤖 Agent: GitHub Copilot (nirutyodjai)
+📁 Action: สร้างระบบ Admin Panel ที่สมบูรณ์แบบ - เริ่มต้นด้วย types และ services
+📝 Status: 🔄 IN_PROGRESS
+🚫 DO NOT: แก้ไข admin-related files, auth types, หรือ permission system จนกว่าจะเสร็จ
+
 📅 [DATE] [TIME] UTC+7
 🤖 Agent: [AGENT_NAME] ([USER])
 📁 Action: [DESCRIPTION]
@@ -35,19 +41,22 @@
 #### Current Active Work Areas
 ```
 🟡 RESERVED AREAS (Do not modify):
-- src/app/page.tsx (หน้าแรก - กำลังปรับปรุงสีแดง)
-- src/app/globals.css (อาจมีการเปลี่ยน CSS color scheme)
-- tailwind.config.ts (อาจมีการปรับ color palette)
+- src/app/page.tsx (หน้าแรก - กำลังปรับปรุงสีแดง - nirutyodjai)
+- src/app/globals.css (อาจมีการเปลี่ยน CSS color scheme - nirutyodjai)
+- tailwind.config.ts (อาจมีการปรับ color palette - nirutyodjai)
+- src/lib/types.ts (เพิ่ม admin/auth types - GitHub Copilot)
+- src/services/ (เพิ่ม admin services - GitHub Copilot)
+- src/app/admin/ (สร้าง admin routes ใหม่ - GitHub Copilot)
 
 🔴 BLOCKED AREAS (Check before editing):
 - Theme-related components จนกว่าการปรับสีแดงจะเสร็จ
-- Color utility classes ใน components/ui/
+- Authentication/Authorization system จนกว่า admin system จะเสร็จ
+- User management related files
 
 🟢 AVAILABLE AREAS:
-- AI flows (src/ai/flows/)
-- Service layer (src/services/)
-- Component logic (non-styling parts)
-- Backend/API related files
+- AI flows (src/ai/flows/) - ไม่เกี่ยวข้องกับ admin/auth
+- Component logic (non-styling, non-auth parts)
+- Utility functions ที่ไม่เกี่ยวข้อง
 ```
 
 #### Coordination Rules
@@ -69,12 +78,14 @@
 - **Service Layer** (`src/services/`): Domain services following singleton pattern with EventBus communication
 - **Component Layer** (`src/components/`): React components organized by feature (canvas/, rack/, topology/, simulation/)
 - **State Management**: Immer-based immutable updates with StateHistoryManager for undo/redo
+- **Admin Layer** (`src/app/admin/`): Complete admin panel with user management and permissions
 
 ### Key Data Flows
 
 1. **Device Management**: `AnyDevice` union type → Service layer → Immer state updates → Canvas rendering
 2. **AI Integration**: User action → AI flow (via actions.ts) → State update → UI feedback
 3. **Cross-component**: EventBus pattern for service communication, SelectionContext for UI state
+4. **Admin Management**: Auth → Permission check → Admin service → Database → UI update
 
 ## Critical Development Patterns
 
@@ -92,6 +103,16 @@ const changeLog = {
 // Update .github/copilot-instructions.md with this info
 ```
 
+### Admin System Pattern
+```typescript
+// Admin operations require permission checking
+const adminAction = async (action: AdminAction, userId: string) => {
+  const hasPermission = await permissionService.checkPermission(userId, action);
+  if (!hasPermission) throw new UnauthorizedError();
+  return await adminService.executeAction(action);
+};
+```
+
 ### Type System Architecture
 ```typescript
 // Union types for device polymorphism
@@ -101,6 +122,13 @@ type AnyDevice = BaseDevice | CameraDevice | NetworkDevice | RackContainer;
 class BaseService {
   constructor(protected eventBus: EventBus) {}
   abstract initialize(): Promise<void>;
+}
+
+// Admin system types
+interface AdminUser extends User {
+  role: 'super_admin' | 'admin' | 'editor' | 'viewer';
+  permissions: Permission[];
+  customPages: CustomPage[];
 }
 ```
 
@@ -135,6 +163,10 @@ npm run genkit:watch      # Auto-reload AI flows
 npm run dev               # Next.js dev server
 npm run typecheck         # TypeScript validation
 npm test                  # Jest test suite
+
+# Admin development
+npm run admin:seed        # Seed admin user data
+npm run admin:migrate     # Run admin database migrations
 ```
 
 ## Project-Specific Conventions
@@ -144,11 +176,13 @@ npm test                  # Jest test suite
 - **Sidebar components**: Toolbars, properties, project management
 - **Topology components**: Network diagram generation and visualization
 - **Simulation components**: 3D view and scenario testing
+- **Admin components**: User management, permissions, custom page builder
 
 ### Service Pattern
 - Services extend `BaseService` and use dependency injection via `ServiceManager.getInstance()`
 - EventBus for cross-service communication: `eventBus.emit()` / `eventBus.on()`
 - Services are lazily initialized and follow singleton pattern
+- Admin services require authentication and permission validation
 
 ### State History System
 ```typescript
@@ -160,16 +194,19 @@ updateProjectState(newState, 'Human readable description', 'add|remove|update|mo
 - Uses `useMobileDetection()` hook for responsive behavior
 - Touch gesture support for undo/redo (three-finger swipe)
 - Separate mobile/desktop UI flows
+- Admin panel is responsive and mobile-friendly
 
 ## Integration Points
 
 ### Firebase Data Connect
 - Schema in `dataconnect/schema/schema.gql` (currently example only)
 - Generated connectors in `dataconnect-generated/`
+- Admin system will use Firebase Auth + Firestore
 
 ### AI Model Configuration
 - Single Genkit instance in `src/ai/genkit.ts` using `googleai/gemini-2.0-flash`
 - All flows use `noAuth()` policy for development
+- Admin can configure AI parameters
 
 ### External Dependencies
 - **React Flow**: Network topology visualization
@@ -177,6 +214,8 @@ updateProjectState(newState, 'Human readable description', 'add|remove|update|mo
 - **React DnD**: Drag-and-drop device placement
 - **Framer Motion**: UI animations
 - **Radix UI**: Design system components
+- **Firebase Auth**: User authentication for admin system
+- **React Hook Form**: Form management for admin
 
 ## Thai Language Context
 
@@ -184,6 +223,7 @@ updateProjectState(newState, 'Human readable description', 'add|remove|update|mo
 - Component labels use Thai terms (e.g., 'กล้องวงจรปิด' for CCTV)
 - Toast notifications and user feedback in Thai
 - Error messages should be bilingual (Thai + English for debugging)
+- Admin interface uses Thai for all user-facing text
 
 ## Performance Considerations
 
@@ -191,6 +231,7 @@ updateProjectState(newState, 'Human readable description', 'add|remove|update|mo
 - Implement virtualization for large device lists
 - AI flows include timing metadata for monitoring
 - Canvas interactions are throttled for mobile performance
+- Admin data tables use pagination and lazy loading
 
 ## Testing Strategy
 
@@ -198,6 +239,7 @@ updateProjectState(newState, 'Human readable description', 'add|remove|update|mo
 - AI flows should have unit tests with mock inputs
 - Canvas components need integration tests for drag/drop
 - Mobile responsiveness testing required for all new features
+- Admin system requires authentication flow testing
 
 ---
 
