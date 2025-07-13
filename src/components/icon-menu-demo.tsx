@@ -435,20 +435,39 @@ export function IconMenuDemo() {
               <p>จัดการเลเยอร์การแสดงผลและการมองเห็น</p>
               <div className="mt-4 space-y-2">
                 <div className="flex items-center justify-between p-2 border rounded">
-                  <span className="text-sm">เลเยอร์กล้อง CCTV</span>
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <label className="text-sm">เลเยอร์กล้อง CCTV</label>
+                  <input 
+                    type="checkbox" 
+                    defaultChecked 
+                    className="rounded" 
+                    aria-label="เปิด/ปิดเลเยอร์กล้อง CCTV"
+                  />
                 </div>
                 <div className="flex items-center justify-between p-2 border rounded">
-                  <span className="text-sm">เลเยอร์เครือข่าย</span>
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <label className="text-sm">เลเยอร์เครือข่าย</label>
+                  <input 
+                    type="checkbox" 
+                    defaultChecked 
+                    className="rounded"
+                    aria-label="เปิด/ปิดเลเยอร์เครือข่าย"
+                  />
                 </div>
                 <div className="flex items-center justify-between p-2 border rounded">
-                  <span className="text-sm">เลเยอร์สถาปัตยกรรม</span>
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <label className="text-sm">เลเยอร์สถาปัตยกรรม</label>
+                  <input 
+                    type="checkbox" 
+                    defaultChecked 
+                    className="rounded"
+                    aria-label="เปิด/ปิดเลเยอร์สถาปัตยกรรม"
+                  />
                 </div>
                 <div className="flex items-center justify-between p-2 border rounded">
-                  <span className="text-sm">เลเยอร์การเดินสาย</span>
-                  <input type="checkbox" className="rounded" />
+                  <label className="text-sm">เลเยอร์การเดินสาย</label>
+                  <input 
+                    type="checkbox" 
+                    className="rounded"
+                    aria-label="เปิด/ปิดเลเยอร์การเดินสาย"
+                  />
                 </div>
               </div>
             </CardContent>

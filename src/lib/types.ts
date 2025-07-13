@@ -11,9 +11,11 @@ export type DeviceType =
   | 'table' | 'elevator';
 
 export interface DeviceConfig {
-  name: string;
-  icon: React.ComponentType;
-  defaults: Record<string, any>;
+  type: DeviceType;
+  label: string;
+  icon: React.ComponentType<any>;
+  colorClass: string;
+  properties: Record<string, any>;
 }
 
 export interface BaseDevice {

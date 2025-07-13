@@ -27,7 +27,7 @@ export function ThemeToggle() {
     <label 
       htmlFor="theme-toggle"
       className="relative inline-flex cursor-pointer items-center"
-      title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={isDarkMode ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'}
     >
       <input 
         id="theme-toggle"

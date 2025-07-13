@@ -1,17 +1,52 @@
 'use client';
-import { WandSparkles, Spline, Target, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Bot, 
+  Send, 
+  Mic, 
+  MicOff,
+  Lightbulb,
+  Zap,
+  History,
+  Settings,
+  RefreshCw,
+  Copy,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
+  WandSparkles, 
+  Spline, 
+  Target, 
+  Eye
+} from 'lucide-react';
+
+interface Message {
+  id: string;
+  type: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  suggestions?: string[];
+  isTyping?: boolean;
+}
 
 interface AiAssistantProps {
-  onAnalyze: () => void;
-  onSuggest: () => void;
-  onFindCablePaths: () => void;
+  onAnalyze?: () => void;
+  onSuggest?: () => void;
+  onFindCablePaths?: () => void;
   onOptimizeCoverage?: () => void;
-  isAnalyzing: boolean;
-  isSuggesting: boolean;
-  isFindingPaths: boolean;
+  isAnalyzing?: boolean;
+  isSuggesting?: boolean;
+  isFindingPaths?: boolean;
   isOptimizingCoverage?: boolean;
+  projectState?: any;
+  onSuggestionApply?: (suggestion: string) => void;
+  onProjectUpdate?: (updates: any) => void;
 }
 
 export function AiAssistant({ 

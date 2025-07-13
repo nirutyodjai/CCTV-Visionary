@@ -1,6 +1,7 @@
 /* Icon Menu Sidebar Styles */
 .icon-menu-sidebar {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border-right: 1px solid rgba(148, 163, 184, 0.2);
 }
@@ -80,6 +81,7 @@
 /* Tooltip Styles */
 .menu-tooltip {
   background: rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -199,6 +201,7 @@
 /* Glass Morphism Effect */
 .glass-effect {
   background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -248,12 +251,26 @@
 
 /* Smooth Scrollbar */
 .custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  /* WebKit browsers (Chrome, Safari, Edge) */
+  overflow: auto;
 }
 
+/* WebKit scrollbars (Chrome, Safari, Edge) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {

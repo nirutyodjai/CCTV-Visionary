@@ -9,24 +9,28 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+// อินเทอร์เฟซสำหรับคุณสมบัติของแถบเครื่องมืออุปกรณ์
 interface DevicesToolbarProps {
-  onSelectDevice: (type: DeviceType) => void;
+  onSelectDevice: (type: DeviceType) => void; // ฟังก์ชันเมื่อเลือกอุปกรณ์
 }
 
+// รายการอุปกรณ์ที่แสดงในแถบเครื่องมือ
 const TOOLBAR_DEVICES: DeviceType[] = [
-    'cctv-dome',
-    'cctv-bullet',
-    'cctv-ptz',
-    'wifi-ap',
-    'nvr',
-    'switch',
-    'rack',
-    'monitor',
-    'utp-cat6',
-    'fiber-optic',
+    'cctv-dome',      // กล้องโดม
+    'cctv-bullet',    // กล้องแบบกระสุน
+    'cctv-ptz',       // กล้อง PTZ
+    'wifi-ap',        // จุดเชื่อมต่อไวไฟ
+    'nvr',           // เครื่องบันทึก
+    'switch',        // สวิตช์
+    'rack',          // แร็ค
+    'monitor',       // จอแสดงผล
+    'utp-cat6',      // สาย UTP
+    'fiber-optic',   // สายใยแก้วนำแสง
 ];
 
+// คอมโพเนนต์แถบเครื่องมืออุปกรณ์
 export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
+    // ใช้สำหรับ force update คอมโพเนนต์
     const [key, forceUpdate] = React.useReducer((x) => x + 1, 0);
 
   return (
@@ -38,6 +42,7 @@ export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
         </CardTitle>
       </CardHeader>
        <CardContent className="p-3 bg-white dark:bg-gray-900/50">
+            {/* กริดแสดงอุปกรณ์ต่างๆ */}
             <div className="grid grid-cols-5 gap-2">
             {TOOLBAR_DEVICES.map(type => {
                 const config = DEVICE_CONFIG[type];
@@ -50,8 +55,10 @@ export function DevicesToolbar({ onSelectDevice }: DevicesToolbarProps) {
                                 <button
                                     onClick={() => {
                                         onSelectDevice(type);
-                                        forceUpdate();
+                                        forceUpdate(); // อัพเดทคอมโพเนนต์
                                     }}
+                                    title={config.label}
+                                    aria-label={`เลือก${config.label}`}
                                     className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
                                 >
                                     <Icon className={cn("w-7 h-7 transition-colors", config.colorClass)} />

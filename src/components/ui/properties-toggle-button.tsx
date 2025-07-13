@@ -21,7 +21,7 @@ const PropertiesToggleButton = React.forwardRef<HTMLLabelElement, PropertiesTogg
                     className="peer sr-only" 
                     checked={isOpen}
                     onChange={(e) => onChange(e.target.checked)}
-                    aria-label={isOpen ? 'Close properties panel' : 'Open properties panel'}
+                    aria-label={isOpen ? 'ปิดแผงคุณสมบัติ' : 'เปิดแผงคุณสมบัติ'}
                 />
                 <div className="border border-border shadow-inner peer-checked:shadow-primary/30 shadow-destructive/30 flex h-6 w-12 items-center rounded bg-destructive pl-7 text-white transition-all duration-300 peer-checked:bg-primary peer-checked:pl-2" />
                 

@@ -171,8 +171,8 @@ export default function LandingPage() {
                       <div className="col-span-8 border-2 border-blue-400/50 rounded relative bg-slate-700/20">
                         {/* Cameras */}
                         <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-red-400 pulse"></div>
-                        <div className="absolute top-4 right-4 w-3 h-3 rounded-full bg-red-400 pulse" style={{animationDelay: '0.5s'}}></div>
-                        <div className="absolute bottom-4 left-1/2 w-3 h-3 rounded-full bg-red-400 pulse" style={{animationDelay: '1s'}}></div>
+                        <div className="absolute top-4 right-4 w-3 h-3 rounded-full bg-red-400 pulse animate-delay-500"></div>
+                        <div className="absolute bottom-4 left-1/2 w-3 h-3 rounded-full bg-red-400 pulse animate-delay-1000"></div>
                         
                         {/* Connections */}
                         <svg className="absolute inset-0 w-full h-full">

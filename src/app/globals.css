@@ -82,8 +82,18 @@
   /* Glassmorphism */
   .glass-card {
     background: rgba(23, 37, 84, 0.5); /* bg-indigo-900/50 */
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(59, 130, 246, 0.2); /* border-blue-500/20 */
+  }
+
+  /* Animation Delay Classes */
+  .animate-delay-500 {
+    animation-delay: 0.5s;
+  }
+  
+  .animate-delay-1000 {
+    animation-delay: 1s;
   }
 
   /* Text Effects */
@@ -200,6 +210,54 @@
   .icon-container {
     background: hsl(var(--secondary) / 0.5);
     border: 1px solid hsl(var(--border));
+  }
+
+  /* Canvas Grid Styles */
+  .canvas-grid {
+    background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .canvas-grid[data-zoom="50"] {
+    transform: scale(0.5);
+  }
+
+  .canvas-grid[data-zoom="75"] {
+    transform: scale(0.75);
+  }
+
+  .canvas-grid[data-zoom="100"] {
+    transform: scale(1);
+  }
+
+  .canvas-grid[data-zoom="125"] {
+    transform: scale(1.25);
+  }
+
+  .canvas-grid[data-zoom="150"] {
+    transform: scale(1.5);
+  }
+
+  .canvas-grid[data-zoom="200"] {
+    transform: scale(2);
+  }
+
+  /* Device Marker Styles */
+  .device-marker {
+    transition: all 0.2s ease;
+  }
+
+  .device-marker[data-x] {
+    left: calc(var(--x, 0) * 100%);
+  }
+
+  .device-marker[data-y] {
+    top: calc(var(--y, 0) * 100%);
+  }
+
+  .device-marker:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 }
 

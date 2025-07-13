@@ -45,7 +45,7 @@ export function SimulationReports({ projectState, activeFloor }: SimulationRepor
   const simulationReports: SimulationReport[] = [
     {
       id: 'sim-1',
-      title: 'System Performance Validation',
+      title: 'การตรวจสอบประสิทธิภาพระบบ',
       date: '9 Jul 2025',
       type: 'system',
       status: 'success',
@@ -55,7 +55,7 @@ export function SimulationReports({ projectState, activeFloor }: SimulationRepor
     },
     {
       id: 'sim-2',
-      title: 'Network Load Analysis',
+      title: 'การวิเคราะห์โหลดเครือข่าย',
       date: '8 Jul 2025',
       type: 'network',
       status: 'warning',
@@ -65,7 +65,7 @@ export function SimulationReports({ projectState, activeFloor }: SimulationRepor
     },
     {
       id: 'sim-3',
-      title: 'Camera Coverage Test',
+      title: 'การทดสอบครอบคลุมพื้นที่กล้อง',
       date: '7 Jul 2025',
       type: 'camera',
       status: 'error',
@@ -75,7 +75,7 @@ export function SimulationReports({ projectState, activeFloor }: SimulationRepor
     },
     {
       id: 'sim-4',
-      title: 'Environmental Impact',
+      title: 'ผลกระทบต่อสิ่งแวดล้อม',
       date: '6 Jul 2025',
       type: 'camera',
       status: 'success',

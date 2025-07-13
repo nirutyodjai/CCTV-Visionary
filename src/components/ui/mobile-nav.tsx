@@ -17,7 +17,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
   const tabs = [
     { name: 'tools', icon: Map, label: 'เครื่องมือ' },
     { name: 'files', icon: Upload, label: 'ไฟล์' },
-    { name: 'ai', icon: Bot, label: 'AI' },
+    { name: 'ai', icon: Bot, label: 'เอไอ' },
     { name: 'project', icon: BarChart2, label: 'โปรเจกต์' },
     { name: 'history', icon: Clock, label: 'ประวัติ' },
     { name: 'settings', icon: Settings, label: 'ตั้งค่า' },
