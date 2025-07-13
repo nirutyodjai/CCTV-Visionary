@@ -1,5 +1,46 @@
 # CCTV Visionary - AI Coding Agent Instructions
 
+## 🚨 AI COORDINATION PROTOCOL - READ FIRST
+
+### Change Tracking & Coordination System
+**MANDATORY**: Before making ANY changes, check this section for recent modifications and ongoing work.
+
+#### Recent Modifications Log
+```
+📅 2025-07-13 21:15 UTC+7
+🤖 Agent: GitHub Copilot (nirutyodjai)
+📁 Action: Created .github/copilot-instructions.md
+📝 Status: ✅ COMPLETED
+🚫 DO NOT: Recreate or duplicate this file
+
+📅 [DATE] [TIME] UTC+7
+🤖 Agent: [AGENT_NAME] ([USER])
+📁 Action: [DESCRIPTION]
+📝 Status: [IN_PROGRESS|COMPLETED|BLOCKED]
+🚫 DO NOT: [SPECIFIC_WARNINGS]
+```
+
+#### Current Active Work Areas
+```
+🟡 RESERVED AREAS (Do not modify):
+- None currently
+
+🔴 BLOCKED AREAS (Check before editing):
+- None currently
+
+🟢 AVAILABLE AREAS:
+- All areas available for modification
+```
+
+#### Coordination Rules
+1. **ALWAYS UPDATE THIS LOG** when starting work on any file/feature
+2. **CHECK FOR CONFLICTS** before modifying core files (types.ts, services/, ai/flows/)
+3. **MARK YOUR WORK** as IN_PROGRESS while editing, COMPLETED when done
+4. **SET WARNINGS** for areas other agents should avoid
+5. **USE THAI** for user-facing changes, English for technical documentation
+
+---
+
 ## Architecture Overview
 
 **CCTV Visionary** is a Thai-language web application for AI-powered CCTV and network system planning. Built with Next.js 15 + TypeScript, it combines visual floor plan design with Google Genkit AI assistance.
@@ -18,6 +59,20 @@
 3. **Cross-component**: EventBus pattern for service communication, SelectionContext for UI state
 
 ## Critical Development Patterns
+
+### Change Tracking Pattern
+```typescript
+// REQUIRED: Log your changes when modifying core files
+const changeLog = {
+  timestamp: new Date().toISOString(),
+  agent: 'AI_AGENT_NAME',
+  user: 'USERNAME',
+  action: 'DESCRIPTION',
+  files: ['path/to/modified/files'],
+  status: 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED'
+};
+// Update .github/copilot-instructions.md with this info
+```
 
 ### Type System Architecture
 ```typescript
@@ -125,3 +180,24 @@ updateProjectState(newState, 'Human readable description', 'add|remove|update|mo
 - AI flows should have unit tests with mock inputs
 - Canvas components need integration tests for drag/drop
 - Mobile responsiveness testing required for all new features
+
+---
+
+## 📝 HOW TO UPDATE THIS FILE
+
+When you make changes to the codebase:
+
+1. **Add entry to Recent Modifications Log** with current Thai time (UTC+7)
+2. **Mark areas as RESERVED** if you're working on them
+3. **Update BLOCKED AREAS** if something depends on your work
+4. **Set clear warnings** about what other agents should avoid
+5. **Mark as COMPLETED** when finished
+
+Example update:
+```
+📅 2025-07-13 22:30 UTC+7
+🤖 Agent: Claude (john_doe)
+📁 Action: เพิ่มระบบ authentication ใน auth.service.ts
+📝 Status: IN_PROGRESS
+🚫 DO NOT: แก้ไข auth-related types ใน src/lib/types.ts จนกว่าจะเสร็จ
+```
